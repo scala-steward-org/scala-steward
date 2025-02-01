@@ -49,6 +49,8 @@ sealed trait ForgeType extends Product with Serializable {
     */
   def pullRequestHeadFor(@nowarn fork: Repo, updateBranch: Branch): String = updateBranch.name
 
+  val maximumPullRequestLength: Int = 65536
+
   val asString: String = this match {
     case AzureRepos      => "azure-repos"
     case Bitbucket       => "bitbucket"
@@ -66,6 +68,7 @@ object ForgeType {
   case object AzureRepos extends ForgeType {
     override val publicWebHost: Some[String] = Some("dev.azure.com")
     override def supportsForking: Boolean = false
+    override val maximumPullRequestLength: Int = 4000
     val diffs: DiffUriPattern = (from, to) =>
       _ / "branchCompare" +? ("baseVersion", s"GT$from") +? ("targetVersion", s"GT$to")
     val files: FileUriPattern =
@@ -93,6 +96,7 @@ object ForgeType {
     override val publicWebHost: None.type = None
     override def supportsForking: Boolean = false
     override def supportsLabels: Boolean = false
+    override val maximumPullRequestLength: Int = 32768
     val diffs: DiffUriPattern = Bitbucket.diffs
     val files: FileUriPattern = fileName => _ / "browse" / fileName
   }

@@ -49,7 +49,8 @@ object NewPullRequestData {
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]],
       filesWithOldVersion: List[String],
       configParsingError: Option[String],
-      labels: List[String]
+      labels: List[String],
+      maximumPullRequestLength: Int
   ): String = {
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
     val appliedMigrations = migrationNote(migrations)
@@ -129,8 +130,7 @@ object NewPullRequestData {
          |
          |<!-- scala-steward = $metadataJson -->""".stripMargin
 
-    // Github limits PR descriptions to 65536 unicode characters
-    if (bodyWithMetadata.length < 65536)
+    if (bodyWithMetadata.length < maximumPullRequestLength)
       bodyWithMetadata
     else plainBody
   }
@@ -264,7 +264,8 @@ object NewPullRequestData {
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
       addLabels: Boolean = false,
-      labels: List[String] = List.empty
+      labels: List[String] = List.empty,
+      maximumPullRequestLength: Int = 65536
   ): NewPullRequestData =
     NewPullRequestData(
       title = CommitMsg
@@ -280,7 +281,8 @@ object NewPullRequestData {
         artifactIdToUpdateInfoUrls,
         filesWithOldVersion,
         data.repoData.cache.maybeRepoConfigParsingError,
-        labels
+        labels,
+        maximumPullRequestLength
       ),
       head = branchName,
       base = data.baseBranch,
