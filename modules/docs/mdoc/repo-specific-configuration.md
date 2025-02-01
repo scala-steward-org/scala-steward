@@ -144,7 +144,7 @@ updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md",
 # you don't change it yourself.
 # If "never", Scala Steward will never update the PR
 # Default: ${PullRequestUpdateStrategy.default.asJson.noSpaces}
-updatePullRequests = "always" | "on-conflicts" | "never"
+updatePullRequests = "always"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: $${artifactName}, $${currentVersion}, $${nextVersion} and $${default}
