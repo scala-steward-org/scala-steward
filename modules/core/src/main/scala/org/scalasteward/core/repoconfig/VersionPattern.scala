@@ -32,6 +32,10 @@ final case class VersionPattern(
       suffix.forall(version.endsWith) &&
       exact.forall(_ === version) &&
       contains.forall(version.contains)
+
+  /** Returns `true` if only `prefix` is defined. */
+  private def isPrefixPattern: Boolean =
+    prefix.isDefined && suffix.isEmpty && exact.isEmpty && contains.isEmpty
 }
 
 object VersionPattern {
@@ -41,6 +45,9 @@ object VersionPattern {
   implicit val versionPatternDecoder: Decoder[VersionPattern] =
     deriveDecoder[VersionPattern].or(Decoder[String].map(s => VersionPattern(prefix = Some(s))))
 
-  implicit val versionPatternEncoder: Encoder[VersionPattern] =
-    deriveEncoder
+  implicit val versionPatternEncoder: Encoder[VersionPattern] = {
+    val prefixEncoder = Encoder.encodeOption[String]
+    val vpEncoder = deriveEncoder[VersionPattern]
+    Encoder.instance(vp => if (vp.isPrefixPattern) prefixEncoder(vp.prefix) else vpEncoder(vp))
+  }
 }
