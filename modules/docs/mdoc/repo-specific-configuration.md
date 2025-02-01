@@ -185,11 +185,11 @@ dependencyOverrides = [
   },
   {
     dependency = { groupId = "com.example", artifactId = "foo" },
-    pullRequests = { frequency = "30 day" },
+    pullRequests = { frequency = "30 days" },
   },
   {
     dependency = { groupId = "com.example" },
-    pullRequests = { frequency = "14 day" },
+    pullRequests = { frequency = "14 days" },
   }
 ]
 
