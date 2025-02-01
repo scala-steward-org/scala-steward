@@ -1,7 +1,7 @@
 import com.typesafe.sbt.packager.docker.*
-import sbtcrossproject.{CrossProject, CrossType, Platform}
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
 import org.typelevel.scalacoptions.ScalacOptions
+import sbtcrossproject.{CrossProject, CrossType, Platform}
 
 /// variables
 
@@ -250,7 +250,9 @@ lazy val docs = myCrossProject("docs")
   .enablePlugins(MdocPlugin)
   .settings(noPublishSettings)
   .settings(
+    libraryDependencies ++= Seq(Dependencies.munitDiff),
     scalacOptions += "-Ytasty-reader",
+    tpolecatExcludeOptions := Set(ScalacOptions.fatalWarnings),
     mdocIn := baseDirectory.value / ".." / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
     mdocVariables := Map(
