@@ -102,6 +102,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "scala-cli",
           "--power",
           "fix",
+          "--enable-built-in-rules=false",
           "--scalafix-rules",
           "github:functional-streams-for-scala/fs2/v1?sha=v1.0.5",
           buildRootDir.pathAsString
