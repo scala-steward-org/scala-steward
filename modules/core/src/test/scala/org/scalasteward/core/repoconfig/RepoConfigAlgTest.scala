@@ -393,8 +393,7 @@ class RepoConfigAlgTest extends FunSuite {
           groupId = None,
           artifactId = None,
           command = Nel.of("sbt", "mySbtCommand"),
-          commitMessage = "Updated with a hook!",
-          signoffCommits = None
+          commitMessage = "Updated with a hook!"
         )
       ).some
     )
@@ -418,8 +417,7 @@ class RepoConfigAlgTest extends FunSuite {
           groupId = Some("eu.timepit".g),
           artifactId = Some("refined.1"),
           command = Nel.of("sbt", "mySbtCommand"),
-          commitMessage = "Updated with a hook!",
-          signoffCommits = None
+          commitMessage = "Updated with a hook!"
         )
       ).some
     )

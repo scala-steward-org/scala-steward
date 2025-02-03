@@ -94,11 +94,8 @@ final class EditAlg[F[_]](implicit
       result <- logger.attemptWarn.log("Scalafix migration failed") {
         buildToolDispatcher.runMigration(repo, config, migration)
       }
-      maybeCommit <- gitAlg.commitAllIfDirty(
-        repo,
-        migration.commitMessage(result),
-        migration.signoffCommits
-      )
+      maybeCommit <-
+        gitAlg.commitAllIfDirty(repo, migration.commitMessage(result), config.signoffCommits)
     } yield ScalafixEdit(migration, result, maybeCommit)
 
   private def applyUpdateReplacements(

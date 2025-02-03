@@ -54,8 +54,7 @@ class SbtAlgTest extends FunSuite {
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
       Version("1.0.0"),
-      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"),
-      signoffCommits = None
+      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
     )
     val initialState = MockState.empty
       .addFiles(
@@ -94,8 +93,7 @@ class SbtAlgTest extends FunSuite {
       Nel.of("cats-core"),
       Version("2.2.0"),
       Nel.of("github:cb372/cats/Cats_v2_2_0?sha=235bd7c92e431ab1902db174cf4665b05e08f2f1"),
-      scalacOptions = Some(Nel.of("-P:semanticdb:synthetics:on")),
-      signoffCommits = None
+      scalacOptions = Some(Nel.of("-P:semanticdb:synthetics:on"))
     )
     val initialState = MockState.empty
       .addFiles(

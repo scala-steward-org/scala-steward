@@ -46,9 +46,7 @@ final class HookExecutor[F[_]](implicit
     F: MonadThrow[F]
 ) {
   def execPostUpdateHooks(data: RepoData, update: Update.Single): F[List[EditAttempt]] =
-    (HookExecutor.postUpdateHooks(
-      data.config.signoffCommits
-    ) ++ data.config.postUpdateHooksOrDefault)
+    (HookExecutor.postUpdateHooks ++ data.config.postUpdateHooksOrDefault)
       .filter { hook =>
         hook.groupId.forall(update.groupId === _) &&
         hook.artifactId.forall(aid => update.artifactIds.exists(_.name === aid.name)) &&
@@ -56,12 +54,13 @@ final class HookExecutor[F[_]](implicit
         hook.enabledByConfig(data.config)
       }
       .distinctBy(_.command)
-      .traverse(execPostUpdateHook(data.repo, update, _))
+      .traverse(execPostUpdateHook(data.repo, update, _, data.config.signoffCommits))
 
   private def execPostUpdateHook(
       repo: Repo,
       update: Update.Single,
-      hook: PostUpdateHook
+      hook: PostUpdateHook,
+      signoffCommits: Option[Boolean]
   ): F[EditAttempt] =
     for {
       _ <- logger.info(
@@ -77,10 +76,10 @@ final class HookExecutor[F[_]](implicit
       commitMessage = hook
         .commitMessage(update)
         .appendParagraph(s"Executed command: ${hook.command.mkString_(" ")}")
-      maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage, hook.signoffCommits)
+      maybeHookCommit <- gitAlg.commitAllIfDirty(repo, commitMessage, signoffCommits)
       maybeBlameIgnoreCommit <-
         maybeHookCommit.flatTraverse(
-          addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage, hook.signoffCommits)
+          addToGitBlameIgnoreRevs(repo, repoDir, hook, _, commitMessage, signoffCommits)
         )
     } yield HookEdit(hook, result, maybeHookCommit.toList ++ maybeBlameIgnoreCommit.toList)
 
@@ -150,8 +149,7 @@ object HookExecutor {
   private def sbtGithubWorkflowGenerateHook(
       groupId: GroupId,
       artifactId: ArtifactId,
-      enabledByCache: RepoCache => Boolean,
-      signoffCommits: Option[Boolean]
+      enabledByCache: RepoCache => Boolean
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
@@ -161,11 +159,10 @@ object HookExecutor {
       commitMessage = _ => CommitMsg("Regenerate GitHub Actions workflow"),
       enabledByCache = enabledByCache,
       enabledByConfig = _ => true,
-      addToGitBlameIgnoreRevs = false,
-      signoffCommits = signoffCommits
+      addToGitBlameIgnoreRevs = false
     )
 
-  private def scalafmtHook(signoffCommits: Option[Boolean]) =
+  private val scalafmtHook =
     PostUpdateHook(
       groupId = Some(scalafmtGroupId),
       artifactId = Some(scalafmtArtifactId),
@@ -174,14 +171,12 @@ object HookExecutor {
       commitMessage = update => CommitMsg(s"Reformat with scalafmt ${update.nextVersion}"),
       enabledByCache = _ => true,
       enabledByConfig = _.scalafmtOrDefault.runAfterUpgradingOrDefault,
-      addToGitBlameIgnoreRevs = true,
-      signoffCommits = signoffCommits
+      addToGitBlameIgnoreRevs = true
     )
 
   private def sbtTypelevelHook(
       groupId: GroupId,
-      artifactId: ArtifactId,
-      signoffCommits: Option[Boolean]
+      artifactId: ArtifactId
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
@@ -191,22 +186,19 @@ object HookExecutor {
       commitMessage = _ => CommitMsg("Run prePR with sbt-typelevel"),
       enabledByCache = _ => true,
       enabledByConfig = _ => true,
-      addToGitBlameIgnoreRevs = false,
-      signoffCommits = signoffCommits
+      addToGitBlameIgnoreRevs = false
     )
 
   private def githubWorkflowGenerateExists(cache: RepoCache): Boolean =
     cache.dependsOn(sbtGitHubWorkflowGenerateModules ++ sbtTypelevelModules)
 
-  private def postUpdateHooks(signoffCommits: Option[Boolean]): List[PostUpdateHook] =
-    scalafmtHook(signoffCommits) ::
+  private val postUpdateHooks: List[PostUpdateHook] =
+    scalafmtHook ::
       sbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
-        sbtGithubWorkflowGenerateHook(gid, aid, _ => true, signoffCommits)
+        sbtGithubWorkflowGenerateHook(gid, aid, _ => true)
       } ++
       conditionalSbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
-        sbtGithubWorkflowGenerateHook(gid, aid, githubWorkflowGenerateExists, signoffCommits)
+        sbtGithubWorkflowGenerateHook(gid, aid, githubWorkflowGenerateExists)
       } ++
-      sbtTypelevelModules.map { case (gid, aid) =>
-        sbtTypelevelHook(gid, aid, signoffCommits)
-      }
+      sbtTypelevelModules.map { case (gid, aid) => sbtTypelevelHook(gid, aid) }
 }
