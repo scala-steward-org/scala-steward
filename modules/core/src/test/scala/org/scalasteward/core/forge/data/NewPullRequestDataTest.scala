@@ -25,7 +25,8 @@ class NewPullRequestDataTest extends FunSuite {
       artifactIdToUpdateInfoUrls = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
-      labels = List("library-update")
+      labels = List("library-update"),
+      maximumPullRequestLength = 65536
     )
     val expected =
       s"""|## About this PR
@@ -114,7 +115,8 @@ class NewPullRequestDataTest extends FunSuite {
       artifactIdToUpdateInfoUrls = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
-      labels = List("library-update")
+      labels = List("library-update"),
+      maximumPullRequestLength = 65536
     )
     val expected =
       s"""|## About this PR
@@ -200,7 +202,8 @@ class NewPullRequestDataTest extends FunSuite {
       artifactIdToUpdateInfoUrls = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
-      labels = List("library-update")
+      labels = List("library-update"),
+      maximumPullRequestLength = 65536
     )
     val expected =
       s"""|## About this PR
@@ -320,7 +323,8 @@ class NewPullRequestDataTest extends FunSuite {
       artifactIdToUpdateInfoUrls = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = Some("parsing error"),
-      labels = List("library-update")
+      labels = List("library-update"),
+      maximumPullRequestLength = 65536
     )
     val expected =
       s"""|## About this PR
@@ -1004,7 +1008,8 @@ class NewPullRequestDataTest extends FunSuite {
         "early-semver-major",
         "semver-spec-minor",
         "commit-count:1"
-      )
+      ),
+      maximumPullRequestLength = 65536
     )
     val expected =
       s"""|## About this PR
@@ -1089,7 +1094,8 @@ class NewPullRequestDataTest extends FunSuite {
         "early-semver-major",
         "semver-spec-minor",
         "commit-count:1"
-      )
+      ),
+      maximumPullRequestLength = 65536
     )
     val expected =
       s"""|## About this PR
