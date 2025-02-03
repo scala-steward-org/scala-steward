@@ -101,8 +101,7 @@ class NewPullRequestDataTest extends FunSuite {
         groupId = "com.spotify".g,
         artifactIds = Nel.one("scio-core"),
         newVersion = Version("0.7.0"),
-        rewriteRules = Nel.of("I am a rewrite rule"),
-        signoffCommits = None
+        rewriteRules = Nel.of("I am a rewrite rule")
       ),
       result = Right(()),
       maybeCommit = Some(Commit(dummySha1))
@@ -464,8 +463,7 @@ class NewPullRequestDataTest extends FunSuite {
         "com.spotify".g,
         Nel.one("scio-core"),
         Version("0.7.0"),
-        Nel.of("I am a rewrite rule"),
-        signoffCommits = None
+        Nel.of("I am a rewrite rule")
       ),
       Right(()),
       Some(Commit(dummySha1))
@@ -495,8 +493,7 @@ class NewPullRequestDataTest extends FunSuite {
         Nel.one("scio-core"),
         Version("0.7.0"),
         Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
-        Some("https://scalacenter.github.io/scalafix/"),
-        signoffCommits = None
+        Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
       Some(Commit(dummySha1))
@@ -528,8 +525,7 @@ class NewPullRequestDataTest extends FunSuite {
         Nel.one("scio-core"),
         Version("0.7.0"),
         Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
-        Some("https://scalacenter.github.io/scalafix/"),
-        signoffCommits = None
+        Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
       Some(Commit(dummySha1))
@@ -539,8 +535,7 @@ class NewPullRequestDataTest extends FunSuite {
         "org.typeleve".g,
         Nel.of("cats-effect", "cats-effect-laws"),
         Version("3.0.0"),
-        Nel.of("I am a rule without an effect"),
-        signoffCommits = None
+        Nel.of("I am a rule without an effect")
       ),
       Right(()),
       None
@@ -623,8 +618,7 @@ class NewPullRequestDataTest extends FunSuite {
         Nel.one("scio-core"),
         Version("0.7.0"),
         Nel.of("I am a rewrite rule", "I am a 2nd rewrite rule"),
-        Some("https://scalacenter.github.io/scalafix/"),
-        signoffCommits = None
+        Some("https://scalacenter.github.io/scalafix/")
       ),
       Right(()),
       Some(Commit(dummySha1))

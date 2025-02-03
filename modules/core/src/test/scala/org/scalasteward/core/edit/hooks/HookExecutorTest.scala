@@ -126,8 +126,7 @@ class HookExecutorTest extends CatsEffectSuite {
           groupId = None,
           artifactId = None,
           command = Nel.of("sbt", "mySbtCommand"),
-          commitMessage = "Updated with a hook!",
-          signoffCommits = None
+          commitMessage = "Updated with a hook!"
         )
       ).some
     )

@@ -91,8 +91,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
       GroupId("co.fs2"),
       Nel.of("fs2-core"),
       Version("1.0.0"),
-      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5"),
-      signoffCommits = None
+      Nel.of("github:functional-streams-for-scala/fs2/v1?sha=v1.0.5")
     )
     val obtained = scalaCliAlg.runMigration(buildRoot, migration).runS(MockState.empty)
     val expected = MockState.empty.copy(trace =

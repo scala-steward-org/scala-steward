@@ -20,8 +20,7 @@ class ScalafixMigrationsFinderTest extends FunSuite {
           Some(
             "https://github.com/typelevel/cats/blob/v2.2.0/scalafix/README.md#migration-to-cats-v220"
           ),
-          Some(Nel.of("-P:semanticdb:synthetics:on")),
-          signoffCommits = None
+          Some(Nel.of("-P:semanticdb:synthetics:on"))
         )
       ),
       List()
