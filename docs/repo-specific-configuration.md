@@ -139,7 +139,7 @@ updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md",
 # you don't change it yourself.
 # If "never", Scala Steward will never update the PR
 # Default: "on-conflicts"
-updatePullRequests = "always" | "on-conflicts" | "never"
+updatePullRequests = "always"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: ${artifactName}, ${currentVersion}, ${nextVersion} and ${default}
@@ -180,11 +180,11 @@ dependencyOverrides = [
   },
   {
     dependency = { groupId = "com.example", artifactId = "foo" },
-    pullRequests = { frequency = "30 day" },
+    pullRequests = { frequency = "30 days" },
   },
   {
     dependency = { groupId = "com.example" },
-    pullRequests = { frequency = "14 day" },
+    pullRequests = { frequency = "14 days" },
   }
 ]
 

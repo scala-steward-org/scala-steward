@@ -5,12 +5,11 @@ The `[.]scala-steward.conf` configuration file can be located in the root of you
 If a configuration file exists in more than one location, only the first found file is taken into account.
 
 ```scala mdoc:passthrough
-import io.circe.refined._
-import io.circe.syntax._
-import org.scalasteward.core.repoconfig._
+import io.circe.refined.*
+import io.circe.syntax.*
+import org.scalasteward.core.repoconfig.*
 
-print("```properties")
-print(s"""
+val input = s"""
 # pullRequests.frequency allows to control how often or when Scala Steward
 # is allowed to create pull requests.
 #
@@ -145,7 +144,7 @@ updates.fileExtensions = [".scala", ".sbt", ".sbt.shared", ".sc", ".yml", ".md",
 # you don't change it yourself.
 # If "never", Scala Steward will never update the PR
 # Default: ${PullRequestUpdateStrategy.default.asJson.noSpaces}
-updatePullRequests = "always" | "on-conflicts" | "never"
+updatePullRequests = "always"
 
 # If set, Scala Steward will use this message template for the commit messages and PR titles.
 # Supported variables: $${artifactName}, $${currentVersion}, $${nextVersion} and $${default}
@@ -186,11 +185,11 @@ dependencyOverrides = [
   },
   {
     dependency = { groupId = "com.example", artifactId = "foo" },
-    pullRequests = { frequency = "30 day" },
+    pullRequests = { frequency = "30 days" },
   },
   {
     dependency = { groupId = "com.example" },
-    pullRequests = { frequency = "14 day" },
+    pullRequests = { frequency = "14 days" },
   }
 ]
 
@@ -207,7 +206,12 @@ reviewers = [ "username1", "username2" ]
 # If true, Scala Steward will sign off all commits (e.g. `git --signoff`).
 # Default: false
 signoffCommits = true
-""")
+"""
+
+DocChecker.verifyParsedEqualsEncoded[RepoConfig](input)
+
+print("```properties")
+print(input)
 println("```")
 ```
 
