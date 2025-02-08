@@ -36,7 +36,7 @@ object dateTime {
     Decoder[String].emap(parseFiniteDuration(_).leftMap(_.getMessage))
 
   implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
-    Encoder[String].contramap(renderFiniteDuration)
+    Encoder[String].contramap(_.toString)
 
   def showDuration(d: FiniteDuration): String = {
     def symbol(unit: TimeUnit): String =
