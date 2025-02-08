@@ -95,8 +95,13 @@ final class ScalaCliAlg[F[_]](implicit
   override def runMigration(buildRoot: BuildRoot, migration: ScalafixMigration): F[Unit] =
     for {
       buildRootDir <- workspaceAlg.buildRootDir(buildRoot)
-      cmd = Nel.of("scala-cli", "--power", "fix", "--scalafix-rules") :::
-        migration.rewriteRules.append(buildRootDir.pathAsString)
+      cmd = Nel.of(
+        "scala-cli",
+        "--power",
+        "fix",
+        "--enable-built-in-rules=false",
+        "--scalafix-rules"
+      ) ::: migration.rewriteRules.append(buildRootDir.pathAsString)
       slurpOptions = SlurpOptions.ignoreBufferOverflow
       _ <- processAlg.execSandboxed(cmd, buildRootDir, slurpOptions = slurpOptions)
     } yield ()
