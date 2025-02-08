@@ -22,6 +22,7 @@ import cats.implicits.*
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Module, ModuleName, Organization}
+import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Version}
 import org.scalasteward.core.util.uri
@@ -37,16 +38,29 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
-  def create[F[_]](implicit
+  def create[F[_]](config: Config)(implicit
       logger: Logger[F],
       parallel: Parallel[F],
-      F: Async[F]
+      F: Async[F],
+      fetchAlg: CoursierDependenciesFetchAlg[F]
   ): CoursierAlg[F] = {
-    val fetch: Fetch[F] =
-      Fetch[F](FileCache[F]())
+    val fetch: F[Fetch[F]] = fetchAlg
+      .classLoader(config.coursierDependencies)
+      .map { loader =>
+        Fetch[F](
+          FileCache[F]().withClassLoaders(loader :: Nil)
+        )
+      }
 
-    val cacheNoTtl: FileCache[F] =
-      FileCache[F]().withTtl(None).withCachePolicies(List(CachePolicy.Update))
+    val cacheNoTtl: F[FileCache[F]] =
+      fetchAlg
+        .classLoader(config.coursierDependencies)
+        .map { loader =>
+          FileCache[F]()
+            .withTtl(None)
+            .withCachePolicies(List(CachePolicy.Update))
+            .withClassLoaders(loader :: Nil)
+        }
 
     new CoursierAlg[F] {
       override def getMetadata(
@@ -64,38 +78,40 @@ object CoursierAlg {
           repositories: List[coursier.Repository],
           acc: DependencyMetadata
       ): F[DependencyMetadata] = {
-        val fetchArtifacts = fetch
-          .withArtifactTypes(Set(coursier.Type.pom, coursier.Type.ivy))
-          .withDependencies(List(dependency))
-          .withRepositories(repositories)
-
-        fetchArtifacts.ioResult.attempt.flatMap {
-          case Left(throwable) =>
-            logger.debug(throwable)(s"Failed to fetch artifacts of $dependency").as(acc)
-          case Right(result) =>
-            val maybeProject = result.resolution.projectCache
-              .get(dependency.moduleVersion)
-              .map { case (_, project) => project }
-
-            maybeProject.fold(F.pure(acc)) { project =>
-              val metadata = acc.enrichWith(metadataFrom(project))
-              val recurse = Option.when(metadata.repoUrl.isEmpty)(())
+        val fetchArtifacts = fetch.map(
+          _.withArtifactTypes(Set(coursier.Type.pom, coursier.Type.ivy))
+            .withDependencies(List(dependency))
+            .withRepositories(repositories)
+        )
+        fetchArtifacts.flatMap {
+          _.ioResult.attempt.flatMap {
+            case Left(throwable) =>
+              logger.debug(throwable)(s"Failed to fetch artifacts of $dependency").as(acc)
+            case Right(result) =>
+              val maybeProject = result.resolution.projectCache
+                .get(dependency.moduleVersion)
+                .map { case (_, project) => project }
+              maybeProject.fold(F.pure(acc)) { project =>
+                val metadata = acc.enrichWith(metadataFrom(project))
+                  val recurse = Option.when(metadata.repoUrl.isEmpty)(())
               (recurse >> parentOf(project)).fold(F.pure(metadata)) { parent =>
-                getMetadataImpl(parent, repositories, metadata)
+                    getMetadataImpl(parent, repositories, metadata)
+                }
               }
-            }
+          }
         }
       }
 
       override def getVersions(dependency: Dependency, resolver: Resolver): F[List[Version]] =
         convertResolver(resolver).flatMap { repository =>
           val module = toCoursierModule(dependency)
-          repository.versions(module, cacheNoTtl.fetch).run.flatMap {
-            case Left(message) =>
-              logger.debug(message) >> F.raiseError[List[Version]](new Throwable(message))
-            case Right((versions, _)) =>
-              F.pure(versions.available.map(Version.apply).sorted)
-          }
+          cacheNoTtl.flatMap { cacheNoTtl =>
+              repository.versions(module, cacheNoTtl.fetch).run.flatMap {
+                case Left(message) =>
+                  logger.debug(message) >> F.raiseError[List[Version]](new Throwable(message))
+                case Right((versions, _)) => F.pure(versions.available.map(Version.apply).sorted)
+              }
+            }
         }
 
       private def convertResolver(resolver: Resolver): F[coursier.Repository] =
