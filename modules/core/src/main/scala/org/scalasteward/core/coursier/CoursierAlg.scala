@@ -22,8 +22,10 @@ import cats.implicits.*
 import coursier.cache.{CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.{Fetch, Module, ModuleName, Organization}
+import org.http4s.Uri
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import org.scalasteward.core.forge.ForgeType
 import org.scalasteward.core.util.uri
 import org.typelevel.log4cats.Logger
 
@@ -146,16 +148,26 @@ object CoursierAlg {
       )
     }
 
-  private def metadataFrom(project: Project): DependencyMetadata =
+  private def metadataFrom(project: Project): DependencyMetadata = {
+    val updateSchemeMaybe: (Uri.Scheme, Uri.Host) => Option[Uri.Scheme] =
+      (scheme, host) =>
+        if (uri.httpSchemes.contains_(scheme))
+          ForgeType.fromPublicWebHost(host.value).flatMap(_.publicWebScheme)
+        else
+          None
+
     DependencyMetadata(
-      homePage = uri.fromStringWithScheme(project.info.homePage),
-      scmUrl = project.info.scm.flatMap(_.url).flatMap(uri.fromStringWithScheme),
+      homePage = uri.fromStringWithScheme(project.info.homePage)(updateSchemeMaybe),
+      scmUrl = project.info.scm
+        .flatMap(_.url)
+        .flatMap(url => uri.fromStringWithScheme(url)(updateSchemeMaybe)),
       releaseNotesUrl = project.properties
         .collectFirst { case (key, value) if key.equalsIgnoreCase("info.releaseNotesUrl") => value }
-        .flatMap(uri.fromStringWithScheme),
+        .flatMap(url => uri.fromStringWithScheme(url)(updateSchemeMaybe)),
       versionScheme = project.properties
         .collectFirst { case (key, value) if key.equalsIgnoreCase("info.versionScheme") => value }
     )
+  }
 
   private def parentOf(project: Project): Option[coursier.Dependency] =
     project.parent.map { case (module, version) =>
