@@ -49,6 +49,16 @@ class CoursierAlgTest extends CatsEffectSuite {
     assertIO(obtained, expected)
   }
 
+  test("getMetadata: homePage and scmUrl with the https scheme instead of http for github") {
+    val dep = "io.lettuce".g % "lettuce-core".a % "6.5.3.RELEASE"
+    val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
+    val expected = emptyMetadata.copy(
+      homePage = Some(uri"https://github.com/lettuce-io/lettuce-core"),
+      scmUrl = Some(uri"https://github.com/lettuce-io/lettuce-core")
+    )
+    assertIO(obtained, expected)
+  }
+
   test("getMetadata: homePage from parent") {
     val dep = "net.bytebuddy".g % "byte-buddy".a % "1.10.5"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
