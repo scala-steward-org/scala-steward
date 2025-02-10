@@ -24,11 +24,17 @@ import org.scalasteward.core.data.{Dependency, DependencyInfo, Repo, RepoData}
 import org.scalasteward.core.forge.data.RepoOut
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.GitAlg
+import org.scalasteward.core.repocache.RepoCacheAlg.RepositoryInactive
 import org.scalasteward.core.repoconfig.RepoConfigAlg
+import org.scalasteward.core.util.DateTimeAlg
+import org.scalasteward.core.util.dateTime.showDuration
 import org.typelevel.log4cats.Logger
+import scala.concurrent.duration.FiniteDuration
+import scala.util.control.NoStackTrace
 
 final class RepoCacheAlg[F[_]](config: Config)(implicit
     buildToolDispatcher: BuildToolDispatcher[F],
+    dateTimeAlg: DateTimeAlg[F],
     forgeApiAlg: ForgeApiAlg[F],
     forgeRepoAlg: ForgeRepoAlg[F],
     gitAlg: GitAlg[F],
@@ -50,6 +56,7 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       data <- maybeCache
         .filter(_.sha1 === latestSha1)
         .fold(cloneAndRefreshCache(repo, repoOut))(supplementCache(repo, _).pure[F])
+      _ <- throwIfInactive(data)
     } yield (data, repoOut)
 
   private def supplementCache(repo: Repo, cache: RepoCache): RepoData =
@@ -68,7 +75,8 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
   private def computeCache(repo: Repo): F[RepoData] =
     for {
       branch <- gitAlg.currentBranch(repo)
-      latestSha1 <- gitAlg.latestSha1(repo, branch)
+      sha1 <- gitAlg.latestSha1(repo, branch)
+      commitDate <- gitAlg.getCommitDate(repo, sha1)
       configParsingResult <- repoConfigAlg.readRepoConfig(repo)
       maybeConfig = configParsingResult.maybeRepoConfig
       maybeConfigParsingError = configParsingResult.maybeParsingError.map(_.getMessage)
@@ -77,9 +85,30 @@ final class RepoCacheAlg[F[_]](config: Config)(implicit
       dependencyInfos <-
         dependencies.traverse(_.traverse(_.traverse(gatherDependencyInfo(repo, _))))
       _ <- gitAlg.discardChanges(repo)
-      cache = RepoCache(latestSha1, dependencyInfos, maybeConfig, maybeConfigParsingError)
+      cache = RepoCache(sha1, commitDate, dependencyInfos, maybeConfig, maybeConfigParsingError)
     } yield RepoData(repo, cache, config)
 
   private def gatherDependencyInfo(repo: Repo, dependency: Dependency): F[DependencyInfo] =
     gitAlg.findFilesContaining(repo, dependency.version.value).map(DependencyInfo(dependency, _))
+
+  private[repocache] def throwIfInactive(data: RepoData): F[Unit] =
+    data.config.inactivityThreshold.traverse_ { threshold =>
+      dateTimeAlg.currentTimestamp.flatMap { now =>
+        val inactiveSince = data.cache.commitDate.until(now)
+        val isInactive = inactiveSince > threshold
+        F.raiseWhen(isInactive)(RepositoryInactive(data.repo, inactiveSince, threshold))
+      }
+    }
+}
+
+object RepoCacheAlg {
+  final case class RepositoryInactive(
+      repo: Repo,
+      inactiveSince: FiniteDuration,
+      threshold: FiniteDuration
+  ) extends RuntimeException
+      with NoStackTrace {
+    override val getMessage: String =
+      s"${repo.show}, inactiveSince = ${showDuration(inactiveSince)}, threshold = ${showDuration(threshold)}"
+  }
 }
