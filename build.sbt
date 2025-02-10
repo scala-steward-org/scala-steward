@@ -395,16 +395,16 @@ lazy val dockerSettings = Def.settings(
       Cmd("USER", "root"),
       Cmd(
         "RUN",
-        "apk --no-cache add bash git gpg ca-certificates curl maven openssh nodejs npm ncurses"
+        "apk --no-cache add bash git gpg ca-certificates curl maven openssh nodejs npm ncurses sqlite sqlite-dev"
       ),
       Cmd("RUN", installSbt),
       Cmd("RUN", installMill),
       Cmd("RUN", installCoursier),
       Cmd("RUN", installScalaCli),
       Cmd("RUN", s"$csBin install --install-dir $binDir scalafix scalafmt"),
-      Cmd("RUN", "npm install --global yarn"),
       // Ensure binaries are in PATH
       Cmd("RUN", "echo $PATH"),
+      Cmd("RUN", "npm install --global yarn"),
       Cmd("RUN", "which cs mill mvn node npm sbt scala-cli scalafix scalafmt yarn")
     )
   },
