@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.nurture
 
-import cats.Monad
+import cats.{Monad, Parallel}
 import cats.syntax.all.*
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ForgeCfg
@@ -31,6 +31,7 @@ import org.scalasteward.core.util.UrlChecker
 final class UpdateInfoUrlFinder[F[_]](implicit
     config: ForgeCfg,
     urlChecker: UrlChecker[F],
+    parallel: Parallel[F],
     F: Monad[F]
 ) {
   def findUpdateInfoUrls(
@@ -46,7 +47,17 @@ final class UpdateInfoUrlFinder[F[_]](implicit
     updateInfoUrls
       .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
       .distinctBy(_.url)
-      .filterA(updateInfoUrl => urlChecker.exists(updateInfoUrl.url))
+      .parFlatTraverse(updateInfoUrl =>
+        urlChecker
+          .validate(updateInfoUrl.url)
+          .map(
+            _.fold(
+              exists = List(updateInfoUrl),
+              notExists = List.empty,
+              redirectTo = u => List(updateInfoUrl.withUrl(u))
+            )
+          )
+      )
   }
 }
 
