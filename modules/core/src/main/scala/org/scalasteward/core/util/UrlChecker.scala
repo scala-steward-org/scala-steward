@@ -76,13 +76,13 @@ object UrlChecker {
     buildCache(config).map { statusCache =>
       new UrlChecker[F] {
         override def validate(url: Uri): F[UrlValidationResult] =
-          check(url).handleErrorWith(th =>
+          check(url, recursion = true).handleErrorWith(th =>
             logger
               .debug(th)(s"Failed to check if $url exists")
               .as(UrlValidationResult.NotExists)
           )
 
-        private def check(url: Uri): F[UrlValidationResult] =
+        private def check(url: Uri, recursion: Boolean): F[UrlValidationResult] =
           statusCache.cachingF(url.renderString)(None) {
             val req = Request[F](method = Method.HEAD, uri = url)
 
@@ -91,15 +91,19 @@ object UrlChecker {
                 case resp if resp.status === Status.Ok =>
                   F.pure(UrlValidationResult.Exists)
 
-                case resp if resp.status === Status.MovedPermanently =>
-                  val uriMaybe =
-                    resp.headers
-                      .get[Location]
-                      .fold[UrlValidationResult](UrlValidationResult.NotExists)(h =>
-                        UrlValidationResult.RedirectTo(h.uri)
+                case resp if recursion && resp.status === Status.MovedPermanently =>
+                  resp.headers
+                    .get[Location]
+                    .traverse(h =>
+                      check(h.uri, recursion = false).map(
+                        _.fold(
+                          exists = UrlValidationResult.RedirectTo(h.uri),
+                          notExists = UrlValidationResult.NotExists,
+                          redirectTo = _ => UrlValidationResult.NotExists
+                        )
                       )
-
-                  F.pure(uriMaybe)
+                    )
+                    .map(_.getOrElse(UrlValidationResult.NotExists))
 
                 case _ =>
                   F.pure(UrlValidationResult.NotExists)
