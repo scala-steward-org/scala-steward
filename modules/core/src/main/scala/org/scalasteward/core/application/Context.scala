@@ -31,7 +31,7 @@ import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.SbtAlg
 import org.scalasteward.core.buildtool.scalacli.ScalaCliAlg
 import org.scalasteward.core.client.ClientConfiguration
-import org.scalasteward.core.coursier.{CoursierAlg, VersionsCache}
+import org.scalasteward.core.coursier.{CoursierAlg, CoursierDependenciesFetchAlg, VersionsCache}
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
@@ -174,7 +174,9 @@ object Context {
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolvers)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
+      implicit val coursierDependenciesFetchAlg: CoursierDependenciesFetchAlg[F] =
+        CoursierDependenciesFetchAlg.create[F]
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F](config)
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]
