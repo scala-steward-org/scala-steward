@@ -45,7 +45,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         :? branchNameMatcher("main") =>
       Ok("""{
            |    "commit": {
-           |        "commitId": "f55c9900528e548511fbba6874c873d44c5d714c"                          
+           |        "commitId": "f55c9900528e548511fbba6874c873d44c5d714c"
            |    },
            |    "name": "main",
            |    "aheadCount": 0,
@@ -95,7 +95,7 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
            |         "isDraft":false,
            |         "mergeId":"3ff8afa0-1147-4158-b215-74a0b5a2e162",
            |         "reviewers":[
-           |            
+           |
            |         ],
            |         "url":"https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/26",
            |         "supportsIterations":true
