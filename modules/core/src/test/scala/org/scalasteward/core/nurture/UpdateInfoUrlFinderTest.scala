@@ -284,4 +284,12 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     val expected = repoUrl / "browse" / "ReleaseNotes.md"
     assert(clue(obtained).contains(expected))
   }
+
+  test("possibleUpdateInfoUrls: CustomReleaseNotes Ok if whitelisted") {
+    val releaseNotesUrl = uri"https://github.com/scala-steward-org/foo/bar/blob/master/RELEASES.md"
+    val metadata = DependencyMetadata.empty.copy(releaseNotesUrl = releaseNotesUrl.some)
+    val obtained = updateInfoUrlFinder.findUpdateInfoUrls(metadata, versionUpdate).runA(state)
+    assertIO(obtained, List(CustomReleaseNotes(releaseNotesUrl)))
+  }
+
 }

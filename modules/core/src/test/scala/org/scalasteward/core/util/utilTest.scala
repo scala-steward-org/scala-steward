@@ -6,6 +6,7 @@ import munit.ScalaCheckSuite
 import org.scalacheck.Gen
 import org.scalacheck.Prop.*
 import scala.collection.mutable.ListBuffer
+import org.http4s.Uri
 
 class utilTest extends ScalaCheckSuite {
   test("appendBounded") {
@@ -51,5 +52,14 @@ class utilTest extends ScalaCheckSuite {
     val s = fs2.Stream.eval(IO(count += 1)).repeat.take(n).through(takeUntilMaybe(0, None)(_ => 0))
     s.compile.drain.unsafeRunSync()
     assertEquals(count, n.toInt)
+  }
+
+  test("isWhitelisted") {
+    assert(
+      isWhitelisted(List("org1", "org2"), Uri.unsafeFromString("https://github.com/org1/repo"))
+    )
+    assert(
+      !isWhitelisted(List("org1", "org2"), Uri.unsafeFromString("https://github.com/org3/repo"))
+    )
   }
 }
