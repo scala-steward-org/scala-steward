@@ -93,6 +93,6 @@ package object util {
   /** check if the url is in the organizations white list
     */
   def isWhitelisted(whitelist: List[String], url: Uri): Boolean =
-    whitelist.exists(url.renderString.contains)
+    whitelist.map(Uri.Path.unsafeFromString(_)).exists(url.path.startsWith(_))
 
 }

@@ -61,5 +61,8 @@ class utilTest extends ScalaCheckSuite {
     assert(
       !isWhitelisted(List("org1", "org2"), Uri.unsafeFromString("https://github.com/org3/repo"))
     )
+    assert(
+      !isWhitelisted(List("org1", "org2"), Uri.unsafeFromString("https://github.com/org3/org1"))
+    )
   }
 }
