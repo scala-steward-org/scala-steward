@@ -12,7 +12,7 @@ import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.forge.github.Repository
 import org.scalasteward.core.forge.{ForgeRepo, ForgeType}
 import org.scalasteward.core.mock.MockContext.context.*
-import org.scalasteward.core.mock.{GitHubAuth, MockEff, MockEffOps, MockState}
+import org.scalasteward.core.mock.{GitHubAuth, MockConfig, MockEff, MockEffOps, MockState}
 import org.scalasteward.core.nurture.UpdateInfoUrl.*
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.*
 
@@ -84,14 +84,16 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained, List.empty)
   }
 
-  implicit private val config: ForgeCfg = ForgeCfg(
+  private val forgeConfig: ForgeCfg = ForgeCfg(
     ForgeType.GitHub,
     uri"https://github.on-prem.com/",
     "",
     doNotFork = false,
     addLabels = false
   )
-  private val onPremUpdateUrlFinder = new UpdateInfoUrlFinder[MockEff]
+  val config = MockConfig.config.copy(forgeCfg = forgeConfig)
+
+  private val onPremUpdateUrlFinder = new UpdateInfoUrlFinder[MockEff](config)
   private val gitHubFooBarRepo = ForgeRepo(GitHub, uri"https://github.com/foo/bar/")
   private val bitbucketFooBarRepo = ForgeRepo(Bitbucket, uri"https://bitbucket.org/foo/bar/")
   private val gitLabFooBarRepo = ForgeRepo(GitLab, uri"https://gitlab.com/foo/bar")

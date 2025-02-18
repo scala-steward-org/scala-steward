@@ -20,6 +20,7 @@ import cats.*
 import cats.syntax.all.*
 import fs2.Pipe
 import scala.collection.mutable.ListBuffer
+import org.http4s.Uri
 
 package object util {
   final type Nel[+A] = cats.data.NonEmptyList[A]
@@ -88,4 +89,10 @@ package object util {
     Left(s"Unexpected string '$s'. Expected one of: ${expected.mkString(", ")}.")
 
   def intellijThisImportIsUsed[A](a: A): Unit = ()
+
+  /** check if the url is in the organizations white list
+    */
+  def isWhitelisted(whitelist: List[String], url: Uri): Boolean =
+    whitelist.exists(url.renderString.contains)
+
 }
