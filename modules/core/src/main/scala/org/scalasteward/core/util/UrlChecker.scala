@@ -76,40 +76,44 @@ object UrlChecker {
     buildCache(config).map { statusCache =>
       new UrlChecker[F] {
         override def validate(url: Uri): F[UrlValidationResult] =
-          check(url, recursion = true).handleErrorWith(th =>
+          check(url).handleErrorWith(th =>
             logger
               .debug(th)(s"Failed to check if $url exists")
               .as(UrlValidationResult.NotExists)
           )
 
-        private def check(url: Uri, recursion: Boolean): F[UrlValidationResult] =
+        /** While checking for the [[Uri]]s presence, we perform up to 3 recursive lookups when
+          * receiving a `MovedPermanently` response.
+          */
+        private def check(url: Uri): F[UrlValidationResult] = {
+          def lookup(url: Uri, maxDepth: Int): F[Option[Uri]] =
+            Option(maxDepth).filter(_ > 0).flatTraverse { depth =>
+              val req = Request[F](method = Method.HEAD, uri = url)
+
+              modify(req).flatMap(r =>
+                urlCheckerClient.client.run(r).use {
+                  case resp if resp.status === Status.Ok =>
+                    F.pure(url.some)
+
+                  case resp if resp.status === Status.MovedPermanently =>
+                    resp.headers
+                      .get[Location]
+                      .flatTraverse(location => lookup(location.uri, depth - 1))
+
+                  case _ =>
+                    F.pure(none)
+                }
+              )
+            }
+
           statusCache.cachingF(url.renderString)(None) {
-            val req = Request[F](method = Method.HEAD, uri = url)
-
-            modify(req).flatMap(r =>
-              urlCheckerClient.client.run(r).use {
-                case resp if resp.status === Status.Ok =>
-                  F.pure(UrlValidationResult.Exists)
-
-                case resp if recursion && resp.status === Status.MovedPermanently =>
-                  resp.headers
-                    .get[Location]
-                    .traverse(h =>
-                      check(h.uri, recursion = false).map(
-                        _.fold(
-                          exists = UrlValidationResult.RedirectTo(h.uri),
-                          notExists = UrlValidationResult.NotExists,
-                          redirectTo = _ => UrlValidationResult.NotExists
-                        )
-                      )
-                    )
-                    .map(_.getOrElse(UrlValidationResult.NotExists))
-
-                case _ =>
-                  F.pure(UrlValidationResult.NotExists)
-              }
-            )
+            lookup(url, maxDepth = 3).map {
+              case Some(u) if u === url => UrlValidationResult.Exists
+              case Some(u)              => UrlValidationResult.RedirectTo(u)
+              case None                 => UrlValidationResult.NotExists
+            }
           }
+        }
       }
     }
 }

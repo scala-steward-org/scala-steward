@@ -29,14 +29,14 @@ class UpdateInfoUrlFinderTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         status = Status.MovedPermanently,
         headers = Headers(Location(redirectUrl))
       ).pure[MockEff]
-    case HEAD -> Root / "foo" / "bar3-redirected"                         => Ok()
+    case HEAD -> Root / "foo" / "bar3-redirected"                          => Ok()
     case HEAD -> Root / "foo" / "bar" / "README.md"                        => Ok()
     case HEAD -> Root / "foo" / "bar" / "compare" / "v0.1.0...v0.2.0"      => Ok()
     case HEAD -> Root / "foo" / "bar1" / "blob" / "master" / "RELEASES.md" => Ok()
     case HEAD -> Root / "foo" / "buz" / "compare" / "v0.1.0...v0.2.0"      => PermanentRedirect()
     case HEAD -> Root / "foo" / "bar2" / "releases" / "tag" / "v0.2.0"     => Ok()
     case HEAD -> Root / "foo" / "bar3-redirected" / "releases" / "tag" / "v0.2.0" => Ok()
-    case _                                                                         => NotFound()
+    case _                                                                        => NotFound()
   }
   private val authApp = GitHubAuth.api(List(Repository("foo/bar")))
   private val state = MockState.empty.copy(clientResponses = authApp <+> httpApp)
