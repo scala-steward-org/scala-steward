@@ -54,15 +54,16 @@ object NewPullRequestData {
   ): String = {
     val migrations = edits.collect { case scalafixEdit: ScalafixEdit => scalafixEdit }
     val appliedMigrations = migrationNote(migrations)
-    val oldVersionDetails = oldVersionNote(filesWithOldVersion, update)
+    val updateWithEdits = filterUpdateWithEditAttempts(update, edits)
+    val oldVersionDetails = oldVersionNote(filesWithOldVersion, updateWithEdits)
     val details = List(
       appliedMigrations,
       oldVersionDetails,
-      adjustFutureUpdates(update).some,
+      adjustFutureUpdates(updateWithEdits).some,
       configParsingError.map(configParsingErrorDetails)
     ).flatten
 
-    val updatesText = update.on(
+    val updatesText = updateWithEdits.on(
       update = u => {
         val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
 
@@ -91,7 +92,7 @@ object NewPullRequestData {
       }
     )
 
-    val skipVersionMessage = update.on(
+    val skipVersionMessage = updateWithEdits.on(
       _ => "If you'd like to skip this version, you can just close this PR. ",
       _ => ""
     )
@@ -120,7 +121,7 @@ object NewPullRequestData {
     val metadataJson =
       Json
         .obj(
-          "Update" -> update.asJson,
+          "Update" -> updateWithEdits.asJson,
           "Labels" -> Json.fromValues(labels.map(_.asJson))
         )
         .toString
@@ -134,6 +135,21 @@ object NewPullRequestData {
       bodyWithMetadata
     else plainBody
   }
+
+  private def filterUpdateWithEditAttempts(update: Update, edits: List[EditAttempt]): Update =
+    update match {
+      case single: Update.Single => single
+      case grouped: Update.Grouped =>
+        grouped.copy(updates = grouped.updates.filter { update =>
+          edits
+            .collect { case EditAttempt.UpdateEdit(update, _) =>
+              update.groupAndMainArtifactId
+            }
+            .exists { case (groupId, artifactId) =>
+              update.groupId == groupId && update.mainArtifactId == artifactId
+            }
+        })
+    }
 
   def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
     Option.when(updateInfoUrls.nonEmpty) {
