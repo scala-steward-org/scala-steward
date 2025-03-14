@@ -193,10 +193,20 @@ class NewPullRequestDataTest extends FunSuite {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
     val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
+    val edits = List(
+      UpdateEdit(
+        update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+        commit = Commit(dummySha1)
+      ),
+      UpdateEdit(
+        update = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single,
+        commit = Commit(dummySha1)
+      )
+    )
 
     val body = bodyFor(
       update = update,
-      edits = List.empty,
+      edits = edits,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
       filesWithOldVersion = List.empty,
@@ -388,6 +398,107 @@ class NewPullRequestDataTest extends FunSuite {
           |      ],
           |      "newerGroupId" : null,
           |      "newerArtifactId" : null
+          |    }
+          |  },
+          |  "Labels" : [
+          |    "library-update"
+          |  ]
+          |} -->""".stripMargin
+
+    assertEquals(body, expected)
+  }
+
+  test("bodyFor() grouped update when edits does not contain an update (scala-steward:off case)") {
+    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+    val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
+    val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
+    val edits = List(
+      UpdateEdit(
+        update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+        commit = Commit(dummySha1)
+      )
+    )
+
+    val body = bodyFor(
+      update = update,
+      edits = edits,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List("library-update"),
+      maximumPullRequestLength = 65536
+    )
+    val expected =
+      s"""|## About this PR
+          |Updates:
+          |
+          |* 📦 ch.qos.logback:logback-classic from `1.2.0` to `1.2.3`
+          |
+          |## Usage
+          |✅ **Please merge!**
+          |
+          |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+          |
+          |If you have any feedback, just mention me in the comments below.
+          |
+          |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+          |
+          |_Have a fantastic day writing Scala!_
+          |
+          |<details>
+          |<summary>⚙ Adjust future updates</summary>
+          |
+          |Add these to your `.scala-steward.conf` file to ignore future updates of these dependencies:
+          |```
+          |updates.ignore = [
+          |  { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |]
+          |```
+          |Or, add these to slow down future updates of these dependencies:
+          |```
+          |dependencyOverrides = [
+          |  {
+          |    pullRequests = { frequency = "30 days" },
+          |    dependency = { groupId = "ch.qos.logback", artifactId = "logback-classic" }
+          |  }
+          |]
+          |```
+          |</details>
+          |
+          |<sup>
+          |labels: library-update
+          |</sup>
+          |
+          |<!-- scala-steward = {
+          |  "Update" : {
+          |    "Grouped" : {
+          |      "name" : "my-group",
+          |      "title" : "The PR title",
+          |      "updates" : [
+          |        {
+          |          "ForArtifactId" : {
+          |            "crossDependency" : [
+          |              {
+          |                "groupId" : "ch.qos.logback",
+          |                "artifactId" : {
+          |                  "name" : "logback-classic",
+          |                  "maybeCrossName" : null
+          |                },
+          |                "version" : "1.2.0",
+          |                "sbtVersion" : null,
+          |                "scalaVersion" : null,
+          |                "configurations" : null
+          |              }
+          |            ],
+          |            "newerVersions" : [
+          |              "1.2.3"
+          |            ],
+          |            "newerGroupId" : null,
+          |            "newerArtifactId" : null
+          |          }
+          |        }
+          |      ]
           |    }
           |  },
           |  "Labels" : [
@@ -837,6 +948,16 @@ class NewPullRequestDataTest extends FunSuite {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
     val update = Update.Grouped("my-group", None, List(update1, update2))
+    val edits = List(
+      UpdateEdit(
+        update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+        commit = Commit(dummySha1)
+      ),
+      UpdateEdit(
+        update = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single,
+        commit = Commit(dummySha1)
+      )
+    )
 
     val data = UpdateData(
       repoData = RepoData(
@@ -851,8 +972,9 @@ class NewPullRequestDataTest extends FunSuite {
       updateBranch = Branch("update/logback-classic-1.2.3")
     )
     val obtained = from(
-      data,
-      "scala-steward:update/logback-classic-1.2.3",
+      data = data,
+      branchName = "scala-steward:update/logback-classic-1.2.3",
+      edits = edits,
       addLabels = true,
       labels = labelsFor(data.update)
     )
