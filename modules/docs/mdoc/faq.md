@@ -79,7 +79,7 @@ a  `scm.url` or an `url` attribute.
 
 ## How can Scala Steward's PRs be merged automatically?
 
-You can use [Mergify](https://mergify.io) to automatically merge Scala Steward's
+You can use [Mergify](https://mergify.com) to automatically merge Scala Steward's
 pull requests. Mergify rules that does this can be found in Scala Steward's own
 repository [here](@GITHUB_URL@/blob/@MAIN_BRANCH@/.mergify.yml).
 Mergify can also be configured to only merge patch updates (in case the version
