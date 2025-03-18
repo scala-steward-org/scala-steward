@@ -201,6 +201,7 @@ Consider creating PR to add your company to the list and join the community.
 * [Hellosoda](https://hellosoda.com/)
 * [HolidayCheck](https://github.com/holidaycheck)
 * [iAdvize](https://www.iadvize.com/en/)
+* [LambdaWorks](https://www.lambdaworks.io/)
 * [LeadIQ](https://leadiq.com/)
 * [Lichess](https://lichess.org)
 * [Lightbend](https://www.lightbend.com/)
