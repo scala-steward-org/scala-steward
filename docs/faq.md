@@ -16,7 +16,7 @@ and 3.0.0.
 * If your version is 1.0.2 or 1.1.0, Scala Steward would create a PR updating it to 1.2.0
 * If your version is 1.2.0 or 2.0.0, Scala Steward would create a PR updating it to 3.0.0
 
-(This can be verified with [this Scastie](https://scastie.scala-lang.org/iYwxJrLWSAOElJC1gMDAOg).)
+(This can be verified with [this Scastie](https://scastie.scala-lang.org/0efSvp4kSTaJd176KKKjmw).)
 
 Of course, once you merge a Scala Steward PR, you've updated your version,
 which can result in Scala Steward sending another PR making the next update.
