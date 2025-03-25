@@ -205,6 +205,7 @@ Consider creating PR to add your company to the list and join the community.
 * [LeadIQ](https://leadiq.com/)
 * [Lichess](https://lichess.org)
 * [Lightbend](https://www.lightbend.com/)
+* [M-net Telekommunikations GmbH](https://www.m-net.de/)
 * [Mobimeo](https://www.mobimeo.com/)
 * [Ocado Technology](https://ocadotechnology.com/)
 * [Play Framework](https://www.playframework.com/)
