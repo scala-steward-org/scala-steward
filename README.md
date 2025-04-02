@@ -196,6 +196,7 @@ Consider creating PR to add your company to the list and join the community.
 * [commercetools](https://docs.commercetools.com/)
 * [Dataswift.io](https://dataswift.io/)
 * [Disney Streaming](https://disneystreaming.com)
+* [Dixa](https://dixa.com)
 * [Enliven Systems](https://enliven.systems)
 * [Evolution Gaming](https://www.evolutiongaming.com/)
 * [Firstbird](https://firstbird.com)
