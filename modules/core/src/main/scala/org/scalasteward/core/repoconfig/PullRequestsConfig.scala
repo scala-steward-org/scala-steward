@@ -27,7 +27,8 @@ final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
     private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
-    private val customLabels: Option[List[String]] = None
+    private val customLabels: Option[List[String]] = None,
+    draft: Option[Boolean] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
@@ -61,7 +62,8 @@ object PullRequestsConfig {
           frequency = x.frequency.orElse(y.frequency),
           grouping = x.grouping |+| y.grouping,
           includeMatchedLabels = x.includeMatchedLabels.orElse(y.includeMatchedLabels),
-          customLabels = x.customLabels |+| y.customLabels
+          customLabels = x.customLabels |+| y.customLabels,
+          draft = (x.draft, y.draft).mapN(_ || _)
         )
     )
 }

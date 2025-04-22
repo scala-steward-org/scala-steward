@@ -84,6 +84,11 @@ pullRequests.includeMatchedLabels = "(.*semver.*)|(commit-count:n:.*)"
 # Defaults to no labels (no labels are added).
 pullRequests.customLabels = [ "dependencies", "scala" ]
 
+# pullRequests.draft will ensure that PRs are raised as 'draft' PRs if the forge supports it.
+# This is useful if you don't want immediate review requests going to all watchers of the repo.
+# Defaults to false (PRs are not raised in draft).
+pullRequests.draft = true
+
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.

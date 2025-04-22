@@ -231,8 +231,9 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
+      pullRequestsConfig = data.repoData.config.pullRequestsOrDefault
       labels =
-        filterLabels(allLabels, data.repoData.config.pullRequestsOrDefault.includeMatchedLabels)
+        filterLabels(allLabels, pullRequestsConfig.includeMatchedLabels)
     } yield NewPullRequestData.from(
       data = data,
       branchName = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch),
@@ -241,7 +242,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
-      labels = data.repoData.config.pullRequestsOrDefault.customLabelsOrDefault ++ labels,
+      draft = pullRequestsConfig.draft.contains(true),
+      labels = pullRequestsConfig.customLabelsOrDefault ++ labels,
       maximumPullRequestLength = config.tpe.maximumPullRequestLength
     )
 
