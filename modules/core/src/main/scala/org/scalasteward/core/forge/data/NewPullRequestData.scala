@@ -280,6 +280,7 @@ object NewPullRequestData {
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
       addLabels: Boolean = false,
+      draft: Boolean = false,
       labels: List[String] = List.empty,
       maximumPullRequestLength: Int = 65536
   ): NewPullRequestData =
@@ -304,7 +305,8 @@ object NewPullRequestData {
       base = data.baseBranch,
       labels = if (addLabels) labels else List.empty,
       assignees = data.repoConfig.assigneesOrDefault,
-      reviewers = data.repoConfig.reviewersOrDefault
+      reviewers = data.repoConfig.reviewersOrDefault,
+      draft = draft
     )
 
   def updateTypeLabels(anUpdate: Update): List[String] = {
