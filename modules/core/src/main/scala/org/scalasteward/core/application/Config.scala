@@ -64,7 +64,8 @@ final case class Config(
     urlCheckerTestUrls: Nel[Uri],
     defaultResolvers: List[Resolver],
     refreshBackoffPeriod: FiniteDuration,
-    exitCodePolicy: ExitCodePolicy
+    exitCodePolicy: ExitCodePolicy,
+    coursierDependencies: List[String]
 ) {
   def forgeSpecificCfg: ForgeSpecificCfg =
     forgeCfg.tpe match {
