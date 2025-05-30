@@ -36,11 +36,11 @@ final class JsonKeyValueStore[F[_], K, V](storeRoot: File, name: String)(implici
   override def get(key: K): F[Option[V]] = {
     val file = jsonFile(key)
     fileAlg.readFile(file).flatMap {
-      case None => F.pure(Option.empty[V])
+      case None          => F.pure(Option.empty[V])
       case Some(content) =>
         decode[Option[V]](content) match {
           case Right(maybeValue) => F.pure(maybeValue)
-          case Left(error) =>
+          case Left(error)       =>
             logger.error(error)(s"Failed to parse or decode JSON from $file").as(Option.empty[V])
         }
     }

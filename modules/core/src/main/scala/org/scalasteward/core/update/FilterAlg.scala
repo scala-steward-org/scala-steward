@@ -37,7 +37,7 @@ final class FilterAlg[F[_]](implicit
   private def logIfRejected(result: FilterResult): F[Option[Update.ForArtifactId]] =
     result match {
       case Right(update) => F.pure(update.some)
-      case Left(reason) =>
+      case Left(reason)  =>
         logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})").as(None)
     }
 }

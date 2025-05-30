@@ -235,7 +235,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
     def goLoop(page: Int, accu: Vector[PullRequestOut]): F[Vector[PullRequestOut]] =
       go(page).flatMap {
         case xs if xs.isEmpty => accu.pure[F]
-        case xs =>
+        case xs               =>
           val xs0 =
             xs.filter(x => x.head.label == head && x.base.label == base.name)
               .map(pullRequestOut)

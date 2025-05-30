@@ -89,7 +89,7 @@ final class HttpJsonClient[F[_]](implicit
       client.run(r).use {
         case Successful(resp) =>
           d.decode(resp, strict = false).value.flatMap {
-            case Right(a) => F.pure((a, resp.headers))
+            case Right(a)      => F.pure((a, resp.headers))
             case Left(failure) =>
               handleFailure(resp)(DecodeFailureWithContext(uri, method, _, Some(failure)))
           }

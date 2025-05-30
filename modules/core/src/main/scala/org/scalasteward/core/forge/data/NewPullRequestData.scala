@@ -138,7 +138,7 @@ object NewPullRequestData {
 
   private def filterUpdateWithEditAttempts(update: Update, edits: List[EditAttempt]): Update =
     update match {
-      case single: Update.Single => single
+      case single: Update.Single   => single
       case grouped: Update.Grouped =>
         grouped.copy(updates = grouped.updates.filter { update =>
           edits
