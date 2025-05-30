@@ -101,7 +101,7 @@ object CoursierAlg {
       private def convertResolver(resolver: Resolver): F[coursier.Repository] =
         toCoursierRepository(resolver) match {
           case Right(repository) => F.pure(repository)
-          case Left(message) =>
+          case Left(message)     =>
             logger.error(s"Failed to convert $resolver: $message") >>
               F.raiseError[coursier.Repository](new Throwable(message))
         }

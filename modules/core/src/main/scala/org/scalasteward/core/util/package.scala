@@ -36,7 +36,7 @@ package object util {
   /** Like `Semigroup[Option[A]].combine` but allows to specify how `A`s are combined. */
   def combineOptions[A](x: Option[A], y: Option[A])(f: (A, A) => A): Option[A] =
     x match {
-      case None => y
+      case None     => y
       case Some(xv) =>
         y match {
           case None     => x

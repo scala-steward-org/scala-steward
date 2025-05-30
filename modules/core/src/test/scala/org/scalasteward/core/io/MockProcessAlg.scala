@@ -21,7 +21,7 @@ object MockProcessAlg {
           state1 = state0.appendTraceEntry(cmd)
           _ <- ctx.set(state1)
           res <- state1.commandOutputs.get(cmd) match {
-            case Some(output) => IO.fromEither(output).tupleRight(state1.files)
+            case Some(output)                => IO.fromEither(output).tupleRight(state1.files)
             case None if state1.execCommands =>
               for {
                 output <- ProcessAlgTest.ioProcessAlg.execImpl(args)

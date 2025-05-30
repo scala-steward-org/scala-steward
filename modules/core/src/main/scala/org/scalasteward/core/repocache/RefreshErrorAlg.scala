@@ -37,7 +37,7 @@ final class RefreshErrorAlg[F[_]](
 ) {
   def throwIfFailedRecently(repo: Repo): F[Unit] =
     failedRecently(repo).flatMap {
-      case None => F.unit
+      case None     => F.unit
       case Some(fd) =>
         val msg = s"Skipping due to previous error for ${showDuration(fd)}"
         F.raiseError(new Throwable(msg) with NoStackTrace)
@@ -52,7 +52,7 @@ final class RefreshErrorAlg[F[_]](
 
   private def failedRecently(repo: Repo): F[Option[FiniteDuration]] =
     kvStore.get(repo).flatMap {
-      case None => F.pure(None)
+      case None        => F.pure(None)
       case Some(entry) =>
         dateTimeAlg.currentTimestamp.flatMap { now =>
           entry.expiresIn(now, backoffPeriod) match {

@@ -278,7 +278,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
 
   private def shouldBeUpdated(data: UpdateData): F[Boolean] = {
     val result = gitAlg.isMerged(data.repo, data.updateBranch, data.baseBranch).flatMap {
-      case true => (false, "PR has been merged").pure[F]
+      case true  => (false, "PR has been merged").pure[F]
       case false =>
         gitAlg.branchAuthors(data.repo, data.updateBranch, data.baseBranch).flatMap { authors =>
           if (authors.length >= 2)

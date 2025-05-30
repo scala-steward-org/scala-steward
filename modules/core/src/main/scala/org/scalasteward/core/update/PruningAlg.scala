@@ -112,7 +112,7 @@ final class PruningAlg[F[_]](implicit
       crossDependency: CrossDependency
   ): F[UpdateState] =
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
-      case None => F.pure(DependencyUpToDate(crossDependency))
+      case None         => F.pure(DependencyUpToDate(crossDependency))
       case Some(update) =>
         pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
           case None =>
@@ -183,7 +183,7 @@ final class PruningAlg[F[_]](implicit
       logger.info(s"$ignoring according to $frequency").as(false)
     else {
       lastPrCreatedAt.flatMap(frequency.waitingTime(_, now)) match {
-        case None => true.pure[F]
+        case None              => true.pure[F]
         case Some(waitingTime) =>
           val message = s"$ignoring for ${dateTime.showDuration(waitingTime)}"
           logger.info(message).as(false)

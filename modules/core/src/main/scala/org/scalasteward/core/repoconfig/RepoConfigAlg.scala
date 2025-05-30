@@ -94,7 +94,7 @@ object RepoConfigAlg {
       .filterA(fileAlg.isRegularFile)
 
     configFileCandidates.flatMap {
-      case Nil => F.pure(None)
+      case Nil                 => F.pure(None)
       case active :: remaining =>
         F.pure(active.some)
           .productL(
@@ -108,7 +108,7 @@ object RepoConfigAlg {
       configFile: File
   )(implicit fileAlg: FileAlg[F], F: Functor[F]): F[ConfigParsingResult] =
     fileAlg.readFile(configFile).map {
-      case None => ConfigParsingResult.FileDoesNotExist
+      case None          => ConfigParsingResult.FileDoesNotExist
       case Some(content) =>
         parseRepoConfig(content) match {
           case Left(error)       => ConfigParsingResult.ConfigIsInvalid(error)

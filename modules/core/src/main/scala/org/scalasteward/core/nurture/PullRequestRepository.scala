@@ -133,7 +133,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
 
   def lastPullRequestCreatedAtByArtifact(repo: Repo): F[Map[(GroupId, String), Timestamp]] =
     kvStore.get(repo).map {
-      case None => Map.empty
+      case None               => Map.empty
       case Some(pullRequests) =>
         pullRequests.values
           .flatMap { entry =>

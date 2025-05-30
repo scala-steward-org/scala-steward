@@ -56,7 +56,7 @@ object ForgeAuthAlg {
       case GitHub =>
         config.githubApp match {
           case Some(gitHub) => new GitHubAuthAlg(config.forgeCfg.apiHost, gitHub.id, gitHub.keyFile)
-          case None =>
+          case None         =>
             new BasicAuthAlg(
               config.forgeCfg.apiHost,
               config.forgeCfg.login,

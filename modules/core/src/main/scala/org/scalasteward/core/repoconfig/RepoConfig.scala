@@ -95,7 +95,7 @@ object RepoConfig {
         () match {
           case _ if x === empty => y
           case _ if y === empty => x
-          case _ =>
+          case _                =>
             RepoConfig(
               commits = x.commits |+| y.commits,
               pullRequests = x.pullRequests |+| y.pullRequests,

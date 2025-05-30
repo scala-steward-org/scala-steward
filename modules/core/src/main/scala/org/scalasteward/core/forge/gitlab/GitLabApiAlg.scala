@@ -215,7 +215,7 @@ final class GitLabApiAlg[F[_]: Parallel](
         .get[MergeRequestOut](url.existingMergeRequest(repo, number), modify)
         .flatMap {
           case mr if mr.mergeStatus =!= GitLabMergeStatus.Checking => F.pure(mr)
-          case mr if retries > 0 =>
+          case mr if retries > 0                                   =>
             logger.info(
               s"Merge request is still in '${mr.mergeStatus}' state. We will check merge request status in $initialDelay again. " +
                 s"Remaining retries count is $retries"
