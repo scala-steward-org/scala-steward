@@ -376,7 +376,7 @@ lazy val dockerSettings = Def.settings(
     val millVer = Dependencies.millMain.revision
     val millBin = s"$binDir/mill"
     val installMill = Seq(
-      s"$curl $millBin https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/$millVer/mill",
+      s"$curl $millBin https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/$millVer/mill-dist-$millVer-mill.sh",
       s"chmod +x $millBin"
     ).mkString(" && ")
     val csBin = s"$binDir/cs"
