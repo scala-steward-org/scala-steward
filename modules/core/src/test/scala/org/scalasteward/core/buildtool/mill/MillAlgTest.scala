@@ -41,7 +41,7 @@ class MillAlgTest extends FunSuite {
       "--no-server",
       "--disable-ticker",
       "--import",
-      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.0",
+      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.2",
       "show",
       extractDeps
     )
@@ -72,7 +72,7 @@ class MillAlgTest extends FunSuite {
       "--ticker",
       "false",
       "--import",
-      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.0",
+      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.2",
       "show",
       extractDeps
     )
