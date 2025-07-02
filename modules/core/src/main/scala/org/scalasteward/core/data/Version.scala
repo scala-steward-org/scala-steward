@@ -99,10 +99,9 @@ final case class Version(value: String) {
       case _                          => false
     }
 
-  private def isSnapshot: Boolean =
+  def isSnapshot: Boolean =
     components.exists {
       case a: Version.Component.Alpha => a.isSnapshotIdent
-      case _: Version.Component.Hash  => true
       case _                          => false
     }
 
