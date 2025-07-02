@@ -2,6 +2,7 @@ package org.scalasteward.core.buildtool.mill
 
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
+import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
 import org.scalasteward.core.data.{Repo, Version}
@@ -41,7 +42,7 @@ class MillAlgTest extends FunSuite {
       "--no-server",
       "--disable-ticker",
       "--import",
-      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.2",
+      s"ivy:org.scala-steward::${BuildInfo.millPluginArtifactName}::${BuildInfo.millPluginVersion}",
       "show",
       extractDeps
     )
@@ -72,7 +73,7 @@ class MillAlgTest extends FunSuite {
       "--ticker",
       "false",
       "--import",
-      "ivy:org.scala-steward::scala-steward-mill-plugin::0.18.2",
+      s"ivy:org.scala-steward::${BuildInfo.millPluginArtifactName}::${BuildInfo.millPluginVersion}",
       "show",
       extractDeps
     )
