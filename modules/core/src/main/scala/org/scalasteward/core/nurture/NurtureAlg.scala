@@ -24,6 +24,7 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
+import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
@@ -138,7 +139,13 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     ) {
       for {
         _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
-        comment = s"Superseded by ${forgeApiAlg.referencePullRequest(newNumber)}."
+        comment = config.tpe match {
+          // If a PR is part of a list element, GitHub renders its title
+          case GitHub => s"""|Superseded by
+                             |- ${forgeApiAlg.referencePullRequest(newNumber)}
+                             |""".stripMargin.trim
+          case _ => s"Superseded by ${forgeApiAlg.referencePullRequest(newNumber)}."
+        }
         _ <- forgeApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
         oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
