@@ -63,22 +63,38 @@ class FilterAlgTest extends FunSuite {
   }
 
   test("ignore update via config updates.ignore") {
-    val update = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
     val config = RepoConfig(updates =
       UpdatesConfig(ignore =
-        List(UpdatePattern(GroupId("eu.timepit"), Some("refined"), None)).some
+        List(
+          UpdatePattern(
+            GroupId("eu.timepit"),
+            Some("refined"),
+            Some(VersionPattern(prefix = Some("0.8.")))
+          )
+        ).some
       ).some
     )
 
-    val initialState = MockState.empty
-    val (state, filtered) =
-      filterAlg.localFilterSingle(config, update).runSA(initialState).unsafeRunSync()
+    // ignore update to any version starting with 0.8.*
+    val update1 = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
+    val initialState1 = MockState.empty
+    val (state1, filtered1) =
+      filterAlg.localFilterSingle(config, update1).runSA(initialState1).unsafeRunSync()
 
-    assertEquals(filtered, None)
-    val expected = initialState.copy(
+    assertEquals(filtered1, None)
+    val expected1 = initialState1.copy(
       trace = Vector(Log("Ignore eu.timepit:refined : 0.8.0 -> 0.8.1 (reason: ignored by config)"))
     )
-    assertEquals(state, expected)
+    assertEquals(state1, expected1)
+
+    // but at the same time allows update on greater (and smaller) versions
+    val update2 = ("eu.timepit".g % "refined".a % "0.9.0" %> "0.9.1").single
+    val initialState2 = MockState.empty
+    val (state2, filtered2) =
+      filterAlg.localFilterSingle(config, update2).runSA(initialState2).unsafeRunSync()
+
+    assertEquals(filtered2, Some(update2))
+    assertEquals(state2, initialState2)
   }
 
   test("ignored versions are removed") {
@@ -102,6 +118,7 @@ class FilterAlgTest extends FunSuite {
   test("ignore update via config updates.pin") {
     val update1 = ("org.http4s".g % "http4s-dsl".a % "0.17.0" %> "0.18.0").single
     val update2 = ("eu.timepit".g % "refined".a % "0.8.0" %> "0.8.1").single
+    val update3 = ("eu.timepit".g % "refined".a % "0.9.0" %> "0.9.1").single
 
     val config = RepoConfig(
       updates = UpdatesConfig(
@@ -129,6 +146,15 @@ class FilterAlgTest extends FunSuite {
       .unsafeRunSync()
 
     assertEquals(filtered2, Some(update2))
+
+    // pinning the version to 0.8, prevents updates to greater versions, too.
+    // becasue the artifact is "pinned" to version with the "0.8." prefix
+    val filtered3 = filterAlg
+      .localFilterSingle(config, update3)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assertEquals(filtered3, None)
   }
 
   test("ignore update via config updates.allow") {
