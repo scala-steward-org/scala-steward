@@ -241,7 +241,7 @@ lazy val core = myCrossProject("core")
         }
         outFile
       }
-      Seq(downloadPlugin("1_0_0"), downloadPlugin("1_3_11"))
+      Seq(downloadPlugin("1_0_0"), downloadPlugin("1_3_11"), downloadPlugin("2_0_0"))
     }.taskValue
   )
 
