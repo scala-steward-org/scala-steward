@@ -46,6 +46,38 @@ class SbtAlgTest extends FunSuite {
     assertEquals(state, expected)
   }
 
+  test("sbt 2") {
+    val repo = Repo("sbt-alg", "test-2")
+    val buildRoot = BuildRoot(repo, ".")
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val initial = MockState.empty
+      .addFiles(repoDir / "project" / "build.properties" -> "sbt.version=2.0.0-RC3")
+      .unsafeRunSync()
+    val state = sbtAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
+    val expected = initial.copy(
+      trace = Vector(
+        Cmd("read", s"$repoDir/project/build.properties"),
+        Cmd("test", "-d", s"$repoDir/project"),
+        Cmd("test", "-d", s"$repoDir/project/project"),
+        Cmd("read", "classpath:StewardPlugin_2_0_0.scala"),
+        Cmd("write", s"$repoDir/project/scala-steward-StewardPlugin_2_0_0.scala"),
+        Cmd("write", s"$repoDir/project/project/scala-steward-StewardPlugin_2_0_0.scala"),
+        Cmd.execSandboxed(
+          repoDir,
+          "sbt",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+        ),
+        Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_2_0_0.scala"),
+        Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_2_0_0.scala")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
     val buildRoot = BuildRoot(repo, ".")

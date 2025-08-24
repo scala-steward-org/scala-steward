@@ -84,8 +84,9 @@ final class SbtAlg[F[_]](defaultResolvers: List[Resolver], ignoreOptsFiles: Bool
     for {
       _ <- Resource.unit[F]
       pluginVersion = maybeSbtVersion match {
-        case Some(v) if v < Version("1.3.11") => "1_0_0"
-        case _                                => "1_3_11"
+        case Some(v) if v < Version("1.3.11")    => "1_0_0"
+        case Some(v) if v.value.startsWith("2.") => "2_0_0"
+        case _                                   => "1_3_11"
       }
       plugin <- Resource.eval(stewardPlugin(pluginVersion))
       _ <- List
