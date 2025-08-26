@@ -29,7 +29,7 @@ object Dependencies {
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M10"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.7.1"
   val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.18"
-  val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.12.7"
+  val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.13.0"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
   val millMain = "com.lihaoyi" % "mill-main_2.13" % "0.12.15"
