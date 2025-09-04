@@ -182,7 +182,7 @@ object Cli {
     (whitelist, readOnly, enableSandbox).mapN(SandboxCfg.apply)
 
   private val maxBufferSize: Opts[Int] = {
-    val default = 32768
+    val default = 49152
     val help =
       s"Size of the buffer for the output of an external process in lines; default: $default"
     option[Int](name.maxBufferSize, help).withDefault(default)
