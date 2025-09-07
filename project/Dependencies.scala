@@ -41,7 +41,7 @@ object Dependencies {
   val refined = "eu.timepit" %% "refined" % "0.11.3"
   val refinedScalacheck = "eu.timepit" %% "refined-scalacheck" % refined.revision
   val scalacacheCaffeine = "com.github.cb372" %% "scalacache-caffeine" % "1.0.0-M6"
-  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.18.1"
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.19.0"
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
     "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.11_2.13" % "0.18.2"
