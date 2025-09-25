@@ -49,7 +49,7 @@ class HttpJsonClientTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       .runA(state)
       .attemptNarrow[DecodeFailureWithContext]
       .map(_.leftMap(_.toHttpResponse(HttpVersion.`HTTP/1.1`).status))
-    val expected = Left(Status.UnprocessableEntity)
+    val expected = Left(Status.UnprocessableContent)
     assertIO(obtained, expected)
   }
 }
