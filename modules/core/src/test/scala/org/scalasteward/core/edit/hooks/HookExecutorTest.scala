@@ -118,6 +118,23 @@ class HookExecutorTest extends CatsEffectSuite {
     state.map(assertEquals(_, expected))
   }
 
+  test("sbt-zio-ci") {
+    val update = ("dev.zio".g % "zio-sbt-ci".a % "0.4.0-alpha.34" %> "0.4.0-alpha.35").single
+    val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
+
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Log(
+          "Executing post-update hook for dev.zio:zio-sbt-ci with command 'sbt ciGenerateGithubWorkflow'"
+        ),
+        Cmd.execSandboxed(repoDir, "sbt", "ciGenerateGithubWorkflow"),
+        Cmd.gitStatus(repoDir)
+      )
+    )
+
+    state.map(assertEquals(_, expected))
+  }
+
   test("hook from config") {
     val update = ("com.random".g % "cool-lib".a % "1.0" %> "1.1").single
     val config = RepoConfig(
