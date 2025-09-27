@@ -119,13 +119,14 @@ final class HookExecutor[F[_]](implicit
 }
 
 object HookExecutor {
-  // sbt plugins that provide a githubWorkflowGenerate task.
+  // sbt plugins that provide a GitHub workflow generate task.
   private val sbtGitHubWorkflowGenerateModules = List(
     (GroupId("com.codecommit"), ArtifactId("sbt-github-actions")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-sonatype")),
     (GroupId("com.codecommit"), ArtifactId("sbt-spiewak-bintray")),
     (GroupId("com.github.sbt"), ArtifactId("sbt-github-actions")),
+    (GroupId("dev.zio"), ArtifactId("zio-sbt-ci")),
     (GroupId("io.chrisdavenport"), ArtifactId("sbt-davenverse")),
     (GroupId("io.github.nafg.mergify"), ArtifactId("sbt-mergify-github-actions")),
     (GroupId("org.typelevel"), ArtifactId("sbt-typelevel-ci-release")),
@@ -146,6 +147,15 @@ object HookExecutor {
   private val conditionalSbtGitHubWorkflowGenerateModules =
     (sbtGroupId, sbtArtifactId) :: (sbtScalafixGroupId, sbtScalafixArtifactId) :: scalaLangModules
 
+  private def sbtGithubWorkflowGenerateCommand(
+      groupId: GroupId,
+      artifactId: ArtifactId
+  ): Nel[String] =
+    if ((groupId, artifactId) == (GroupId("dev.zio"), ArtifactId("zio-sbt-ci")))
+      Nel.of("sbt", "ciGenerateGithubWorkflow")
+    else
+      Nel.of("sbt", "githubWorkflowGenerate")
+
   private def sbtGithubWorkflowGenerateHook(
       groupId: GroupId,
       artifactId: ArtifactId,
@@ -154,7 +164,7 @@ object HookExecutor {
     PostUpdateHook(
       groupId = Some(groupId),
       artifactId = Some(artifactId),
-      command = Nel.of("sbt", "githubWorkflowGenerate"),
+      command = sbtGithubWorkflowGenerateCommand(groupId, artifactId),
       useSandbox = true,
       commitMessage = _ => CommitMsg("Regenerate GitHub Actions workflow"),
       enabledByCache = enabledByCache,

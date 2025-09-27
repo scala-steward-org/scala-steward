@@ -99,6 +99,7 @@ Thanks goes to these wonderful people for contributing to Scala Steward:
 * [Eldar Yusupov](https://github.com/eyusupov)
 * [Ender Tunç](https://github.com/endertunc)
 * [Erik Erlandson](https://github.com/erikerlandson)
+* [Erik van Oosten](https://github.com/erikvanoosten)
 * [Erlend Hamnaberg](https://github.com/hamnis)
 * [eugeniyk](https://github.com/eugeniyk)
 * [Fabian Grutsch](https://github.com/fgrutsch)
