@@ -63,7 +63,10 @@ object PullRequestsConfig {
           grouping = x.grouping |+| y.grouping,
           includeMatchedLabels = x.includeMatchedLabels.orElse(y.includeMatchedLabels),
           customLabels = x.customLabels |+| y.customLabels,
-          draft = (x.draft, y.draft).mapN(_ || _)
+          draft = {
+            implicit val booleanOrMonoid: Monoid[Boolean] = Monoid.instance(false, _ || _)
+            x.draft |+| y.draft
+          }
         )
     )
 }
