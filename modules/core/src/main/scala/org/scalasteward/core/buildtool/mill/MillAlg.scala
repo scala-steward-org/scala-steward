@@ -90,11 +90,18 @@ final class MillAlg[F[_]](defaultResolvers: List[Resolver])(implicit
   override protected val scalafixIssue: Option[String] =
     Some("https://github.com/scala-steward-org/scala-steward/issues/2838")
 
-  private def getMillVersion(buildRootDir: File): F[Option[Version]] =
-    List(
-      buildRootDir / s".$millVersionName",
-      buildRootDir / ".config" / millVersionName
-    ).collectFirstSomeM(fileAlg.readFile).map(_.flatMap(parser.parseMillVersion))
+  private def getMillVersion(buildRootDir: File): F[Option[Version]] = {
+    val fromConfigFile =
+      List(
+        buildRootDir / s".$millVersionName",
+        buildRootDir / ".config" / millVersionName
+      ).collectFirstSomeM(fileAlg.readFile).map(_.flatMap(parser.parseMillVersion))
+    val fromBuildFile = List(buildRootDir / "build.mill", buildRootDir / "build.mill.scala")
+      .collectFirstSomeM(fileAlg.readFile)
+      .map(_.flatMap(parser.parseBuildFileMillVersion))
+
+    fromBuildFile.orElse(fromConfigFile)
+  }
 
   private def getMillPluginDeps(
       millVersion: Version,
