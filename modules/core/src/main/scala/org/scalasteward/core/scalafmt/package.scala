@@ -17,7 +17,6 @@
 package org.scalasteward.core
 
 import cats.syntax.all.*
-import org.scalasteward.core.buildtool.sbt.defaultScalaBinaryVersion
 import org.scalasteward.core.data.*
 
 package object scalafmt {
@@ -26,7 +25,7 @@ package object scalafmt {
 
   val scalafmtArtifactId: ArtifactId = {
     val core = "scalafmt-core"
-    ArtifactId(core, s"${core}_$defaultScalaBinaryVersion")
+    ArtifactId(core, s"${core}_2.13")
   }
 
   val scalafmtModule: (GroupId, ArtifactId) =
