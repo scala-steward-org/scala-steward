@@ -159,4 +159,52 @@ class VersionPositionScannerTest extends FunSuite {
     val expected = List()
     assertEquals(obtained, expected)
   }
+
+  test("mise.toml scala") {
+    val version = "2.13.16".v
+    val fd = FileData(
+      "mise.toml",
+      s"""[tools]
+         |java = "zulu-21"
+         |scala = "${version}"
+         |sbt = "1.11.7"""".stripMargin
+    )
+    val obtained = VersionPositionScanner.findPositions(version, fd)
+    val expected = List(
+      Unclassified(Substring.Position(fd.path, 34, version.value), "scala = \"")
+    )
+    assertEquals(obtained, expected)
+  }
+
+  test("mise.toml sbt") {
+    val version = "1.11.7".v
+    val fd = FileData(
+      "mise.toml",
+      s"""[tools]
+         |java = "zulu-21"
+         |scala = "2.13.16"
+         |sbt = "${version}"""".stripMargin
+    )
+    val obtained = VersionPositionScanner.findPositions(version, fd)
+    val expected = List(
+      Unclassified(Substring.Position(fd.path, 50, version.value), "sbt = \"")
+    )
+    assertEquals(obtained, expected)
+  }
+
+  test("mise.toml with latest should not match") {
+    val version = "1.11.7".v
+    val fd = FileData(
+      "mise.toml",
+      s"""[tools]
+         |java = "zulu-21"
+         |scala = "latest"
+         |sbt = "${version}"""".stripMargin
+    )
+    val obtained = VersionPositionScanner.findPositions(version, fd)
+    val expected = List(
+      Unclassified(Substring.Position(fd.path, 49, version.value), "sbt = \"")
+    )
+    assertEquals(obtained, expected)
+  }
 }

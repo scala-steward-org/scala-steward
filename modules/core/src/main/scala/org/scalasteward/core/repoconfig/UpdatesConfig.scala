@@ -110,6 +110,7 @@ object UpdatesConfig {
       ".scala",
       ".sdkmanrc",
       ".yml",
+      "mise.toml",
       gradle.libsVersionsTomlName,
       maven.pomXmlName,
       mill.MillAlg.millVersionName,
