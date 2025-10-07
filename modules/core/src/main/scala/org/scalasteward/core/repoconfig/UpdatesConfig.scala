@@ -111,6 +111,7 @@ object UpdatesConfig {
       ".sdkmanrc",
       ".yml",
       "mise.toml",
+      "mise/config.toml",
       gradle.libsVersionsTomlName,
       maven.pomXmlName,
       mill.MillAlg.millVersionName,
