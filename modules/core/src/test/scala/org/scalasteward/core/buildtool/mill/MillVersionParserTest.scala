@@ -19,4 +19,31 @@ class MillVersionParserTest extends FunSuite {
     val parsed = parser.parseMillVersion(versionFileContent).map(_.value)
     assertEquals(parsed, expected)
   }
+
+  test(s"parse version from build.mill file") {
+    val buildMillFileContent = """
+      |//|
+      |//| mill-version: 1.0.5
+      |""".stripMargin
+    val parsed = parser.parseBuildFileMillVersion(buildMillFileContent).map(_.value)
+    assertEquals(parsed, Some("1.0.5"))
+  }
+
+  test(s"parse quoted version from build.mill file") {
+    val buildMillFileContent = """
+      |//|
+      |//| mill-version: "1.0.5"
+      |""".stripMargin
+    val parsed = parser.parseBuildFileMillVersion(buildMillFileContent).map(_.value)
+    assertEquals(parsed, Some("1.0.5"))
+  }
+
+  test(s"parse single quoted version from build.mill file") {
+    val buildMillFileContent = """
+      |//|
+      |//| mill-version: '1.0.5'
+      |""".stripMargin
+    val parsed = parser.parseBuildFileMillVersion(buildMillFileContent).map(_.value)
+    assertEquals(parsed, Some("1.0.5"))
+  }
 }
