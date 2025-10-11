@@ -206,6 +206,10 @@ reviewers = [ "username1", "username2" ]
 # If true, Scala Steward will sign off all commits (e.g. `git --signoff`).
 # Default: false
 signoffCommits = true
+
+# Repos whose last commit is older than this threshold are considered
+# inactive and are ignored.
+inactivityThreshold = "90 days"
 ```
 
 The version information given in the patterns above can be in two formats:
