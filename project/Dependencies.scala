@@ -44,6 +44,6 @@ object Dependencies {
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.19.0"
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
-    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill1_3" % "0.18.2-9-0ad5e5"
+    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill1_3" % "0.19.0"
   val tomlj = "org.tomlj" % "tomlj" % "1.1.1"
 }
