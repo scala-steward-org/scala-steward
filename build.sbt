@@ -316,7 +316,8 @@ lazy val compileSettings = Def.settings(
   scalacOptions ++= {
     scalaBinaryVersion.value match {
       case "2.13" =>
-        Seq("-Xsource:3-cross")
+        // https://github.com/scala/bug/issues/13128#issuecomment-3375870295
+        Seq("-Xsource:3-cross", "-Wconf:cat=lint-infer-any&msg=kind-polymorphic:s")
       case _ =>
         Nil
     }
