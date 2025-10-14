@@ -287,8 +287,8 @@ lazy val dummy = myCrossProject("dummy")
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(
-      Dependencies.millMain,
-      Dependencies.scalaStewardMillPlugin
+      Dependencies.millMain.intransitive(),
+      Dependencies.scalaStewardMillPlugin.intransitive()
     )
   )
 
