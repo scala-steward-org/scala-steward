@@ -96,7 +96,11 @@ final class MillAlg[F[_]](defaultResolvers: List[Resolver])(implicit
         buildRootDir / s".$millVersionName",
         buildRootDir / ".config" / millVersionName
       ).collectFirstSomeM(fileAlg.readFile).map(_.flatMap(parser.parseMillVersion))
-    val fromBuildFile = List(buildRootDir / "build.mill", buildRootDir / "build.mill.scala", buildRootDir / "build.sc")
+    val fromBuildFile = List(
+      buildRootDir / "build.mill",
+      buildRootDir / "build.mill.scala",
+      buildRootDir / "build.sc"
+    )
       .collectFirstSomeM(fileAlg.readFile)
       .map(_.flatMap(parser.parseBuildFileMillVersion))
 
