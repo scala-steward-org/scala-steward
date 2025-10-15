@@ -46,6 +46,12 @@ object parser {
   def parseMillVersion(s: String): Option[Version] =
     Option(s.trim).filter(_.nonEmpty).map(Version.apply)
 
+  private val millVersionRegex = """\s*\/\/\|\s*mill-version:\s*['"]?(.+?)['"]?\s*""".r
+  def parseBuildFileMillVersion(s: String): Option[Version] =
+    s.linesIterator.collectFirst { case millVersionRegex(version) =>
+      Version(version)
+    }
+
   /** Used to correctly format the Mill plugin artifacts will when included look like:
     *   - import $ivy.`com.goyeau::mill-scalafix::0.2.10`
     *
