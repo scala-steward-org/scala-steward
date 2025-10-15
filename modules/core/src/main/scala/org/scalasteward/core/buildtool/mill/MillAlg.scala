@@ -39,7 +39,7 @@ final class MillAlg[F[_]](defaultResolvers: List[Resolver])(implicit
     workspaceAlg.buildRootDir(buildRoot).flatMap(findBuildFile).map(_.nonEmpty)
 
   private def findBuildFile(buildRootDir: File): F[Option[File]] =
-    List("build.sc", "build.mill", "build.mill.scala")
+    List("build.mill", "build.mill.scala", "build.sc")
       .map(buildRootDir / _)
       .findM(fileAlg.isRegularFile)
 
@@ -95,16 +95,17 @@ final class MillAlg[F[_]](defaultResolvers: List[Resolver])(implicit
       List(
         buildRootDir / s".$millVersionName",
         buildRootDir / ".config" / millVersionName
-      ).collectFirstSomeM(fileAlg.readFile).map(_.flatMap(parser.parseMillVersion))
+      ).collectFirstSomeM(fileAlg.readFile(_).map(_.flatMap(parser.parseMillVersion)))
     val fromBuildFile = List(
       buildRootDir / "build.mill",
       buildRootDir / "build.mill.scala",
       buildRootDir / "build.sc"
-    )
-      .collectFirstSomeM(fileAlg.readFile)
-      .map(_.flatMap(parser.parseBuildFileMillVersion))
+    ).collectFirstSomeM(fileAlg.readFile(_).map(_.flatMap(parser.parseBuildFileMillVersion)))
 
-    fromBuildFile.orElse(fromConfigFile)
+    fromBuildFile.flatMap {
+      case None => fromConfigFile
+      case some => F.pure(some)
+    }
   }
 
   private def getMillPluginDeps(
