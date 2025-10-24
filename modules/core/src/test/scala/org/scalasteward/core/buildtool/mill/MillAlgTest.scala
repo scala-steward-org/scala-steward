@@ -22,6 +22,9 @@ class MillAlgTest extends FunSuite {
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
+        Cmd("read", s"$buildRootDir/build.mill"),
+        Cmd("read", s"$buildRootDir/build.mill.scala"),
+        Cmd("read", s"$buildRootDir/build.sc"),
         Cmd("read", s"$buildRootDir/.mill-version"),
         Cmd("read", s"$buildRootDir/.config/mill-version"),
         Cmd("write", predef),
@@ -53,8 +56,13 @@ class MillAlgTest extends FunSuite {
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
+        Cmd("read", s"$buildRootDir/build.mill"),
+        Cmd("read", s"$buildRootDir/build.mill.scala"),
+        Cmd("read", s"$buildRootDir/build.sc"),
         Cmd("read", s"$buildRootDir/.mill-version"),
         millCmd,
+        Cmd("test", "-f", s"$buildRootDir/build.mill"),
+        Cmd("test", "-f", s"$buildRootDir/build.mill.scala"),
         Cmd("test", "-f", s"$buildRootDir/build.sc"),
         Cmd("read", s"$buildRootDir/build.sc")
       )
@@ -84,10 +92,46 @@ class MillAlgTest extends FunSuite {
     val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
+        Cmd("read", s"$buildRootDir/build.mill"),
+        Cmd("read", s"$buildRootDir/build.mill.scala"),
+        Cmd("read", s"$buildRootDir/build.sc"),
         Cmd("read", s"$buildRootDir/.mill-version"),
         millCmd,
+        Cmd("test", "-f", s"$buildRootDir/build.mill"),
+        Cmd("test", "-f", s"$buildRootDir/build.mill.scala"),
         Cmd("test", "-f", s"$buildRootDir/build.sc"),
         Cmd("read", s"$buildRootDir/build.sc")
+      )
+    )
+    assertEquals(state, expected)
+  }
+
+  test("getDependencies, 1 <= version") {
+    val repo = Repo("mill-alg", "test-3")
+    val buildRoot = BuildRoot(repo, ".")
+    val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
+    val millCmd = Cmd.execSandboxed(
+      buildRootDir,
+      "mill",
+      "--no-server",
+      "--ticker",
+      "false",
+      "--import",
+      s"ivy:org.scala-steward::${BuildInfo.millPluginArtifactName}::${BuildInfo.millPluginVersion}",
+      "show",
+      extractDeps
+    )
+    val initial = MockState.empty
+      .copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
+      .addFiles(buildRootDir / "build.mill" -> "//| mill-version: 1.0.6")
+      .unsafeRunSync()
+    val state = millAlg.getDependencies(buildRoot).runS(initial).unsafeRunSync()
+    val expected = initial.copy(
+      trace = Vector(
+        Cmd("read", s"$buildRootDir/build.mill"),
+        millCmd,
+        Cmd("test", "-f", s"$buildRootDir/build.mill"),
+        Cmd("read", s"$buildRootDir/build.mill")
       )
     )
     assertEquals(state, expected)

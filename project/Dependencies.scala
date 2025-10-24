@@ -28,11 +28,11 @@ object Dependencies {
   val http4sEmberServer = "org.http4s" %% "http4s-ember-server" % http4sCore.revision
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M10"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.7.1"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.19"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.20"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.13.0"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
-  val millMain = "com.lihaoyi" % "mill-main_2.13" % "0.12.16"
+  val millMain = "com.lihaoyi" % "mill-runner-launcher_3" % "1.0.6"
   val monocleCore = "dev.optics" %% "monocle-core" % "3.3.0"
   val munit = "org.scalameta" %% "munit" % "1.2.0"
   val munitCatsEffect = "org.typelevel" %% "munit-cats-effect" % "2.1.0"
@@ -44,6 +44,6 @@ object Dependencies {
   val scalacheck = "org.scalacheck" %% "scalacheck" % "1.19.0"
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
-    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill0.11_2.13" % "0.18.2"
+    "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill1_3" % "0.19.0"
   val tomlj = "org.tomlj" % "tomlj" % "1.1.1"
 }
