@@ -24,9 +24,9 @@ import org.scalasteward.core.data.{SemVer, Update}
 import scala.util.matching.Regex
 
 final case class PullRequestUpdateFilter private (
-    group: Option[String] = None,
-    artifact: Option[String] = None,
-    version: Option[SemVer.Change] = None
+    group: Option[String],
+    artifact: Option[String],
+    version: Option[SemVer.Change]
 ) {
 
   /** Returns `true` if an update falls into this filter; returns `false` otherwise.
