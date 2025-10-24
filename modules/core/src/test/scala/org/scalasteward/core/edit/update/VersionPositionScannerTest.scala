@@ -182,7 +182,7 @@ class VersionPositionScannerTest extends FunSuite {
       "mise.toml",
       s"""[tools]
          |java = "zulu-21"
-         |scala = "2.13.16"
+         |scala = "2.13.17"
          |sbt = "${version}"""".stripMargin
     )
     val obtained = VersionPositionScanner.findPositions(version, fd)
