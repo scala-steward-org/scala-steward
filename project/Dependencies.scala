@@ -12,7 +12,7 @@ object Dependencies {
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % "0.15.1"
-  val commonsIo = "commons-io" % "commons-io" % "2.20.0"
+  val commonsIo = "commons-io" % "commons-io" % "2.21.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.1.24"
   val coursierSbtMaven =
     "io.get-coursier" %% "coursier-sbt-maven-repository" % coursierCore.revision
