@@ -67,7 +67,7 @@ class VersionPositionScannerTest extends FunSuite {
     val d = "org.scala-js".g % "sbt-scalajs".a % "0.6.23"
     val fd = FileData(
       "plugins.sbt",
-      s"""addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.5")
+      s"""addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.6")
          |addSbtPlugin("${d.groupId}" % "${d.artifactId.name}" % "${d.version}")
          |addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.2.0")""".stripMargin
     )
