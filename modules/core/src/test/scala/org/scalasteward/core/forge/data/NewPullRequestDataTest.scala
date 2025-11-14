@@ -357,7 +357,7 @@ class NewPullRequestDataTest extends FunSuite {
          |
          |If you have any feedback, just mention me in the comments below.
          |
-         |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/9f62794a058343a20f1c3738d93d7b078e6cf8f5/docs/repo-specific-configuration.md) file.
+         |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
          |
          |_Have a fantastic day writing Scala!_""".stripMargin
 
