@@ -322,6 +322,48 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(body, expected)
   }
 
+  test("bodyFor() grouped update when updates breach maximumPullRequestLength") {
+    val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
+    val update = Update.Grouped("my-group", Some("The PR title"), List.fill(100)(update1))
+    val edits = List(
+      UpdateEdit(
+        update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+        commit = Commit(dummySha1)
+      ),
+      UpdateEdit(
+        update = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single,
+        commit = Commit(dummySha1)
+      )
+    )
+
+    val maximumPullRequestLength = 4000
+
+    val body = bodyFor(
+      update = update,
+      edits = edits,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List("library-update"),
+      maximumPullRequestLength = maximumPullRequestLength
+    )
+
+    val expected =
+      s"""## Usage
+         |✅ **Please merge!**
+         |
+         |I'll automatically update this PR to resolve conflicts as long as you don't change it yourself.
+         |
+         |If you have any feedback, just mention me in the comments below.
+         |
+         |Configure Scala Steward for your repository with a [`.scala-steward.conf`](https://github.com/scala-steward-org/scala-steward/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
+         |
+         |_Have a fantastic day writing Scala!_""".stripMargin
+
+    assertEquals(body, expected)
+  }
+
   test("bodyFor() output should contain notion about config parsing error") {
     val update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
 

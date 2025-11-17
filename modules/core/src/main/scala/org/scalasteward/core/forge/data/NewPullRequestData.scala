@@ -97,9 +97,8 @@ object NewPullRequestData {
       _ => ""
     )
 
-    val plainBody =
-      s"""|$updatesText
-          |
+    val minimalPlainBody =
+      s"""|
           |## Usage
           |✅ **Please merge!**
           |
@@ -110,6 +109,13 @@ object NewPullRequestData {
           |Configure Scala Steward for your repository with a [`${RepoConfigAlg.repoConfigBasename}`](${org.scalasteward.core.BuildInfo.gitHubUrl}/blob/${org.scalasteward.core.BuildInfo.gitHeadCommit}/docs/repo-specific-configuration.md) file.
           |
           |_Have a fantastic day writing Scala!_
+          |
+          """.stripMargin.trim
+
+    val plainBody =
+      s"""|$updatesText
+          |
+          |$minimalPlainBody
           |
           |${details.map(_.toHtml).mkString("\n")}
           |
@@ -133,7 +139,9 @@ object NewPullRequestData {
 
     if (bodyWithMetadata.length < maximumPullRequestLength)
       bodyWithMetadata
-    else plainBody
+    else if (plainBody.length < maximumPullRequestLength)
+      plainBody
+    else minimalPlainBody
   }
 
   private def filterUpdateWithEditAttempts(update: Update, edits: List[EditAttempt]): Update =
