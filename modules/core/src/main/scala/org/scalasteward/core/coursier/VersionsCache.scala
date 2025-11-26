@@ -18,13 +18,15 @@ package org.scalasteward.core.coursier
 
 import cats.implicits.*
 import cats.{MonadThrow, Parallel}
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
 import io.circe.{Codec, KeyEncoder}
 import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import scala.concurrent.duration.FiniteDuration
+import io.circe.Encoder
+import io.circe.Decoder
 
 final class VersionsCache[F[_]](
     cacheTtl: FiniteDuration,
@@ -53,7 +55,7 @@ final class VersionsCache[F[_]](
         case maybeValue =>
           coursierAlg.getVersions(dependency, resolver).attempt.flatMap {
             case Right(versions) =>
-              store.put(key, Value(now, versions, None)).as(versions)
+              store.put(key, Value(now, versions.map(addCurrentTime), None)).as(versions)
             case Left(throwable) =>
               val versions = maybeValue.map(_.versions).getOrElse(List.empty)
               store.put(key, Value(now, versions, Some(throwable.toString))).as(versions)
@@ -79,7 +81,7 @@ object VersionsCache {
 
   final case class Value(
       updatedAt: Timestamp,
-      versions: List[Version],
+      versions: List[(Version, Instant)],
       maybeError: Option[String]
   ) {
     def maxAgeFactor: Long =
@@ -89,5 +91,19 @@ object VersionsCache {
   object Value {
     implicit val valueCodec: Codec[Value] =
       deriveCodec
+  }
+
+  final case class VersionWithFirstSeen(
+      version: Version,
+      firstSeen: Option[Timestamp]
+  )
+
+  object VersionWithFirstSeen {
+    implicit val valueEncoder: Encoder[VersionWithFirstSeen] = deriveEncoder
+    implicit val valueDecoder: Decoder[VersionWithFirstSeen] =
+      deriveDecoder[VersionWithFirstSeen]
+        .or(
+          Decoder[Version].map(v => VersionWithFirstSeen(v, None))
+        )
   }
 }
