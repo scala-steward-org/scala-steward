@@ -19,7 +19,8 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.*
-import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId, Version}
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId}
 
 final case class UpdatePattern(
     groupId: GroupId,
@@ -32,20 +33,26 @@ final case class UpdatePattern(
 object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      filteredVersions: List[Version]
+      filteredVersions: List[VersionWithFirstSeen]
   )
 
   def findMatch(
       patterns: List[UpdatePattern],
       update: ArtifactUpdateVersions,
-      include: Boolean
+      include: Boolean,
+      versionPredicate: VersionWithFirstSeen => Boolean = _ => true
   ): MatchResult = {
     val artifactForUpdate = update.artifactForUpdate
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
     val byArtifactId =
       byGroupId.filter(_.artifactId.forall(_ === artifactForUpdate.artifactId.name))
     val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
-      byArtifactId.exists(_.version.forall(_.matches(newVersion.value))) === include
+      (byArtifactId.exists(
+        _.version.forall(_.matches(newVersion.version.value))
+      ) && versionPredicate(
+        newVersion
+      ))
+        === include
     )
     MatchResult(byArtifactId, filteredVersions)
   }

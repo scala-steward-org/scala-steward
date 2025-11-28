@@ -3,6 +3,7 @@ package org.scalasteward.core
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.Resolver.IvyRepository
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 object TestSyntax {
   val sbtPluginReleases: IvyRepository = {
@@ -19,6 +20,7 @@ object TestSyntax {
     def g: GroupId = GroupId(self)
     def a: ArtifactId = ArtifactId(self)
     def v: Version = Version(self)
+    def vfs: VersionWithFirstSeen = VersionWithFirstSeen(Version(self), None)
   }
 
   implicit class StringTupleOps(private val self: (String, String)) extends AnyVal {

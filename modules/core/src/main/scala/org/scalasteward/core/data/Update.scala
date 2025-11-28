@@ -22,6 +22,7 @@ import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 case class ArtifactForUpdate(
     crossDependency: CrossDependency,
@@ -49,9 +50,9 @@ trait ArtifactUpdateVersions {
   */
 case class ArtifactUpdateCandidates(
     artifactForUpdate: ArtifactForUpdate,
-    newerVersions: Nel[Version]
+    newerVersionsWithFirstSeen: Nel[VersionWithFirstSeen]
 ) extends ArtifactUpdateVersions {
-  override val refersToUpdateVersions: Nel[Version] = newerVersions
+  override val refersToUpdateVersions: Nel[Version] = newerVersionsWithFirstSeen.map(_.version)
 
   def asSpecificUpdate(nextVersion: Version): Update.ForArtifactId =
     Update.ForArtifactId(artifactForUpdate, nextVersion)

@@ -292,7 +292,10 @@ class FilterAlgTest extends FunSuite {
         "3.3.3",
         "3.4.0"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
+    assertEquals(
+      scalaLTSFilter(update),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.3.3".vfs)))
+    )
   }
 
   test("scalaLTSFilter: Next") {
