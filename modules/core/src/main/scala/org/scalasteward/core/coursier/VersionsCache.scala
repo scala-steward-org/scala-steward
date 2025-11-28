@@ -51,7 +51,7 @@ final class VersionsCache[F[_]](
       val key = Key(dependency, resolver)
       store.get(key).flatMap {
         case Some(value) if value.updatedAt.until(now) <= (maxAge * value.maxAgeFactor) =>
-          F.pure(value.versions)
+          F.pure(value.versions.map(_.version))
         case maybeValue =>
           coursierAlg.getVersions(dependency, resolver).attempt.flatMap {
             case Right(versions) =>
@@ -62,6 +62,8 @@ final class VersionsCache[F[_]](
           }
       }
     }
+
+  private def addCurrentTime(version: Version): VersionWithFirstSeen = {}
 }
 
 object VersionsCache {
@@ -81,7 +83,7 @@ object VersionsCache {
 
   final case class Value(
       updatedAt: Timestamp,
-      versions: List[(Version, Instant)],
+      versions: List[VersionWithFirstSeen],
       maybeError: Option[String]
   ) {
     def maxAgeFactor: Long =
