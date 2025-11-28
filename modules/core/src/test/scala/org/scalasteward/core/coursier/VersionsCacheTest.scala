@@ -21,4 +21,17 @@ class VersionsCacheTest extends FunSuite {
     )
     assertEquals(parser.decode[Value](input), Right(expected))
   }
+
+  test("version cache deserialisation with first seen") {
+    val input = Source.fromResource("versions-cache-value-with-first-seen.json").mkString
+    val expected = Value(
+      Timestamp(10002),
+      List(
+        VersionWithFirstSeen(Version("1.0.0"), Some(Timestamp(10000))),
+        VersionWithFirstSeen(Version("1.0.1"), Some(Timestamp(10001)))
+      ),
+      None
+    )
+    assertEquals(parser.decode[Value](input), Right(expected))
+  }
 }
