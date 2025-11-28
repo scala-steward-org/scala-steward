@@ -36,10 +36,13 @@ final class VersionsCache[F[_]](
     parallel: Parallel[F],
     F: MonadThrow[F]
 ) {
-  def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
+  def getVersions(
+      dependency: Scope.Dependency,
+      maxAge: Option[FiniteDuration]
+  ): F[List[VersionWithFirstSeen]] =
     dependency.resolvers
       .parFlatTraverse(getVersionsImpl(dependency.value, _, maxAge.getOrElse(cacheTtl)))
-      .map(_.map(_.version).distinct.sorted) // TODO - remove `.map(_.version)`
+      .map(_.distinct.sortBy(_.version))
 
   private def getVersionsImpl(
       dependency: Dependency,
