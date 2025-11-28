@@ -32,7 +32,7 @@ final case class UpdatePattern(
 object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      filteredVersions: List[Version]
+      filteredVersions: Set[Version]
   )
 
   def findMatch(
@@ -47,7 +47,7 @@ object UpdatePattern {
     val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
       byArtifactId.exists(_.version.forall(_.matches(newVersion.value))) === include
     )
-    MatchResult(byArtifactId, filteredVersions)
+    MatchResult(byArtifactId, filteredVersions.toSet)
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =
