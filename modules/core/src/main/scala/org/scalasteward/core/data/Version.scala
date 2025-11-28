@@ -21,7 +21,6 @@ import cats.implicits.*
 import cats.parse.{Numbers, Parser, Rfc5234}
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Version.startsWithDate
-import java.time.Instant
 
 final case class Version(value: String) {
   override def toString: String = value
