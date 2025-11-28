@@ -22,6 +22,7 @@ import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 sealed trait Update {
 
@@ -86,7 +87,7 @@ object Update {
 
   final case class ForArtifactId(
       crossDependency: CrossDependency,
-      newerVersions: Nel[Version],
+      newerVersions: Nel[VersionWithFirstSeen],
       newerGroupId: Option[GroupId] = None,
       newerArtifactId: Option[String] = None
   ) extends Single {
