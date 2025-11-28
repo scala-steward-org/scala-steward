@@ -21,6 +21,7 @@ import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUn
 import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.{UpdatePattern, UpdatesConfig, VersionPattern}
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 @BenchmarkMode(Array(Mode.AverageTime))
 class UpdatesConfigBenchmark {
@@ -32,7 +33,7 @@ class UpdatesConfigBenchmark {
     val dependency = CrossDependency(Dependency(groupId, ArtifactId("artifact"), Version("1.0.0")))
     val newerVersions = Nel
       .of("2.0.0", "2.1.0", "2.1.1", "2.2.0", "3.0.0", "3.1.0", "3.2.1", "3.3.3", "4.0", "5.0")
-      .map(Version.apply)
+      .map(v => VersionWithFirstSeen(Version(v), None))
     val update = ArtifactUpdateCandidates(ArtifactForUpdate(dependency), newerVersions)
 
     UpdatesConfig().keep(update)

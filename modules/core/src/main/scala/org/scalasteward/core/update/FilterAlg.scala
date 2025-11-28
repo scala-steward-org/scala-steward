@@ -79,9 +79,10 @@ object FilterAlg {
         // already on Scala Next
         Right(update)
       } else {
-        val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
+        val filteredVersions =
+          update.newerVersionsWithFirstSeen.filterNot(v => v.version >= scalaNextMinVersion)
         if (filteredVersions.nonEmpty)
-          Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
+          Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(filteredVersions)))
         else
           Left(IgnoreScalaNext(update))
       }
