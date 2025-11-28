@@ -71,9 +71,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
     kvStore.getOrElse(repo, Map.empty).map {
       _.collect {
         case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch))
-            if state === PullRequestState.Open &&
-              u.withNextVersion(update.nextVersion) === update &&
-              u.nextVersion < update.nextVersion =>
+            if state === PullRequestState.Open && update.supersedes(u) =>
           for {
             number <- number
             branch = updateBranch.getOrElse(git.branchFor(u, repo.branch))

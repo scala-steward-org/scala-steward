@@ -84,9 +84,9 @@ final class UpdateAlg[F[_]](implicit
   private def findNewerVersions(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
-  ): OptionT[F, Nel[Version]] =
+  ): OptionT[F, Nel[VersionsCache.VersionWithFirstSeen]] =
     OptionT(versionsCache.getVersions(dependency, maxAge).map { versions =>
-      Nel.fromList(versions.filter(_ > dependency.value.version))
+      Nel.fromList(versions.filter(v => v.version > dependency.value.version))
     })
 }
 
