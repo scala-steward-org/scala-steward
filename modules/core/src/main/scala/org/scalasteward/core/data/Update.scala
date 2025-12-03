@@ -77,12 +77,9 @@ object Update {
       s"$groupId:$artifacts : $versions"
     }
 
-    def withNewerVersions(versions: Nel[Version]): Update.Single = this match {
-      case s @ ForArtifactId(_, _, _, _) =>
-        s.copy(newerVersions = versions)
-      case ForGroupId(forArtifactIds) =>
-        ForGroupId(forArtifactIds.map(_.copy(newerVersions = versions)))
-    }
+    def supersedes(that: Update.Single): Boolean =
+      this.groupAndMainArtifactId == that.groupAndMainArtifactId
+        && this.nextVersion > that.nextVersion
   }
 
   final case class ForArtifactId(
