@@ -1,0 +1,8 @@
+{
+    "updatedAt": 10002,
+    "versions": [
+        { "version": "1.0.0", "firstSeen": 10000 },
+        { "version": "1.0.1", "firstSeen": 10001 }
+    ],
+    "maybeError": null
+}
