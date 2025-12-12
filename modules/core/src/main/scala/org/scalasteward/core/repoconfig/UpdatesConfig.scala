@@ -40,7 +40,8 @@ final case class UpdatesConfig(
     private val ignore: Option[List[UpdatePattern]] = None,
     private val retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = UpdatesConfig.defaultLimit,
-    private val fileExtensions: Option[List[String]] = None
+    private val fileExtensions: Option[List[String]] = None,
+    private val cooldown: Option[List[CooldownConfig]] = None
 ) {
   private[repoconfig] def pinOrDefault: List[UpdatePattern] =
     pin.getOrElse(Nil)

@@ -54,8 +54,11 @@ final class JsonKeyValueStore[F[_], K, V](storeRoot: File, name: String)(implici
     }
   }
 
-  private def jsonFile(key: K): File =
-    storeRoot / keyEncoder(key) / s"$name.json"
+  private def jsonFile(key: K): File = {
+    val file = storeRoot / keyEncoder(key) / s"$name.json"
+    println(s"file is ${file}")
+    file
+  }
 }
 
 object JsonKeyValueStore {
