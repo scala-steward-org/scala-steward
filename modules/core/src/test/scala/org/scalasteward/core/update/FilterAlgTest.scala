@@ -28,12 +28,18 @@ class FilterAlgTest extends FunSuite {
 
   test("localFilter: update without bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.0" %> Nel.of("1.1.2", "2.0.0")).single
-    assertEquals(localFilter(update, config), Right(update.copy(newerVersions = Nel.of("1.1.2".v))))
+    assertEquals(
+      localFilter(update, config),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("1.1.2".vfs)))
+    )
   }
 
   test("localFilter: update with bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
-    assertEquals(localFilter(update, config), Right(update.copy(newerVersions = Nel.of("2.0.0".v))))
+    assertEquals(
+      localFilter(update, config),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("2.0.0".vfs)))
+    )
   }
 
   test("localFilter: update with bad version 2") {
@@ -41,7 +47,7 @@ class FilterAlgTest extends FunSuite {
       Nel.of("7726", "8020", "2017.09", "1.2019.12")).single
     assertEquals(
       localFilter(update, config),
-      Right(update.copy(newerVersions = Nel.of("1.2019.12".v)))
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("1.2019.12".vfs)))
     )
   }
 
@@ -58,7 +64,7 @@ class FilterAlgTest extends FunSuite {
       config.updatesOrDefault.copy(allowPreReleases = allowedPreReleases.some).some
     )
 
-    val expected = Right(update.copy(newerVersions = Nel.of("2.0.1-M3".v)))
+    val expected = Right(update.copy(newerVersionsWithFirstSeen = Nel.of("2.0.1-M3".vfs)))
     assertEquals(localFilter(update, configWithAllowed), expected)
   }
 
@@ -111,7 +117,7 @@ class FilterAlgTest extends FunSuite {
         ).some
       ).some
     )
-    val expected = Right(update.copy(newerVersions = Nel.of("2.13.7".v)))
+    val expected = Right(update.copy(newerVersionsWithFirstSeen = Nel.of("2.13.7".vfs)))
     assertEquals(localFilter(update, config), expected)
   }
 
@@ -214,7 +220,10 @@ class FilterAlgTest extends FunSuite {
     )
 
     val filtered = localFilter(update, config)
-    assertEquals(filtered, Right(update.copy(newerVersions = Nel.of("7.3.0.jre8".v))))
+    assertEquals(
+      filtered,
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("7.3.0.jre8".vfs)))
+    )
   }
 
   test("ignore update via config updates.ignore using suffix") {
@@ -234,7 +243,10 @@ class FilterAlgTest extends FunSuite {
     )
 
     val filtered = localFilter(update, config)
-    assertEquals(filtered, Right(update.copy(newerVersions = Nel.of("7.3.0.jre8".v))))
+    assertEquals(
+      filtered,
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("7.3.0.jre8".vfs)))
+    )
   }
 
   test("ignore update via config updates.pin using prefix and suffix") {
@@ -263,7 +275,7 @@ class FilterAlgTest extends FunSuite {
       """updates.ignore = [ { groupId = "sqlserver", version = { contains = "feature" } } ]"""
     )
     val obtained = repoConfig.flatMap(localFilter(update, _).leftMap(_.show))
-    assertEquals(obtained, Right(update.copy(newerVersions = Nel.of("7.3.0".v))))
+    assertEquals(obtained, Right(update.copy(newerVersionsWithFirstSeen = Nel.of("7.3.0".vfs))))
   }
 
   test("isDependencyConfigurationIgnored: false") {
@@ -287,7 +299,10 @@ class FilterAlgTest extends FunSuite {
         "3.3.3",
         "3.4.0"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
+    assertEquals(
+      scalaLTSFilter(update),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.3.3".vfs)))
+    )
   }
 
   test("scalaLTSFilter: Next") {

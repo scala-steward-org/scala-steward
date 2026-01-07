@@ -77,7 +77,7 @@ final case class UpdatesConfig(
   private def isAllowed(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
     else if (allowOrDefault.isEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
@@ -86,7 +86,7 @@ final case class UpdatesConfig(
   private def isPinned(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
     else if (m.byArtifactId.isEmpty)
       Right(update)
     else Left(VersionPinnedByConfig(update))
@@ -95,7 +95,7 @@ final case class UpdatesConfig(
   private def isIgnored(update: Update.ForArtifactId): FilterResult = {
     val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
     if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
     else
       Left(IgnoredByConfig(update))
   }

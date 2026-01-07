@@ -19,7 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.*
-import org.scalasteward.core.data.{GroupId, Update, Version}
+import org.scalasteward.core.data.{GroupId, Update}
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 final case class UpdatePattern(
@@ -44,8 +44,10 @@ object UpdatePattern {
   ): MatchResult = {
     val byGroupId = patterns.filter(_.groupId === update.groupId)
     val byArtifactId = byGroupId.filter(_.artifactId.forall(_ === update.artifactId.name))
-    val filteredVersions = update.newerVersions.filter(newVersion =>
-      (byArtifactId.exists(_.version.forall(_.matches(newVersion.value))) && versionPredicate(
+    val filteredVersions = update.newerVersionsWithFirstSeen.filter(newVersion =>
+      (byArtifactId.exists(
+        _.version.forall(_.matches(newVersion.version.value))
+      ) && versionPredicate(
         newVersion
       ))
         === include

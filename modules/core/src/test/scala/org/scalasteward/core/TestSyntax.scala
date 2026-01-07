@@ -3,6 +3,7 @@ package org.scalasteward.core
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.Resolver.IvyRepository
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 object TestSyntax {
   val sbtPluginReleases: IvyRepository = {
@@ -19,6 +20,7 @@ object TestSyntax {
     def g: GroupId = GroupId(self)
     def a: ArtifactId = ArtifactId(self)
     def v: Version = Version(self)
+    def vfs: VersionWithFirstSeen = VersionWithFirstSeen(Version(self), None)
   }
 
   implicit class StringTupleOps(private val self: (String, String)) extends AnyVal {
@@ -76,21 +78,21 @@ object TestSyntax {
       private val self: (Dependency, String)
   ) extends AnyVal {
     def single: Update.ForArtifactId =
-      Update.ForArtifactId(CrossDependency(self._1), Nel.of(self._2.v))
+      Update.ForArtifactId(CrossDependency(self._1), Nel.of(self._2.vfs))
   }
 
   implicit class DependencyAndNewerVersionsOps(
       private val self: (Dependency, Nel[String])
   ) extends AnyVal {
     def single: Update.ForArtifactId =
-      Update.ForArtifactId(CrossDependency(self._1), self._2.map(_.v))
+      Update.ForArtifactId(CrossDependency(self._1), self._2.map(_.vfs))
   }
 
   implicit class DependenciesAndNextVersionOps(
       private val self: (Nel[Dependency], String)
   ) extends AnyVal {
     def single: Update.ForArtifactId =
-      Update.ForArtifactId(CrossDependency(self._1), Nel.of(self._2.v))
+      Update.ForArtifactId(CrossDependency(self._1), Nel.of(self._2.vfs))
   }
 
   implicit class GroupIdAndArtifactIdsAndVersionAndNextVersionOps(
@@ -98,7 +100,7 @@ object TestSyntax {
   ) extends AnyVal {
     def single: Update.ForArtifactId = {
       val crossDependency = CrossDependency(self._2.map(aId => Dependency(self._1, aId, self._3.v)))
-      Update.ForArtifactId(crossDependency, Nel.of(self._4.v))
+      Update.ForArtifactId(crossDependency, Nel.of(self._4.vfs))
     }
 
     def group: Update.ForGroupId = {

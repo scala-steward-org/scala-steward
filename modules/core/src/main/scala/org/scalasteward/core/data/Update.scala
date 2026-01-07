@@ -84,7 +84,7 @@ object Update {
 
   final case class ForArtifactId(
       crossDependency: CrossDependency,
-      newerVersions: Nel[VersionWithFirstSeen],
+      newerVersionsWithFirstSeen: Nel[VersionWithFirstSeen],
       newerGroupId: Option[GroupId] = None,
       newerArtifactId: Option[String] = None
   ) extends Single {
@@ -108,6 +108,8 @@ object Update {
 
     override def currentVersion: Version =
       crossDependency.head.version
+
+    val newerVersions: Nel[Version] = newerVersionsWithFirstSeen.map(_.version)
 
     def artifactId: ArtifactId =
       crossDependency.head.artifactId
@@ -216,7 +218,12 @@ object Update {
           newerGroupId: Option[GroupId],
           newerArtifactId: Option[String]
       ) =>
-        ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
+        ForArtifactId(
+          crossDependency,
+          newerVersions.map(VersionWithFirstSeen(_, None)),
+          newerGroupId,
+          newerArtifactId
+        )
     }
 
   private val forArtifactIdDecoderV2 =
