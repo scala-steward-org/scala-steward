@@ -23,7 +23,7 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.refined.*
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
@@ -60,20 +60,20 @@ final case class UpdatesConfig(
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def keep(update: Update.ForArtifactId): FilterResult =
+  def keep(update: ArtifactUpdateCandidates): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
 
-  def preRelease(update: Update.ForArtifactId): FilterResult =
+  def preRelease(update: ArtifactUpdateCandidates): FilterResult =
     isAllowedPreReleases(update)
 
-  private def isAllowedPreReleases(update: Update.ForArtifactId): FilterResult = {
+  private def isAllowedPreReleases(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(allowPreReleasesOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
-  private def isAllowed(update: Update.ForArtifactId): FilterResult = {
+  private def isAllowed(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -82,7 +82,7 @@ final case class UpdatesConfig(
     else Left(NotAllowedByConfig(update))
   }
 
-  private def isPinned(update: Update.ForArtifactId): FilterResult = {
+  private def isPinned(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
@@ -91,7 +91,7 @@ final case class UpdatesConfig(
     else Left(VersionPinnedByConfig(update))
   }
 
-  private def isIgnored(update: Update.ForArtifactId): FilterResult = {
+  private def isIgnored(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
