@@ -221,14 +221,11 @@ object Update {
         ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
     }
 
-  private val forArtifactIdDecoderV1: Decoder[ForArtifactId] =
-    Decoder.forProduct1("Single")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
-
   private val forArtifactIdDecoderV2 =
     Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
 
   implicit private val forArtifactIdDecoder: Decoder[ForArtifactId] =
-    forArtifactIdDecoderV2.or(forArtifactIdDecoderV1)
+    forArtifactIdDecoderV2
 
   // ForGroupId
 
@@ -237,30 +234,15 @@ object Update {
       Encoder.forProduct1("forArtifactIds")(_.forArtifactIds)
     }
 
-  private val unwrappedForGroupIdDecoderV1: Decoder[ForGroupId] =
-    Decoder.forProduct2("crossDependencies", "newerVersions") {
-      (crossDependencies: Nel[CrossDependency], newerVersions: Nel[Version]) =>
-        val forArtifactIds =
-          crossDependencies.map(crossDependency => ForArtifactId(crossDependency, newerVersions))
-        ForGroupId(forArtifactIds)
-    }
-
   private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId] =
     Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId]) =>
       ForGroupId(forArtifactIds)
     }
 
-  private val forGroupIdDecoderV1: Decoder[ForGroupId] =
-    Decoder.forProduct1("Group")(identity[ForGroupId])(unwrappedForGroupIdDecoderV1)
-
-  private val forGroupIdDecoderV2: Decoder[ForGroupId] =
-    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV1)
-
   private val forGroupIdDecoderV3: Decoder[ForGroupId] =
     Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV3)
 
-  private val forGroupIdDecoder: Decoder[ForGroupId] =
-    forGroupIdDecoderV3.or(forGroupIdDecoderV2).or(forGroupIdDecoderV1)
+  private val forGroupIdDecoder: Decoder[ForGroupId] = forGroupIdDecoderV3
 
   // Grouped
 

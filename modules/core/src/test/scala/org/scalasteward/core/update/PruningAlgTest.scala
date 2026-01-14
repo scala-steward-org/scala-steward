@@ -36,7 +36,7 @@ class PruningAlgTest extends FunSuite {
           |  "https://github.com/fthomas/scalafix-test/pull/27" : {
           |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
           |    "update" : {
-          |      "Single" : {
+          |      "ForArtifactId" : {
           |        "crossDependency" : [
           |          {
           |            "groupId" : "org.scalatest",
@@ -124,7 +124,7 @@ class PruningAlgTest extends FunSuite {
           |  "https://github.com/${repo.toPath}/pull/27" : {
           |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
           |    "update" : {
-          |      "Single" : {
+          |      "ForArtifactId" : {
           |        "crossDependency" : [
           |          {
           |            "groupId" : "org.scalatest",
@@ -270,7 +270,7 @@ class PruningAlgTest extends FunSuite {
           |  "https://github.com/${repo.toPath}/pull/27" : {
           |    "baseSha1" : "12def27a837ba6dc9e17406cbbe342fba3527c14",
           |    "update" : {
-          |      "Single" : {
+          |      "ForArtifactId" : {
           |        "crossDependency" : [
           |          {
           |            "groupId" : "software.awssdk",
