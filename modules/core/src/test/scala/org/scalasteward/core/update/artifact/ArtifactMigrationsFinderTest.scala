@@ -113,13 +113,13 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   test("findUpdates: newer groupId") {
     val dependency = "org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10"
     val expected = ("org.spire-math".g % ("kind-projector", "kind-projector_2.12").a % "0.9.10" %>
-      Nel.of("0.10.3")).single
+      Nel.of("0.10.3")).single.artifactForUpdate
       .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
     val obtained = updateAlg
       .findUpdates(List(dependency.withMavenCentral), RepoConfig.empty, None)
       .runA(MockState.empty)
       .unsafeRunSync()
-    assertEquals(obtained, List(expected))
+    assertEquals(obtained.map(_.artifactForUpdate), List(expected))
   }
 
   test("migrateDependency: newer groupId") {
@@ -151,7 +151,7 @@ class ArtifactMigrationsFinderTest extends FunSuite {
   test("migrateDependency: sbt-dynver with migration") {
     val dependency = ("com.dwijnand".g % "sbt-dynver".a % "4.1.1")
       .copy(sbtVersion = Some(SbtVersion("1.0")), scalaVersion = Some(ScalaVersion("2.12")))
-    val expected = (dependency %> Nel.of("5.1.1")).single
+    val expected = (dependency %> Nel.of("5.1.1")).single.artifactForUpdate
       .copy(newerGroupId = Some("com.github.sbt".g), newerArtifactId = Some("sbt-dynver"))
     val obtained = updateAlg
       .findUpdates(
@@ -162,6 +162,6 @@ class ArtifactMigrationsFinderTest extends FunSuite {
       .runA(MockState.empty)
       .unsafeRunSync()
 
-    assertEquals(obtained, List(expected))
+    assertEquals(obtained.map(_.artifactForUpdate), List(expected))
   }
 }

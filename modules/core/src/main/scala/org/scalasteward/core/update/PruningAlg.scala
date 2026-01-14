@@ -88,7 +88,7 @@ final class PruningAlg[F[_]](implicit
       }
     }
     val seenUpdates = allUpdates.filterNot { u =>
-      maybeOutdatedDeps.exists(_.value === u.crossDependency.head)
+      maybeOutdatedDeps.exists(_.value === u.artifactForUpdate.crossDependency.head)
     }
     updateAlg.findUpdates(maybeOutdatedDeps, repoConfig, Some(5.minutes)).map(_ ++ seenUpdates)
   }
