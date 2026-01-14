@@ -18,12 +18,12 @@ package org.scalasteward.core.update
 
 import cats.Traverse
 import cats.syntax.all.*
-import org.scalasteward.core.data.{GroupId, Update}
+import org.scalasteward.core.data.{GroupId, NextVersion, Update}
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
 object show {
-  def oneLiner(update: Update.Single): String =
+  def oneLiner(update: Update.Single[NextVersion]): String =
     commaSeparated(update.groupId, update.crossDependencies.map(_.head.artifactId.name))
 
   private def commaSeparated(groupId: GroupId, artifactIds: Nel[String]): String = {

@@ -18,38 +18,57 @@ package org.scalasteward.core.data
 
 import cats.Order
 import cats.implicits.*
-import io.circe.{Decoder, Encoder}
+import io.circe.{Codec, Decoder, Encoder}
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
-sealed trait Update {
+sealed trait VersionData {
+  val refersToVersions: Nel[Version]
+}
 
-  def on[A](update: Update.Single => A, grouped: Update.Grouped => A): A = this match {
-    case g: Update.Grouped => grouped(g)
-    case u: Update.Single  => update(u)
+case class NextVersion(nextVersion: Version) extends VersionData {
+  override val refersToVersions: Nel[Version] = Nel.one(nextVersion)
+
+  /**
+   * Only useful for invoking UpdatePattern.findMatch()?
+   */
+  lazy val asNewerVersions: NewerVersions = NewerVersions(refersToVersions)
+}
+
+case class NewerVersions(newerVersions: Nel[Version]) extends VersionData {
+  override val refersToVersions: Nel[Version] = refersToVersions
+
+  lazy val toNextVersion: NextVersion = NextVersion(newerVersions.head) // TODO how does this compare to org.scalasteward.core.update.FilterAlg.selectSuitableNextVersion ?
+}
+
+sealed trait Update[VData <: VersionData] {
+
+  def on[A](update: Update.Single[VData] => A, grouped: Update.Grouped[VData] => A): A = this match {
+    case g: Update.Grouped[VData] => grouped(g)
+    case u: Update.Single[VData]  => update(u)
   }
 
   def show: String
 
-  val asSingleUpdates: List[Update.Single]
+  val asSingleUpdates: List[Update.Single[VData]]
 }
 
 object Update {
 
-  final case class Grouped(
+  final case class Grouped[VData <: VersionData](
       name: String,
       title: Option[String],
-      updates: List[Update.ForArtifactId]
-  ) extends Update {
+      updates: List[Update.ForArtifactId[VData]]
+  ) extends Update[VData] {
 
     override def show: String = name
-    override val asSingleUpdates: List[Update.Single] = updates
+    override val asSingleUpdates: List[Update.Single[VData]] = updates
   }
 
-  sealed trait Single extends Product with Serializable with Update {
-    override val asSingleUpdates: List[Update.Single] = List(this)
-    def forArtifactIds: Nel[ForArtifactId]
+  sealed trait Single[VData <: VersionData] extends Product with Serializable with Update[VData] {
+    override val asSingleUpdates: List[Update.Single[VData]] = List(this)
+    def forArtifactIds: Nel[ForArtifactId[VData]]
     def crossDependencies: Nel[CrossDependency]
     def dependencies: Nel[Dependency]
     def groupId: GroupId
@@ -57,40 +76,41 @@ object Update {
     def mainArtifactId: String
     def groupAndMainArtifactId: (GroupId, String) = (groupId, mainArtifactId)
     def currentVersion: Version
-    def newerVersions: Nel[Version]
+    def versionData: VData
 
     final def name: String = Update.nameOf(groupId, mainArtifactId)
 
-    final def nextVersion: Version = newerVersions.head
-
     final override def show: String = {
       val artifacts = this match {
-        case s: ForArtifactId => s.crossDependency.showArtifactNames
-        case g: ForGroupId => g.crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")
+        case s: ForArtifactId[VData] => s.crossDependency.showArtifactNames
+        case g: ForGroupId[VData] => g.crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")
       }
       val versions = {
-        val vs0 = (currentVersion :: newerVersions).toList
-        val vs1 = if (vs0.size > 6) vs0.take(3) ++ ("..." :: vs0.takeRight(3)) else vs0
-        vs1.mkString("", " -> ", "")
+        val vs0 = (currentVersion :: versionData.refersToVersions).toList.map(_.value)
+        val vs1: Seq[String] = if (vs0.size > 6) vs0.take(3) ++ ("..." :: vs0.takeRight(3)) else vs0
+        vs1.mkString(" -> ")
       }
       s"$groupId:$artifacts : $versions"
     }
 
-    def withNewerVersions(versions: Nel[Version]): Update.Single = this match {
+    def withVersionData(versionData: VData): Update.Single[VData] = this match {
       case s @ ForArtifactId(_, _, _, _) =>
-        s.copy(newerVersions = versions)
+        s.copy(versionData = versionData)
       case ForGroupId(forArtifactIds) =>
-        ForGroupId(forArtifactIds.map(_.copy(newerVersions = versions)))
+        ForGroupId(forArtifactIds.map(_.copy(versionData = versionData)))
     }
   }
 
-  final case class ForArtifactId(
+  final case class ForArtifactId[VData <: VersionData](
       crossDependency: CrossDependency,
-      newerVersions: Nel[Version],
+      versionData: VData,
       newerGroupId: Option[GroupId] = None,
       newerArtifactId: Option[String] = None
-  ) extends Single {
-    override def forArtifactIds: Nel[ForArtifactId] =
+  ) extends Single[VData] {
+    def transformVersionData[VData2 <: VersionData](f: VData => VData2): ForArtifactId[VData2] =
+      copy(versionData = f(versionData))
+
+    override def forArtifactIds: Nel[ForArtifactId[VData]] =
       Nel.one(this)
 
     override def crossDependencies: Nel[CrossDependency] =
@@ -115,9 +135,12 @@ object Update {
       crossDependency.head.artifactId
   }
 
-  final case class ForGroupId(
-      forArtifactIds: Nel[ForArtifactId]
-  ) extends Single {
+  final case class ForGroupId[VData <: VersionData](
+      forArtifactIds: Nel[ForArtifactId[VData]]
+  ) extends Single[VData] {
+
+    override def versionData: VData = forArtifactIds.head.versionData
+
     override def crossDependencies: Nel[CrossDependency] =
       forArtifactIds.map(_.crossDependency)
 
@@ -145,11 +168,9 @@ object Update {
     override def currentVersion: Version =
       dependencies.head.version
 
-    override def newerVersions: Nel[Version] =
-      forArtifactIds.head.newerVersions
-
     def artifactIdsPrefix: Option[String] =
       util.string.longestCommonPrefixGteq(artifactIds.map(_.name), 3)
+
   }
 
   val commonSuffixes: List[String] =
@@ -161,19 +182,19 @@ object Update {
     else
       artifactId
 
-  def groupByArtifactIdName(updates: List[ForArtifactId]): List[ForArtifactId] = {
+  def groupByArtifactIdName(updates: List[ForArtifactId[NextVersion]]): List[ForArtifactId[NextVersion]] = {
     val groups0 =
-      updates.groupByNel(s => (s.groupId, s.artifactId.name, s.currentVersion, s.newerVersions))
+      updates.groupByNel(s => (s.groupId, s.artifactId.name, s.currentVersion, s.versionData.nextVersion))
     val groups1 = groups0.values.map { group =>
       val dependencies = group.flatMap(_.crossDependency.dependencies).distinct.sorted
       group.head.copy(crossDependency = CrossDependency(dependencies))
     }
-    groups1.toList.distinct.sortBy(u => u: Update.Single)
+    groups1.toList.distinct.sortBy(u => u: Update.Single[NextVersion])
   }
 
-  def groupByGroupId(updates: List[ForArtifactId]): List[Single] = {
+  def groupByGroupId(updates: List[ForArtifactId[NextVersion]]): List[Single[NextVersion]] = {
     val groups0 =
-      updates.groupByNel(s => (s.groupId, s.currentVersion, s.newerVersions))
+      updates.groupByNel(s => (s.groupId, s.currentVersion, s.versionData.nextVersion))
     val groups1 = groups0.values.map { group =>
       if (group.tail.isEmpty) group.head else ForGroupId(group)
     }
@@ -187,89 +208,92 @@ object Update {
     */
   def groupByPullRequestGroup(
       groups: List[PullRequestGroup],
-      updates: List[Update.ForArtifactId]
-  ): (List[Grouped], List[Update.ForArtifactId]) =
-    groups.foldLeft((List.empty[Grouped], updates)) { case ((grouped, notGrouped), group) =>
+      updates: List[Update.ForArtifactId[NextVersion]]
+  ): (List[Grouped[NextVersion]], List[Update.ForArtifactId[NextVersion]]) =
+    groups.foldLeft((List.empty[Grouped[NextVersion]], updates)) { case ((grouped, notGrouped), group) =>
       notGrouped.partition(group.matches) match {
         case (Nil, rest)     => (grouped, rest)
         case (matched, rest) => (grouped :+ Grouped(group.name, group.title, matched), rest)
       }
     }
 
-  implicit val SingleOrder: Order[Single] =
-    Order.by((u: Single) => (u.crossDependencies, u.newerVersions))
+  implicit val SingleOrder: Order[Single[NextVersion]] =
+    Order.by((u: Single[NextVersion]) => (u.crossDependencies, u.versionData.nextVersion))
 
   // Encoder and Decoder instances
 
+  implicit private val forNextVersionEncoder: Codec[NextVersion] =
+    Codec.forProduct1[NextVersion, Version]("NextVersion")(NextVersion(_))(_.nextVersion)
+
   // ForArtifactId
 
-  implicit private val forArtifactIdEncoder: Encoder[ForArtifactId] =
-    Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId]) {
+  implicit private val forArtifactIdEncoder: Encoder[ForArtifactId[NextVersion]] =
+    Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId[NextVersion]]) {
       Encoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
-        s => (s.crossDependency, s.newerVersions, s.newerGroupId, s.newerArtifactId)
+        s => (s.crossDependency, s.versionData, s.newerGroupId, s.newerArtifactId)
       }
     }
 
-  private val unwrappedForArtifactIdDecoder: Decoder[ForArtifactId] =
-    Decoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
+  private val unwrappedForArtifactIdDecoder: Decoder[ForArtifactId[NextVersion]] =
+    Decoder.forProduct4("crossDependency", "nextVersion", "newerGroupId", "newerArtifactId") {
       (
           crossDependency: CrossDependency,
-          newerVersions: Nel[Version],
+          nextVersion: NextVersion,
           newerGroupId: Option[GroupId],
           newerArtifactId: Option[String]
       ) =>
-        ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
+        ForArtifactId(crossDependency, nextVersion, newerGroupId, newerArtifactId)
     }
 
   private val forArtifactIdDecoderV2 =
-    Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
+    Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId[NextVersion]])(unwrappedForArtifactIdDecoder)
 
-  implicit private val forArtifactIdDecoder: Decoder[ForArtifactId] =
+  implicit private val forArtifactIdDecoder: Decoder[ForArtifactId[NextVersion]] =
     forArtifactIdDecoderV2
 
   // ForGroupId
 
-  private val forGroupIdEncoder: Encoder[ForGroupId] =
-    Encoder.forProduct1("ForGroupId")(identity[ForGroupId]) {
+  private val forGroupIdEncoder: Encoder[ForGroupId[NextVersion]] =
+    Encoder.forProduct1("ForGroupId")(identity[ForGroupId[NextVersion]]) {
       Encoder.forProduct1("forArtifactIds")(_.forArtifactIds)
     }
 
-  private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId] =
-    Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId]) =>
+  private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId[NextVersion]] =
+    Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId[NextVersion]]) =>
       ForGroupId(forArtifactIds)
     }
 
-  private val forGroupIdDecoderV3: Decoder[ForGroupId] =
-    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV3)
+  private val forGroupIdDecoderV3: Decoder[ForGroupId[NextVersion]] =
+    Decoder.forProduct1("ForGroupId")(identity[ForGroupId[NextVersion]])(unwrappedForGroupIdDecoderV3)
 
-  private val forGroupIdDecoder: Decoder[ForGroupId] = forGroupIdDecoderV3
+  private val forGroupIdDecoder: Decoder[ForGroupId[NextVersion]] = forGroupIdDecoderV3
 
   // Grouped
 
-  private val groupedEncoder: Encoder[Grouped] =
-    Encoder.forProduct1("Grouped")(identity[Grouped]) {
+  private val groupedEncoder: Encoder[Grouped[NextVersion]] =
+    Encoder.forProduct1("Grouped")(identity[Grouped[NextVersion]]) {
       Encoder.forProduct3("name", "title", "updates")(s => (s.name, s.title, s.updates))
     }
 
-  private val groupedDecoder: Decoder[Grouped] =
-    Decoder.forProduct1("Grouped")(identity[Grouped]) {
+  private val groupedDecoder: Decoder[Grouped[NextVersion]] =
+    Decoder.forProduct1("Grouped")(identity[Grouped[NextVersion]]) {
       Decoder.forProduct3("name", "title", "updates") {
-        (name: String, title: Option[String], updates: List[ForArtifactId]) =>
+        (name: String, title: Option[String], updates: List[ForArtifactId[NextVersion]]) =>
           Grouped(name, title, updates)
       }
     }
 
   // Update
 
-  implicit val updateEncoder: Encoder[Update] = {
-    case update: ForArtifactId => forArtifactIdEncoder.apply(update)
-    case update: ForGroupId    => forGroupIdEncoder.apply(update)
-    case update: Grouped       => groupedEncoder.apply(update)
+  implicit val updateEncoder: Encoder[Update[NextVersion]] = {
+    case update: ForArtifactId[NextVersion] => forArtifactIdEncoder.apply(update)
+    case update: ForGroupId[NextVersion]    => forGroupIdEncoder.apply(update)
+    case update: Grouped[NextVersion]       => groupedEncoder.apply(update)
   }
 
-  implicit val updateDecoder: Decoder[Update] =
+  implicit val updateDecoder: Decoder[Update[NextVersion]] =
     forArtifactIdDecoder
-      .widen[Update]
-      .or(forGroupIdDecoder.widen[Update])
-      .or(groupedDecoder.widen[Update])
+      .widen[Update[NextVersion]]
+      .or(forGroupIdDecoder.widen[Update[NextVersion]])
+      .or(groupedDecoder.widen[Update[NextVersion]])
 }

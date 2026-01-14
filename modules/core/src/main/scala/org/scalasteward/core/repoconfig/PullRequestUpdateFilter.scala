@@ -20,7 +20,8 @@ import cats.Eq
 import cats.syntax.all.*
 import io.circe.*
 import io.circe.syntax.*
-import org.scalasteward.core.data.{SemVer, Update}
+import org.scalasteward.core.data.{NextVersion, SemVer, Update}
+
 import scala.util.matching.Regex
 
 final case class PullRequestUpdateFilter private (
@@ -31,7 +32,7 @@ final case class PullRequestUpdateFilter private (
 
   /** Returns `true` if an update falls into this filter; returns `false` otherwise.
     */
-  def matches(update: Update.ForArtifactId): Boolean =
+  def matches(update: Update.ForArtifactId[NextVersion]): Boolean =
     groupRegex.forall(_.matches(update.groupId.value)) &&
       artifactRegex.forall(_.matches(update.mainArtifactId)) &&
       version.forall(isMatchedVersion(_, update))
@@ -44,11 +45,9 @@ final case class PullRequestUpdateFilter private (
     new Regex(pattern)
   }
 
-  private def isMatchedVersion(versionType: SemVer.Change, update: Update.ForArtifactId): Boolean =
-    (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
-      .flatMap { case (current, next) => SemVer.getChangeEarly(current, next) }
-      .map(_.render === versionType.render)
-      .getOrElse(false)
+  private def isMatchedVersion(versionType: SemVer.Change, update: Update.ForArtifactId[NextVersion]): Boolean =
+    (SemVer.parse(update.currentVersion.value), SemVer.parse(update.versionData.nextVersion.value)).tupled
+      .flatMap { case (current, next) => SemVer.getChangeEarly(current, next) }.exists(_.render === versionType.render)
 
 }
 

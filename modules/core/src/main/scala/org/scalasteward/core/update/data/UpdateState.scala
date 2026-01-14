@@ -17,7 +17,7 @@
 package org.scalasteward.core.update.data
 
 import org.http4s.Uri
-import org.scalasteward.core.data.{CrossDependency, Update}
+import org.scalasteward.core.data.{CrossDependency, NextVersion, Update}
 
 sealed trait UpdateState extends Product with Serializable {
   def crossDependency: CrossDependency
@@ -25,7 +25,7 @@ sealed trait UpdateState extends Product with Serializable {
 
 object UpdateState {
   sealed trait WithUpdate extends UpdateState {
-    def update: Update.ForArtifactId
+    def update: Update.ForArtifactId[NextVersion]
   }
 
   sealed trait WithPullRequest extends WithUpdate {
@@ -38,24 +38,24 @@ object UpdateState {
 
   final case class DependencyOutdated(
       crossDependency: CrossDependency,
-      update: Update.ForArtifactId
+      update: Update.ForArtifactId[NextVersion]
   ) extends WithUpdate
 
   final case class PullRequestUpToDate(
       crossDependency: CrossDependency,
-      update: Update.ForArtifactId,
+      update: Update.ForArtifactId[NextVersion],
       pullRequest: Uri
   ) extends WithPullRequest
 
   final case class PullRequestOutdated(
       crossDependency: CrossDependency,
-      update: Update.ForArtifactId,
+      update: Update.ForArtifactId[NextVersion],
       pullRequest: Uri
   ) extends WithPullRequest
 
   final case class PullRequestClosed(
       crossDependency: CrossDependency,
-      update: Update.ForArtifactId,
+      update: Update.ForArtifactId[NextVersion],
       pullRequest: Uri
   ) extends WithPullRequest
 
@@ -68,13 +68,13 @@ object UpdateState {
       case DependencyUpToDate(_) =>
         s"up-to-date: $gav"
       case DependencyOutdated(_, update) =>
-        s"new version: $gav -> ${update.newerVersions.head}"
+        s"new version: $gav -> ${update.versionData.nextVersion}"
       case PullRequestUpToDate(_, update, pullRequest) =>
-        s"PR opened: $gav -> ${update.newerVersions.head} ($pullRequest)"
+        s"PR opened: $gav -> ${update.versionData.nextVersion} ($pullRequest)"
       case PullRequestOutdated(_, update, pullRequest) =>
-        s"PR outdated: $gav -> ${update.newerVersions.head} ($pullRequest)"
+        s"PR outdated: $gav -> ${update.versionData.nextVersion} ($pullRequest)"
       case PullRequestClosed(_, update, pullRequest) =>
-        s"PR closed: $gav -> ${update.newerVersions.head} ($pullRequest)"
+        s"PR closed: $gav -> ${update.versionData.nextVersion} ($pullRequest)"
     }
   }
 }

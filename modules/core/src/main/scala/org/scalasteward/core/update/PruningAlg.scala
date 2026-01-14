@@ -70,7 +70,7 @@ final class PruningAlg[F[_]](implicit
           } yield (freshStates, freshUpdates)
       }
       (updateStates1, updates1) = res
-      _ <- logger.info(util.logger.showUpdates(updates1.widen[Update.Single]))
+      _ <- logger.info(util.logger.showUpdates(updates1.widen[Update.Single[NextVersion]]))
       result <- filterUpdateStates(repo, repoConfig, updateStates1)
     } yield result
   }
@@ -79,8 +79,8 @@ final class PruningAlg[F[_]](implicit
       repoConfig: RepoConfig,
       dependencies: List[Scope.Dependency],
       outdatedDeps: List[DependencyOutdated],
-      allUpdates: List[Update.ForArtifactId]
-  ): F[List[Update.ForArtifactId]] = {
+      allUpdates: List[Update.ForArtifactId[NextVersion]]
+  ): F[List[Update.ForArtifactId[NextVersion]]] = {
     val unseenUpdates = outdatedDeps.map(_.update)
     val maybeOutdatedDeps = dependencies.filter { d =>
       unseenUpdates.exists { u =>
@@ -97,7 +97,7 @@ final class PruningAlg[F[_]](implicit
       repo: Repo,
       repoCache: RepoCache,
       dependencies: List[Dependency],
-      updates: List[Update.ForArtifactId]
+      updates: List[Update.ForArtifactId[NextVersion]]
   ): F[List[UpdateState]] = {
     val groupedDependencies = CrossDependency.group(dependencies)
     val groupedUpdates = Update.groupByArtifactIdName(updates)
@@ -107,14 +107,14 @@ final class PruningAlg[F[_]](implicit
   private def findUpdateState(
       repo: Repo,
       repoCache: RepoCache,
-      updates: List[Update.ForArtifactId]
+      updates: List[Update.ForArtifactId[NextVersion]]
   )(
       crossDependency: CrossDependency
   ): F[UpdateState] =
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
       case None         => F.pure(DependencyUpToDate(crossDependency))
       case Some(update) =>
-        pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
+        pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.versionData.nextVersion).map {
           case None =>
             DependencyOutdated(crossDependency, update)
           case Some(pr) if pr.state.isClosed =>
@@ -169,7 +169,7 @@ final class PruningAlg[F[_]](implicit
       repoConfig.dependencyOverridesOrDefault
         .collectFirstSome { groupRepoConfig =>
           val matchResult = UpdatePattern
-            .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update, include = true)
+            .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update.transformVersionData(_.asNewerVersions), include = true)
           Option.when(matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty)(
             (groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt)
           )
@@ -199,14 +199,14 @@ object PruningAlg {
 
   def removeOvertakingUpdates(
       dependencies: List[Dependency],
-      updates: List[Update.ForArtifactId]
-  ): List[Update.ForArtifactId] =
+      updates: List[Update.ForArtifactId[NextVersion]]
+  ): List[Update.ForArtifactId[NextVersion]] =
     updates.filterNot { update =>
       dependencies.exists { dependency =>
         dependency.groupId === update.groupId &&
         dependency.artifactId === update.artifactId && {
           dependency.version > update.currentVersion &&
-          dependency.version <= update.nextVersion
+          dependency.version <= update.versionData.nextVersion
         }
       }
     }

@@ -30,23 +30,21 @@ final class FilterAlg[F[_]](implicit
 ) {
   def localFilterSingle(
       config: RepoConfig,
-      update: Update.ForArtifactId
-  ): F[Option[Update.ForArtifactId]] =
-    logIfRejected(localFilter(update, config))
-
-  private def logIfRejected(result: FilterResult): F[Option[Update.ForArtifactId]] =
-    result match {
-      case Right(update) => F.pure(update.some)
-      case Left(reason)  =>
+      update: Update.ForArtifactId[NewerVersions]
+  ): F[Option[Update.ForArtifactId[NextVersion]]] =
+    localFilter(update, config) match {
+      case Right(update) => F.pure(update.transformVersionData(_.toNextVersion).some)
+      case Left(reason) =>
         logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})").as(None)
     }
+
 }
 
 object FilterAlg {
-  type FilterResult = Either[RejectionReason, Update.ForArtifactId]
+  type FilterResult = Either[RejectionReason, Update.ForArtifactId[NewerVersions]]
 
   sealed trait RejectionReason {
-    def update: Update.ForArtifactId
+    def update: Update.ForArtifactId[NewerVersions]
     def show: String =
       this match {
         case IgnoredByConfig(_)         => "ignored by config"
@@ -58,20 +56,20 @@ object FilterAlg {
       }
   }
 
-  final case class IgnoredByConfig(update: Update.ForArtifactId) extends RejectionReason
-  final case class VersionPinnedByConfig(update: Update.ForArtifactId) extends RejectionReason
-  final case class NotAllowedByConfig(update: Update.ForArtifactId) extends RejectionReason
-  final case class NoSuitableNextVersion(update: Update.ForArtifactId) extends RejectionReason
-  final case class VersionOrderingConflict(update: Update.ForArtifactId) extends RejectionReason
-  final case class IgnoreScalaNext(update: Update.ForArtifactId) extends RejectionReason
+  final case class IgnoredByConfig(update: Update.ForArtifactId[NewerVersions]) extends RejectionReason
+  final case class VersionPinnedByConfig(update: Update.ForArtifactId[NewerVersions]) extends RejectionReason
+  final case class NotAllowedByConfig(update: Update.ForArtifactId[NewerVersions]) extends RejectionReason
+  final case class NoSuitableNextVersion(update: Update.ForArtifactId[NewerVersions]) extends RejectionReason
+  final case class VersionOrderingConflict(update: Update.ForArtifactId[NewerVersions]) extends RejectionReason
+  final case class IgnoreScalaNext(update: Update.ForArtifactId[NewerVersions]) extends RejectionReason
 
-  def localFilter(update: Update.ForArtifactId, repoConfig: RepoConfig): FilterResult =
+  def localFilter(update: Update.ForArtifactId[NewerVersions], repoConfig: RepoConfig): FilterResult =
     repoConfig.updatesOrDefault
       .keep(update)
       .flatMap(scalaLTSFilter)
       .flatMap(globalFilter(_, repoConfig))
 
-  def scalaLTSFilter(update: Update.ForArtifactId): FilterResult =
+  def scalaLTSFilter(update: Update.ForArtifactId[NewerVersions]): FilterResult =
     if (!isScala3Lang(update))
       Right(update)
     else {
@@ -79,20 +77,20 @@ object FilterAlg {
         // already on Scala Next
         Right(update)
       } else {
-        val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
+        val filteredVersions = update.versionData.newerVersions.filterNot(_ >= scalaNextMinVersion)
         if (filteredVersions.nonEmpty)
-          Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
+          Right(update.copy(versionData = NewerVersions(Nel.fromListUnsafe(filteredVersions))))
         else
           Left(IgnoreScalaNext(update))
       }
     }
 
-  def isScala3Lang(update: Update.ForArtifactId): Boolean =
+  def isScala3Lang(update: Update.ForArtifactId[_]): Boolean =
     scala3LangModules.exists { case (g, a) =>
       update.groupId == g && update.artifactIds.exists(_.name == a.name)
     }
 
-  private def globalFilter(update: Update.ForArtifactId, repoConfig: RepoConfig): FilterResult =
+  private def globalFilter(update: Update.ForArtifactId[NewerVersions], repoConfig: RepoConfig): FilterResult =
     selectSuitableNextVersion(update, repoConfig).flatMap(checkVersionOrdering)
 
   def isDependencyConfigurationIgnored(dependency: Dependency): Boolean =
@@ -106,23 +104,22 @@ object FilterAlg {
     }
 
   private def selectSuitableNextVersion(
-      update: Update.ForArtifactId,
+      update: Update.ForArtifactId[NewerVersions],
       repoConfig: RepoConfig
   ): FilterResult = {
-    val newerVersions = update.newerVersions.toList
-    val maybeNext = repoConfig.updatesOrDefault.preRelease(update) match {
-      case Left(_)  => update.currentVersion.selectNext(newerVersions)
-      case Right(_) => update.currentVersion.selectNext(newerVersions, allowPreReleases = true)
-    }
+    val newerVersions = update.versionData.newerVersions.toList
+    val allowPreReleases = repoConfig.updatesOrDefault.preRelease(update).isRight
+    val maybeNext = update.currentVersion.selectNext(newerVersions, allowPreReleases)
+
     maybeNext match {
-      case Some(next) => Right(update.copy(newerVersions = Nel.of(next)))
+      case Some(next) => Right(update.copy(versionData = NewerVersions(Nel.of(next)))) // TODO but we _could_ go to singular NextVersion at this point
       case None       => Left(NoSuitableNextVersion(update))
     }
   }
 
-  private def checkVersionOrdering(update: Update.ForArtifactId): FilterResult = {
+  private def checkVersionOrdering(update: Update.ForArtifactId[NewerVersions]): FilterResult = {
     val current = coursier.core.Version(update.currentVersion.value)
-    val next = coursier.core.Version(update.nextVersion.value)
+    val next = coursier.core.Version(update.versionData.toNextVersion.nextVersion.value) // TODO is this the right change?
     if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
   }
 }

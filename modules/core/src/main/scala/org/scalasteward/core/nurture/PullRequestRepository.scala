@@ -67,13 +67,13 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       }
       .void
 
-  def getObsoleteOpenPullRequests(repo: Repo, update: Update.Single): F[List[PullRequestData[Id]]] =
+  def getObsoleteOpenPullRequests(repo: Repo, update: Update.Single[NextVersion]): F[List[PullRequestData[Id]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.collect {
-        case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch))
+        case (url, Entry(baseSha1, u: Update.Single[NextVersion], state, _, number, updateBranch))
             if state === PullRequestState.Open &&
-              u.withNewerVersions(update.newerVersions) === update &&
-              u.nextVersion < update.nextVersion =>
+              u.withVersionData(update.versionData) === update &&
+              u.versionData.nextVersion < update.versionData.nextVersion =>
           for {
             number <- number
             branch = updateBranch.getOrElse(git.branchFor(u, repo.branch))
@@ -89,7 +89,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       pullRequets.flatMap {
         case (
               url,
-              Entry(baseSha1, u: Update.Single, PullRequestState.Open, _, number, updateBranch)
+              Entry(baseSha1, u: Update.Single[NextVersion], PullRequestState.Open, _, number, updateBranch)
             ) =>
           for {
             prNumber <- number
@@ -111,8 +111,8 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
   ): F[Option[PullRequestData[Option]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.filter {
-        case (_, Entry(_, u: Update.Single, _, _, _, _)) =>
-          UpdateAlg.isUpdateFor(u, crossDependency) && u.nextVersion === newVersion
+        case (_, Entry(_, u: Update.Single[NextVersion], _, _, _, _)) =>
+          UpdateAlg.isUpdateFor(u, crossDependency) && u.versionData.nextVersion === newVersion
         case _ => false
       }
         .maxByOption { case (_, entry) => entry.entryCreatedAt.millis }
@@ -146,7 +146,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
 object PullRequestRepository {
   final case class Entry(
       baseSha1: Sha1,
-      update: Update,
+      update: Update[NextVersion],
       state: PullRequestState,
       entryCreatedAt: Timestamp,
       number: Option[PullRequestNumber],

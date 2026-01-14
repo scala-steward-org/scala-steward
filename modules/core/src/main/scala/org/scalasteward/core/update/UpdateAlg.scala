@@ -38,39 +38,37 @@ final class UpdateAlg[F[_]](implicit
       dependency: Scope[Dependency],
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
-  ): F[Option[Update.ForArtifactId]] =
-    findUpdateWithoutMigration(dependency, maxAge)
-      .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
-      .orElse(findUpdateWithMigration(dependency, maxAge))
-      .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
+  ): F[Option[Update.ForArtifactId[NextVersion]]] =
+    findUpdateWithoutMigration(dependency, maxAge).flatMapF(filterAlg.localFilterSingle(repoConfig, _))
+      .orElse(findUpdateWithMigration(dependency, maxAge).flatMapF(filterAlg.localFilterSingle(repoConfig, _)))
       .value
 
   def findUpdates(
       dependencies: List[Scope.Dependency],
       repoConfig: RepoConfig,
       maxAge: Option[FiniteDuration]
-  ): F[List[Update.ForArtifactId]] =
+  ): F[List[Update.ForArtifactId[NextVersion]]] =
     dependencies.parTraverseFilter(findUpdate(_, repoConfig, maxAge))
 
   private def findUpdateWithoutMigration(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
-  ): OptionT[F, Update.ForArtifactId] =
+  ): OptionT[F, Update.ForArtifactId[NewerVersions]] =
     findNewerVersions(dependency, maxAge).map { newerVersions =>
-      Update.ForArtifactId(CrossDependency(dependency.value), newerVersions)
+      Update.ForArtifactId[NewerVersions](CrossDependency(dependency.value), NewerVersions(newerVersions))
     }
 
   private def findUpdateWithMigration(
       dependency: Scope[Dependency],
       maxAge: Option[FiniteDuration]
-  ): OptionT[F, Update.ForArtifactId] =
+  ): OptionT[F, Update.ForArtifactId[NewerVersions]] =
     OptionT.fromOption(artifactMigrationsFinder.findArtifactChange(dependency.value)).flatMap {
       artifactChange =>
         val migratedDependency = migrateDependency(dependency.value, artifactChange)
         findNewerVersions(dependency.as(migratedDependency), maxAge).map { newerVersions =>
           Update.ForArtifactId(
             CrossDependency(dependency.value),
-            newerVersions,
+            NewerVersions(newerVersions),
             Some(artifactChange.groupIdAfter),
             Some(artifactChange.artifactIdAfter)
           )
@@ -87,7 +85,7 @@ final class UpdateAlg[F[_]](implicit
 }
 
 object UpdateAlg {
-  def isUpdateFor(update: Update.Single, crossDependency: CrossDependency): Boolean =
+  def isUpdateFor(update: Update.Single[NextVersion], crossDependency: CrossDependency): Boolean =
     crossDependency.dependencies.forall { dependency =>
       update.groupId === dependency.groupId &&
       update.currentVersion === dependency.version &&

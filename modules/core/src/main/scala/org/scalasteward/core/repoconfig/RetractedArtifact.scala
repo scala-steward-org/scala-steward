@@ -18,17 +18,17 @@ package org.scalasteward.core.repoconfig
 
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{NextVersion, Update}
 
 final case class RetractedArtifact(
     reason: String,
     doc: String,
     artifacts: List[UpdatePattern] = List.empty
 ) {
-  def isRetracted(updateSingle: Update.Single): Boolean =
+  def isRetracted(updateSingle: Update.Single[NextVersion]): Boolean = // NextVersion, because the PR already raised?
     updateSingle.forArtifactIds.exists { updateForArtifactId =>
       UpdatePattern
-        .findMatch(artifacts, updateForArtifactId, include = true)
+        .findMatch(artifacts, updateForArtifactId.transformVersionData(_.asNewerVersions), include = true)
         .filteredVersions
         .nonEmpty
     }

@@ -20,7 +20,7 @@ import cats.Eq
 import cats.data.NonEmptyList
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{NextVersion, Update}
 
 case class PullRequestGroup(
     name: String,
@@ -30,7 +30,7 @@ case class PullRequestGroup(
 
   /** Returns `true` if an update falls into this group; returns `false` otherwise.
     */
-  def matches(update: Update.ForArtifactId): Boolean = filter.exists(_.matches(update))
+  def matches(update: Update.ForArtifactId[NextVersion]): Boolean = filter.exists(_.matches(update))
 
 }
 

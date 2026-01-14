@@ -17,7 +17,7 @@
 package org.scalasteward.core.git
 
 import cats.syntax.all.*
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{NextVersion, Update}
 import org.scalasteward.core.update.show
 import org.scalasteward.core.util.Nel
 
@@ -37,11 +37,11 @@ final case class CommitMsg(
 }
 
 object CommitMsg {
-  def replaceVariables(s: String)(update: Update, baseBranch: Option[Branch]): CommitMsg =
+  def replaceVariables(s: String)(update: Update[NextVersion], baseBranch: Option[Branch]): CommitMsg =
     update.on(
       u => {
         val artifactNameValue = show.oneLiner(u)
-        val nextVersionValue = u.nextVersion.value
+        val nextVersionValue = u.versionData.nextVersion.value
         val defaultValue = s"Update $artifactNameValue to $nextVersionValue" +
           baseBranch.fold("")(branch => s" in ${branch.name}")
         val title = s
@@ -55,10 +55,10 @@ object CommitMsg {
       g => CommitMsg(title = groupMessage(group = g, baseBranch))
     )
 
-  def groupMessage(group: Update.Grouped, baseBranch: Option[Branch]): String = {
+  def groupMessage(group: Update.Grouped[NextVersion], baseBranch: Option[Branch]): String = {
     def innerGroupMessage(shortNotation: Boolean) = {
       val artifactsWithVersions = group.updates
-        .groupBy(_.nextVersion)
+        .groupBy(_.versionData.nextVersion)
         .map {
           case (version, List(update)) =>
             s"${update.artifactId.name} to ${version.value}"

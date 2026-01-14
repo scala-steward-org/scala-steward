@@ -17,14 +17,14 @@
 package org.scalasteward.core.nurture
 
 import org.http4s.Uri
-import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.{NextVersion, Update}
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git.{Branch, Sha1}
 
 final case class PullRequestData[F[_]](
     url: Uri,
     baseSha1: Sha1,
-    update: Update,
+    update: Update[NextVersion],
     state: PullRequestState,
     number: F[PullRequestNumber],
     updateBranch: F[Branch]
