@@ -110,11 +110,9 @@ object FilterAlg {
       repoConfig: RepoConfig
   ): FilterResult = {
     val newerVersions = update.newerVersions.toList
-    val maybeNext = repoConfig.updatesOrDefault.preRelease(update) match {
-      case Left(_)  => update.currentVersion.selectNext(newerVersions)
-      case Right(_) => update.currentVersion.selectNext(newerVersions, allowPreReleases = true)
-    }
-    maybeNext match {
+    val allowPreReleases = repoConfig.updatesOrDefault.preRelease(update).isRight
+
+    update.currentVersion.selectNext(newerVersions, allowPreReleases) match {
       case Some(next) => Right(update.copy(newerVersions = Nel.of(next)))
       case None       => Left(NoSuitableNextVersion(update))
     }
