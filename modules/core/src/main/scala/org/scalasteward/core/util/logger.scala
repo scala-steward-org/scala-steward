@@ -20,6 +20,7 @@ import cats.syntax.all.*
 import cats.{Monad, MonadThrow}
 import org.scalasteward.core.data.Update
 import org.typelevel.log4cats.Logger
+
 import scala.concurrent.duration.FiniteDuration
 
 object logger {
