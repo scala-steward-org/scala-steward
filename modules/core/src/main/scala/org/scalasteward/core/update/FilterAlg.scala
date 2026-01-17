@@ -122,10 +122,7 @@ object FilterAlg {
   }
 
   private def checkVersionOrdering(
-      update: Update.ForArtifactId
-  ): Either[RejectionReason, Update.ForArtifactId] = {
-    val current = coursier.core.Version(update.currentVersion.value)
-    val next = coursier.core.Version(update.nextVersion.value)
-    if (current > next) Left(VersionOrderingConflict(update)) else Right(update)
-  }
+      u: Update.ForArtifactId
+  ): Either[RejectionReason, Update.ForArtifactId] =
+    Either.cond(u.versionUpdate.obeysCoursierOrdering, u, VersionOrderingConflict(u))
 }
