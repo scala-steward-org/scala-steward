@@ -79,9 +79,10 @@ object FilterAlg {
         // already on Scala Next
         Right(update)
       } else {
-        val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
+        val filteredVersions =
+          update.newerVersionsWithFirstSeen.filterNot(v => v.version >= scalaNextMinVersion)
         if (filteredVersions.nonEmpty)
-          Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
+          Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(filteredVersions)))
         else
           Left(IgnoreScalaNext(update))
       }
@@ -113,7 +114,7 @@ object FilterAlg {
     val allowPreReleases = repoConfig.updatesOrDefault.preRelease(update).isRight
 
     update.currentVersion.selectNext(newerVersions, allowPreReleases) match {
-      case Some(next) => Right(update.copy(newerVersions = Nel.of(next)))
+      case Some(next) => Right(update.copy(newerVersionsWithFirstSeen = Nel.of(next)))
       case None       => Left(NoSuitableNextVersion(update))
     }
   }

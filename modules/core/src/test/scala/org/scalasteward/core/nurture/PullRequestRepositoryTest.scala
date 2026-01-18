@@ -81,7 +81,7 @@ class PullRequestRepositoryTest extends FunSuite {
 
   test("getObsoleteOpenPullRequests for single update") {
     val data = openPRFor(portableScala)
-    val nextUpdate = portableScala.copy(newerVersions = Nel.of("1.0.1".v))
+    val nextUpdate = portableScala.copy(newerVersionsWithFirstSeen = Nel.of("1.0.1".vfs))
 
     val (emptyResult, result, closedResult) =
       executeOnTestRepo(expectedStoreOps = Seq("read", "write", "write")) { repo =>
