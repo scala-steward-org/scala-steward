@@ -15,7 +15,6 @@ import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.{RetractedArtifact, UpdatePattern, VersionPattern}
-import org.scalasteward.core.util.Nel
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -81,7 +80,7 @@ class PullRequestRepositoryTest extends FunSuite {
 
   test("getObsoleteOpenPullRequests for single update") {
     val data = openPRFor(portableScala)
-    val nextUpdate = portableScala.copy(newerVersions = Nel.of("1.0.1".v))
+    val nextUpdate = portableScala.copy(nextVersion = "1.0.1".v)
 
     val (emptyResult, result, closedResult) =
       executeOnTestRepo(expectedStoreOps = Seq("read", "write", "write")) { repo =>

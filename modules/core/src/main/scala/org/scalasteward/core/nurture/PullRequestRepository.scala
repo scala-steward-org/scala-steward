@@ -72,7 +72,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       _.collect {
         case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch))
             if state === PullRequestState.Open &&
-              u.withNewerVersions(update.newerVersions) === update &&
+              u.withNextVersion(update.nextVersion) === update &&
               u.nextVersion < update.nextVersion =>
           for {
             number <- number

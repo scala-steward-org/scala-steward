@@ -204,21 +204,19 @@ object Selector {
       update: Update.Single,
       modulePositions: List[ModulePosition]
   ): List[Substring.Replacement] =
-    update.forArtifactIds.toList.flatMap { forArtifactId =>
-      val newerGroupId = forArtifactId.newerGroupId
-      val newerArtifactId = forArtifactId.newerArtifactId
+    update.artifactsForUpdate.toList.flatMap { artifactForUpdate =>
+      val newerGroupId = artifactForUpdate.newerGroupId
+      val newerArtifactId = artifactForUpdate.newerArtifactId
       if (newerGroupId.isEmpty && newerArtifactId.isEmpty) List.empty
       else {
-        val currentGroupId = forArtifactId.groupId
-        val currentArtifactId = forArtifactId.artifactIds.head
         modulePositions
           .filter { p =>
-            p.groupId.value === currentGroupId.value &&
-            currentArtifactId.names.contains_(p.artifactId.value)
+            p.groupId.value === artifactForUpdate.groupId.value &&
+            artifactForUpdate.artifactId.names.contains_(p.artifactId.value)
           }
           .flatMap { p =>
-            newerGroupId.map(g => p.groupId.replaceWith(g.value)).toList ++
-              newerArtifactId.map(a => p.artifactId.replaceWith(a)).toList
+            newerGroupId.map(g => p.groupId.replaceWith(g.value)) ++
+              newerArtifactId.map(a => p.artifactId.replaceWith(a))
           }
       }
     }

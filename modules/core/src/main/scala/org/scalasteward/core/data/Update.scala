@@ -23,6 +23,43 @@ import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 
+case class ArtifactForUpdate(
+    crossDependency: CrossDependency,
+    newerGroupId: Option[GroupId] = None,
+    newerArtifactId: Option[String] = None
+) {
+  private val headDependency: Dependency = crossDependency.head
+  def groupId: GroupId = headDependency.groupId
+  def artifactId: ArtifactId = headDependency.artifactId
+  def currentVersion: Version = headDependency.version
+}
+
+trait ArtifactUpdateVersions {
+  val artifactForUpdate: ArtifactForUpdate
+
+  val refersToUpdateVersions: Nel[Version]
+
+  def show: String
+}
+
+/** Captures possible ''candidate'' newer versions that we may update an artifact to.
+  *
+  * Compare with the other subclass of [[ArtifactUpdateVersions]], [[Update.ForArtifactId]], which
+  * denotes the specific ''single'' next version ultimately used in a PR.
+  */
+case class ArtifactUpdateCandidates(
+    artifactForUpdate: ArtifactForUpdate,
+    newerVersions: Nel[Version]
+) extends ArtifactUpdateVersions {
+  override val refersToUpdateVersions: Nel[Version] = newerVersions
+
+  def asSpecificUpdate(nextVersion: Version): Update.ForArtifactId =
+    Update.ForArtifactId(artifactForUpdate, nextVersion)
+
+  override def show: String =
+    s"${artifactForUpdate.groupId}:${artifactForUpdate.crossDependency.showArtifactNames} : ${Version.show((artifactForUpdate.currentVersion +: refersToUpdateVersions.toList)*)}"
+}
+
 sealed trait Update {
 
   def on[A](update: Update.Single => A, grouped: Update.Grouped => A): A = this match {
@@ -37,6 +74,11 @@ sealed trait Update {
 
 object Update {
 
+  /** Denotes the update of one or more artifacts, which have all matched the same
+    * `pullRequests.grouping` config rule.
+    *
+    * An `Update.Grouped` PR looks like this: [[https://github.com/guardian/etag-caching/pull/62]]
+    */
   final case class Grouped(
       name: String,
       title: Option[String],
@@ -49,47 +91,54 @@ object Update {
 
   sealed trait Single extends Product with Serializable with Update {
     override val asSingleUpdates: List[Update.Single] = List(this)
+    def artifactsForUpdate: Nel[ArtifactForUpdate]
     def forArtifactIds: Nel[ForArtifactId]
     def crossDependencies: Nel[CrossDependency]
     def dependencies: Nel[Dependency]
     def groupId: GroupId
     def artifactIds: Nel[ArtifactId]
     def mainArtifactId: String
+    def showArtifacts: String
     def groupAndMainArtifactId: (GroupId, String) = (groupId, mainArtifactId)
     def currentVersion: Version
-    def newerVersions: Nel[Version]
+    def nextVersion: Version
 
     final def name: String = Update.nameOf(groupId, mainArtifactId)
 
-    final def nextVersion: Version = newerVersions.head
+    final override def show: String =
+      s"$groupId:$showArtifacts : ${Version.show(currentVersion, nextVersion)}"
 
-    final override def show: String = {
-      val artifacts = this match {
-        case s: ForArtifactId => s.crossDependency.showArtifactNames
-        case g: ForGroupId => g.crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")
-      }
-      val versions = {
-        val vs0 = (currentVersion :: newerVersions).toList
-        val vs1 = if (vs0.size > 6) vs0.take(3) ++ ("..." :: vs0.takeRight(3)) else vs0
-        vs1.mkString("", " -> ", "")
-      }
-      s"$groupId:$artifacts : $versions"
-    }
-
-    def withNewerVersions(versions: Nel[Version]): Update.Single = this match {
-      case s @ ForArtifactId(_, _, _, _) =>
-        s.copy(newerVersions = versions)
-      case ForGroupId(forArtifactIds) =>
-        ForGroupId(forArtifactIds.map(_.copy(newerVersions = versions)))
+    def withNextVersion(nextVersion: Version): Update.Single = this match {
+      case s: ForArtifactId =>
+        s.copy(nextVersion = nextVersion)
+      case g: ForGroupId =>
+        g.copy(nextVersion = nextVersion)
     }
   }
 
+  /** Denotes the update of a specific single artifact to some particular chosen next version.
+    *
+    * An update PR with a single `Update.ForArtifactId` looks like this:
+    * [[https://github.com/guardian/etag-caching/pull/125]]
+    *
+    * In the other subclass of [[ArtifactUpdateVersions]], [[ArtifactUpdateCandidates]], _multiple_
+    * possible candidate newer versions are stored.
+    */
   final case class ForArtifactId(
-      crossDependency: CrossDependency,
-      newerVersions: Nel[Version],
-      newerGroupId: Option[GroupId] = None,
-      newerArtifactId: Option[String] = None
-  ) extends Single {
+      artifactForUpdate: ArtifactForUpdate,
+      nextVersion: Version
+  ) extends Single
+      with ArtifactUpdateVersions {
+    val crossDependency: CrossDependency = artifactForUpdate.crossDependency
+
+    override val refersToUpdateVersions: Nel[Version] = Nel.one(nextVersion)
+
+    override def artifactsForUpdate: Nel[ArtifactForUpdate] = Nel.one(artifactForUpdate)
+
+    override def showArtifacts: String = crossDependency.showArtifactNames
+
+    lazy val versionUpdate: Version.Update = Version.Update(currentVersion, nextVersion)
+
     override def forArtifactIds: Nel[ForArtifactId] =
       Nel.one(this)
 
@@ -100,7 +149,7 @@ object Update {
       crossDependency.dependencies
 
     override def groupId: GroupId =
-      crossDependency.head.groupId
+      artifactForUpdate.groupId
 
     override def artifactIds: Nel[ArtifactId] =
       dependencies.map(_.artifactId)
@@ -109,17 +158,28 @@ object Update {
       artifactId.name
 
     override def currentVersion: Version =
-      crossDependency.head.version
+      artifactForUpdate.currentVersion
 
     def artifactId: ArtifactId =
-      crossDependency.head.artifactId
+      artifactForUpdate.artifactId
   }
 
+  /** Denotes the update of several artifacts which all have the same Maven group-id, and also are
+    * all are being updated ''from'' the same version, and updated ''to'' the same `nextVersion`.
+    *
+    * An `Update.ForGroupId` PR looks like this:
+    * [[https://github.com/guardian/etag-caching/pull/128]]
+    */
   final case class ForGroupId(
-      forArtifactIds: Nel[ForArtifactId]
+      artifactsForUpdate: Nel[ArtifactForUpdate],
+      nextVersion: Version
   ) extends Single {
+
+    override def forArtifactIds: Nel[ForArtifactId] =
+      artifactsForUpdate.map(ForArtifactId(_, nextVersion))
+
     override def crossDependencies: Nel[CrossDependency] =
-      forArtifactIds.map(_.crossDependency)
+      artifactsForUpdate.map(_.crossDependency)
 
     override def dependencies: Nel[Dependency] =
       crossDependencies.flatMap(_.dependencies)
@@ -142,11 +202,11 @@ object Update {
         .getOrElse(artifactIds.head.name)
     }
 
+    override def showArtifacts: String =
+      crossDependencies.map(_.showArtifactNames).mkString_("{", ", ", "}")
+
     override def currentVersion: Version =
       dependencies.head.version
-
-    override def newerVersions: Nel[Version] =
-      forArtifactIds.head.newerVersions
 
     def artifactIdsPrefix: Option[String] =
       util.string.longestCommonPrefixGteq(artifactIds.map(_.name), 3)
@@ -163,19 +223,23 @@ object Update {
 
   def groupByArtifactIdName(updates: List[ForArtifactId]): List[ForArtifactId] = {
     val groups0 =
-      updates.groupByNel(s => (s.groupId, s.artifactId.name, s.currentVersion, s.newerVersions))
+      updates.groupByNel(s => (s.groupId, s.artifactId.name, s.currentVersion, s.nextVersion))
     val groups1 = groups0.values.map { group =>
-      val dependencies = group.flatMap(_.crossDependency.dependencies).distinct.sorted
-      group.head.copy(crossDependency = CrossDependency(dependencies))
+      val dependencies = group.flatMap(_.dependencies).distinct.sorted
+      val update: Update.ForArtifactId = group.head
+      update.copy(artifactForUpdate =
+        update.artifactForUpdate.copy(crossDependency = CrossDependency(dependencies))
+      )
     }
     groups1.toList.distinct.sortBy(u => u: Update.Single)
   }
 
   def groupByGroupId(updates: List[ForArtifactId]): List[Single] = {
     val groups0 =
-      updates.groupByNel(s => (s.groupId, s.currentVersion, s.newerVersions))
-    val groups1 = groups0.values.map { group =>
-      if (group.tail.isEmpty) group.head else ForGroupId(group)
+      updates.groupByNel(s => (s.groupId, s.versionUpdate))
+    val groups1 = groups0.map { case ((_, versionUpdate), group) =>
+      if (group.tail.isEmpty) group.head
+      else ForGroupId(group.map(_.artifactForUpdate), versionUpdate.nextVersion)
     }
     groups1.toList.distinct.sorted
   }
@@ -197,7 +261,7 @@ object Update {
     }
 
   implicit val SingleOrder: Order[Single] =
-    Order.by((u: Single) => (u.crossDependencies, u.newerVersions))
+    Order.by((u: Single) => (u.crossDependencies, u.nextVersion))
 
   // Encoder and Decoder instances
 
@@ -206,7 +270,13 @@ object Update {
   implicit private val forArtifactIdEncoder: Encoder[ForArtifactId] =
     Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId]) {
       Encoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
-        s => (s.crossDependency, s.newerVersions, s.newerGroupId, s.newerArtifactId)
+        s =>
+          (
+            s.crossDependency,
+            Seq(s.nextVersion),
+            s.artifactForUpdate.newerGroupId,
+            s.artifactForUpdate.newerArtifactId
+          )
       }
     }
 
@@ -214,11 +284,14 @@ object Update {
     Decoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
       (
           crossDependency: CrossDependency,
-          newerVersions: Nel[Version],
+          newerVersions: List[Version],
           newerGroupId: Option[GroupId],
           newerArtifactId: Option[String]
       ) =>
-        ForArtifactId(crossDependency, newerVersions, newerGroupId, newerArtifactId)
+        ForArtifactId(
+          ArtifactForUpdate(crossDependency, newerGroupId, newerArtifactId),
+          newerVersions.head
+        )
     }
 
   private val forArtifactIdDecoderV2 =
@@ -236,7 +309,7 @@ object Update {
 
   private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId] =
     Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId]) =>
-      ForGroupId(forArtifactIds)
+      ForGroupId(forArtifactIds.map(_.artifactForUpdate), forArtifactIds.head.nextVersion)
     }
 
   private val forGroupIdDecoderV3: Decoder[ForGroupId] =

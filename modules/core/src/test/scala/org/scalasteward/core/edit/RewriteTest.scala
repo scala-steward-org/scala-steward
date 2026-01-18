@@ -332,7 +332,7 @@ class RewriteTest extends FunSuite {
 
   test("artifact change with sbt ModuleID") {
     val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
-      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
+      .migration(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
     val original = Map("build.sbt" -> """ "org.spire-math" %% "kind-projector" % "0.9.0" """)
     val expected = Map("build.sbt" -> """ "org.typelevel" %% "kind-projector" % "0.10.0" """)
     runApplyUpdate(update, original, expected)
@@ -340,7 +340,7 @@ class RewriteTest extends FunSuite {
 
   test("artifact change with Mill dependency") {
     val update = ("org.spire-math".g % "kind-projector".a % "0.9.0" %> "0.10.0").single
-      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
+      .migration(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("kind-projector"))
     val original = Map("build.sc" -> """ "org.spire-math::kind-projector:0.9.0" """)
     val expected = Map("build.sc" -> """ "org.typelevel::kind-projector:0.10.0" """)
     runApplyUpdate(update, original, expected)
@@ -348,7 +348,7 @@ class RewriteTest extends FunSuite {
 
   test("test updating group id and version") {
     val update = ("com.github.mpilquist".g % "simulacrum".a % "0.19.0" %> "1.0.0").single
-      .copy(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("simulacrum"))
+      .migration(newerGroupId = Some("org.typelevel".g), newerArtifactId = Some("simulacrum"))
     val original = Map("build.sbt" -> """val simulacrum = "0.19.0"
                                         |"com.github.mpilquist" %% "simulacrum" % simulacrum
                                         |"""".stripMargin)
@@ -360,7 +360,7 @@ class RewriteTest extends FunSuite {
 
   test("test updating artifact id and version") {
     val update = ("com.test".g % "artifact".a % "1.0.0" %> "2.0.0").single
-      .copy(newerGroupId = Some("com.test".g), newerArtifactId = Some("newer-artifact"))
+      .migration(newerGroupId = Some("com.test".g), newerArtifactId = Some("newer-artifact"))
     val original =
       Map("Dependencies.scala" -> """val testVersion = "1.0.0"
                                     |val test = "com.test" %% "artifact" % testVersion
@@ -375,7 +375,7 @@ class RewriteTest extends FunSuite {
   // https://github.com/scala-steward-org/scala-steward/issues/1977
   test("artifact change: version and groupId/artifactId in different files") {
     val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
-      .copy(newerGroupId = Some("org.typelevel".g))
+      .migration(newerGroupId = Some("org.typelevel".g))
     val original = Map(
       "Dependencies.scala" -> """val log4catsVersion = "1.1.1" """,
       "build.sbt" -> """ "io.chrisdavenport" %% "log4cats" % log4catsVersion """
@@ -390,9 +390,9 @@ class RewriteTest extends FunSuite {
   // https://github.com/scala-steward-org/scala-steward/issues/1974
   test("artifact change: group update") {
     val update1 = ("io.chrisdavenport".g % "log4cats-core".a % "1.2.1" %> "1.3.0").single
-      .copy(newerGroupId = Some("org.typelevel".g))
+      .migration(newerGroupId = Some("org.typelevel".g))
     val update2 = ("io.chrisdavenport".g % "log4cats-slf4j".a % "1.2.1" %> "1.3.0").single
-      .copy(newerGroupId = Some("org.typelevel".g))
+      .migration(newerGroupId = Some("org.typelevel".g))
     val update = Update.groupByGroupId(List(update1, update2)).head
     val original = Map(
       "Dependencies.scala" -> """val log4catsVersion = "1.2.1" """,
@@ -409,7 +409,7 @@ class RewriteTest extends FunSuite {
 
   test("groupId and version change of Maven dependency") {
     val update = ("io.chrisdavenport".g % "log4cats".a % "1.1.1" %> "1.2.0").single
-      .copy(newerGroupId = Some("org.typelevel".g))
+      .migration(newerGroupId = Some("org.typelevel".g))
     val original = Map("pom.xml" -> """<groupId>io.chrisdavenport</groupId>
                                       |<artifactId>log4cats</artifactId>
                                       |<version>1.1.1</version>""".stripMargin)
@@ -421,7 +421,7 @@ class RewriteTest extends FunSuite {
 
   test("artifactId and version change of Maven dependency with binary suffix") {
     val update = ("org.foo".g % ("log4cats", "log4cats_2.13").a % "1.1.1" %> "1.2.0").single
-      .copy(newerArtifactId = Some("log4dogs"))
+      .migration(newerArtifactId = Some("log4dogs"))
     val original = Map("pom.xml" -> s"""<groupId>org.foo</groupId>
                                        |<artifactId>log4cats_$${scala.binary.version}</artifactId>
                                        |<version>1.1.1</version>""".stripMargin)
@@ -436,7 +436,7 @@ class RewriteTest extends FunSuite {
     val update = ("com.pauldijou".g % Nel.of(
       ("jwt-core", "jwt-core_2.12").a,
       ("jwt-core", "jwt-core_2.13").a
-    ) % "5.0.0" %> "9.2.0").single.copy(newerGroupId = Some("com.github.jwt-scala".g))
+    ) % "5.0.0" %> "9.2.0").single.migration(newerGroupId = Some("com.github.jwt-scala".g))
     val original = Map("build.sbt" -> """ "com.pauldijou" %% "jwt-core" % "5.0.0" """)
     val expected = Map("build.sbt" -> """ "com.github.jwt-scala" %% "jwt-core" % "9.2.0" """)
     runApplyUpdate(update, original, expected)
@@ -941,7 +941,7 @@ class RewriteTest extends FunSuite {
   // https://github.com/scala-steward-org/scala-steward/issues/3206
   test("sbt module where the artifactId is also part of the groupId") {
     val update = ("com.typesafe.play".g % "play".a % "2.9.0" %> "3.0.0").single
-      .copy(newerGroupId = Some("org.playframework".g), newerArtifactId = Some("play"))
+      .migration(newerGroupId = Some("org.playframework".g), newerArtifactId = Some("play"))
     val original = Map("build.sbt" -> """ "com.typesafe.play" %% "play" % "2.9.0" """)
     val expected = Map("build.sbt" -> """ "org.playframework" %% "play" % "3.0.0" """)
     runApplyUpdate(update, original, expected)

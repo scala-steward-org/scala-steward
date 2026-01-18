@@ -363,7 +363,7 @@ object NewPullRequestData {
 
     val artifactMigrationsLabel = Option.when {
       update.asSingleUpdates
-        .flatMap(_.forArtifactIds.toList)
+        .flatMap(_.artifactsForUpdate.toList)
         .exists(u => u.newerGroupId.nonEmpty || u.newerArtifactId.nonEmpty)
     }("artifact-migrations")
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
