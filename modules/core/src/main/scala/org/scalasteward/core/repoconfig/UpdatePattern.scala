@@ -36,11 +36,11 @@ object UpdatePattern {
       filteredVersions: List[VersionWithFirstSeen]
   )
 
-  def findMatch(
+  def findMatch[V](
       patterns: List[UpdatePattern],
-      update: ArtifactUpdateVersions,
+      update: ArtifactUpdateVersions[V],
       include: Boolean,
-      versionPredicate: VersionWithFirstSeen => Boolean = _ => true
+      versionPredicate: V => Boolean = _ => true
   ): MatchResult = {
     val artifactForUpdate = update.artifactForUpdate
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)

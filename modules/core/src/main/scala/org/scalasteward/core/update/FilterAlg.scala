@@ -43,7 +43,7 @@ object FilterAlg {
   type FilterResult = Either[RejectionReason, ArtifactUpdateCandidates]
 
   sealed trait RejectionReason {
-    def update: ArtifactUpdateVersions
+    def update: ArtifactUpdateVersions[?]
     def show: String =
       this match {
         case IgnoredByConfig(_)         => "ignored by config"
