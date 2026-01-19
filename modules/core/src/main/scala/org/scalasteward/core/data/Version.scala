@@ -124,6 +124,12 @@ final case class Version(value: String) {
 object Version {
   case class Update(currentVersion: Version, nextVersion: Version)
 
+  def show(versions: Version*): String = {
+    val vs0 = versions.map(_.value)
+    val vs1: Seq[String] = if (vs0.size > 6) (vs0.take(3) :+ "...") ++ vs0.takeRight(3) else vs0
+    vs1.mkString(" -> ")
+  }
+
   val tagNames: List[Version => String] = List("v" + _, _.value, "release-" + _)
 
   implicit val versionDecoder: Decoder[Version] =
@@ -137,6 +143,9 @@ object Version {
       val (c1, c2) = padToSameLength(v1.alnumComponents, v2.alnumComponents, Component.Empty)
       c1.compare(c2)
     }
+
+  implicit val versionUpdateOrder: Order[Version.Update] =
+    Order.by((vu: Version.Update) => (vu.currentVersion, vu.nextVersion))
 
   private def padToSameLength[A](l1: List[A], l2: List[A], elem: A): (List[A], List[A]) = {
     val maxLength = math.max(l1.length, l2.length)

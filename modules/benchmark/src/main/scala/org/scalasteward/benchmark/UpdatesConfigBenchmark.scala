@@ -33,7 +33,7 @@ class UpdatesConfigBenchmark {
     val newerVersions = Nel
       .of("2.0.0", "2.1.0", "2.1.1", "2.2.0", "3.0.0", "3.1.0", "3.2.1", "3.3.3", "4.0", "5.0")
       .map(Version.apply)
-    val update = Update.ForArtifactId(dependency, newerVersions)
+    val update = ArtifactUpdateCandidates(ArtifactForUpdate(dependency), newerVersions)
 
     UpdatesConfig().keep(update)
     UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None)))).keep(update)

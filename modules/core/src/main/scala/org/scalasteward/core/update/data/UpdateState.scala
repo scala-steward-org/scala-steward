@@ -68,13 +68,13 @@ object UpdateState {
       case DependencyUpToDate(_) =>
         s"up-to-date: $gav"
       case DependencyOutdated(_, update) =>
-        s"new version: $gav -> ${update.newerVersions.head}"
+        s"new version: $gav -> ${update.nextVersion}"
       case PullRequestUpToDate(_, update, pullRequest) =>
-        s"PR opened: $gav -> ${update.newerVersions.head} ($pullRequest)"
+        s"PR opened: $gav -> ${update.nextVersion} ($pullRequest)"
       case PullRequestOutdated(_, update, pullRequest) =>
-        s"PR outdated: $gav -> ${update.newerVersions.head} ($pullRequest)"
+        s"PR outdated: $gav -> ${update.nextVersion} ($pullRequest)"
       case PullRequestClosed(_, update, pullRequest) =>
-        s"PR closed: $gav -> ${update.newerVersions.head} ($pullRequest)"
+        s"PR closed: $gav -> ${update.nextVersion} ($pullRequest)"
     }
   }
 }

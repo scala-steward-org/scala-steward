@@ -815,7 +815,7 @@ class NewPullRequestDataTest extends FunSuite {
   }
 
   test("artifact-migrations label") {
-    val update = ("a".g % "b".a % "1" -> "2").single.copy(newerGroupId = Some("aa".g))
+    val update = ("a".g % "b".a % "1" -> "2").single.migration(newerGroupId = Some("aa".g))
     val obtained = labelsFor(update)
     val expected = List("library-update", "artifact-migrations", "commit-count:0")
     assertEquals(obtained, expected)
