@@ -108,12 +108,8 @@ object Update {
     final override def show: String =
       s"$groupId:$showArtifacts : ${Version.show(currentVersion, nextVersion)}"
 
-    def withNextVersion(nextVersion: Version): Update.Single = this match {
-      case s: ForArtifactId =>
-        s.copy(nextVersion = nextVersion)
-      case g: ForGroupId =>
-        g.copy(nextVersion = nextVersion)
-    }
+    def supersedes(that: Update.Single): Boolean =
+      groupAndMainArtifactId == that.groupAndMainArtifactId && nextVersion > that.nextVersion
   }
 
   /** Denotes the update of a specific single artifact to some particular chosen next version.
