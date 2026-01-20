@@ -52,6 +52,8 @@ object TestSyntax {
   implicit class DependencyOps(private val self: Dependency) extends AnyVal {
     def %(configurations: String): Dependency = self.copy(configurations = Some(configurations))
     def %>(nextVersion: String): (Dependency, String) = (self, nextVersion)
+    def %>(nextVersion: VersionWithFirstSeen): (Dependency, VersionWithFirstSeen) =
+      (self, nextVersion)
     def %>(newerVersions: Nel[String]): (Dependency, Nel[String]) = (self, newerVersions)
     def cross: CrossDependency = CrossDependency(self)
   }
@@ -85,7 +87,7 @@ object TestSyntax {
       private val self: (Dependency, Nel[String])
   ) extends AnyVal {
     def single: ArtifactUpdateCandidates =
-      ArtifactUpdateCandidates(ArtifactForUpdate(CrossDependency(self._1)), self._2.map(_.v))
+      ArtifactUpdateCandidates(ArtifactForUpdate(CrossDependency(self._1)), self._2.map(_.vfs))
   }
 
   implicit class DependenciesAndNextVersionOps(
@@ -93,6 +95,13 @@ object TestSyntax {
   ) extends AnyVal {
     def single: Update.ForArtifactId =
       Update.ForArtifactId(ArtifactForUpdate(CrossDependency(self._1)), self._2.v)
+  }
+
+  implicit class DependencyAndNextVersionWithFirstSeenOps(
+    private val self: (Dependency, VersionWithFirstSeen)
+  ) extends AnyVal {
+    def single: ArtifactUpdateCandidates =
+      ArtifactUpdateCandidates(ArtifactForUpdate(CrossDependency(self._1)), Nel.of(self._2))
   }
 
   implicit class GroupIdAndArtifactIdsAndVersionAndNextVersionOps(

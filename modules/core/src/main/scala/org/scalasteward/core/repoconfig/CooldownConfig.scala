@@ -18,14 +18,15 @@ package org.scalasteward.core.repoconfig
 
 import io.circe.{Codec, Decoder, Encoder}
 import io.circe.generic.semiauto.deriveCodec
+
 import scala.concurrent.duration.FiniteDuration
 import cats.syntax.either.*
-
+import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.dateTime.parseFiniteDuration
 
 final case class CooldownConfig(
-    age: FiniteDuration,
-    artifacts: List[UpdatePattern] = List.empty
+    minimumAge: FiniteDuration,
+    artifacts: Nel[UpdatePattern]
 )
 
 object CooldownConfig {

@@ -23,15 +23,11 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.refined.*
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId}
 import org.scalasteward.core.scalafmt
-import org.scalasteward.core.update.FilterAlg.{
-  FilterResult,
-  IgnoredByConfig,
-  NotAllowedByConfig,
-  VersionPinnedByConfig
-}
-import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel}
+import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig, TooYoungForCooldown, VersionPinnedByConfig}
+import org.scalasteward.core.util.{Nel, Timestamp, combineOptions, intellijThisImportIsUsed}
 
 final case class UpdatesConfig(
     private val pin: Option[List[UpdatePattern]] = None,
@@ -61,8 +57,10 @@ final case class UpdatesConfig(
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def keep(update: ArtifactUpdateCandidates): FilterResult =
-    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
+  def cooldownOrDefault: List[CooldownConfig] = cooldown.getOrElse(Nil)
+
+  def keep(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
+    isAllowed(update).flatMap(isPinned).flatMap(isIgnored).flatMap(isTooNew(_, currentTime))
 
   def preRelease(update: ArtifactUpdateCandidates): FilterResult =
     isAllowedPreReleases(update)
@@ -99,6 +97,23 @@ final case class UpdatesConfig(
     else
       Left(IgnoredByConfig(update))
   }
+
+  private def isTooNew(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
+    cooldownOrDefault
+      .foldLeft(Right(update): Either[TooYoungForCooldown, ArtifactUpdateCandidates]) { (e, c) =>
+        e.flatMap { u =>
+          val m = UpdatePattern.findMatch[VersionWithFirstSeen](
+            c.artifacts.toList,
+            u,
+            include = false,
+            version => version.firstSeen.exists(_.until(currentTime) < c.minimumAge)
+          )
+          if (m.filteredVersions.nonEmpty)
+            Right(u.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
+          else
+            Left(TooYoungForCooldown(update))
+        }
+      }
 }
 
 object UpdatesConfig {
@@ -139,7 +154,8 @@ object UpdatesConfig {
           ignore = mergeIgnore(x.ignore, y.ignore),
           retracted = x.retracted |+| y.retracted,
           limit = x.limit.orElse(y.limit),
-          fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
+          fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions),
+          cooldown = x.cooldown |+| y.cooldown
         )
     )
 

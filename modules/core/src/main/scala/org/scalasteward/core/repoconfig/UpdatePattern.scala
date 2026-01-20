@@ -40,21 +40,22 @@ object UpdatePattern {
       patterns: List[UpdatePattern],
       update: ArtifactUpdateVersions[V],
       include: Boolean,
-      versionPredicate: V => Boolean = _ => true
+      versionPredicate: V => Boolean = (_: V) => true
   ): MatchResult = {
     val artifactForUpdate = update.artifactForUpdate
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
     val byArtifactId =
       byGroupId.filter(_.artifactId.forall(_ === artifactForUpdate.artifactId.name))
-    val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
-      (byArtifactId.exists(
-        _.version.forall(_.matches(newVersion.version.value))
-      ) && versionPredicate(
-        newVersion
-      ))
-        === include
-    )
-    MatchResult(byArtifactId, filteredVersions)
+//    val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
+//      (byArtifactId.exists(
+//        _.version.forall(_.matches(newVersion.version.value))
+//      ) && versionPredicate(
+//        newVersion
+//      ))
+//        === include
+//    )
+//    MatchResult(byArtifactId, filteredVersions)
+    ???
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =

@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit}
 import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.{UpdatePattern, UpdatesConfig, VersionPattern}
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{Nel, Timestamp}
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 
 @BenchmarkMode(Array(Mode.AverageTime))
@@ -35,11 +35,12 @@ class UpdatesConfigBenchmark {
       .of("2.0.0", "2.1.0", "2.1.1", "2.2.0", "3.0.0", "3.1.0", "3.2.1", "3.3.3", "4.0", "5.0")
       .map(v => VersionWithFirstSeen(Version(v), None))
     val update = ArtifactUpdateCandidates(ArtifactForUpdate(dependency), newerVersions)
+    val currentTime = Timestamp(millis = 0)
 
-    UpdatesConfig().keep(update)
-    UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None)))).keep(update)
+    UpdatesConfig().keep(update, currentTime)
+    UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None)))).keep(update, currentTime)
     UpdatesConfig(allow =
       Some(List(UpdatePattern(groupId, None, Some(VersionPattern(prefix = Some("6.0"))))))
-    ).keep(update)
+    ).keep(update, currentTime)
   }
 }
