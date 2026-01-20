@@ -395,4 +395,41 @@ class FilterAlgTest extends FunSuite {
     )
     assertEquals(FilterAlg.localFilter(update3, config, Timestamp(10)), Right(update2.asSoleUpdate))
   }
+
+  test("apply first matching cooldown config") {
+    val config = RepoConfig(updates =
+      UpdatesConfig(cooldown =
+        List(
+          CooldownConfig(
+            minimumAge = 1.millis,
+            artifacts = Nel.one(UpdatePattern(GroupId("com.gu")))
+          ),
+          CooldownConfig(
+            minimumAge = 7.millis,
+            artifacts = Nel.one(UpdatePattern(GroupId("*")))
+          )
+        ).some
+      ).some
+    )
+
+    val update1 =
+      ("com.gu".g % "example".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(8))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(update1, config, Timestamp(10)),
+      Right(update1.asSoleUpdate)
+    )
+
+    val update2 =
+      ("org.bang".g % "example".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(8))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(update2, config, Timestamp(10)),
+      Left(TooYoungForCooldown(update2))
+    )
+  }
 }

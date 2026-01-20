@@ -24,8 +24,8 @@ import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId}
 
 final case class UpdatePattern(
     groupId: GroupId,
-    artifactId: Option[String],
-    version: Option[VersionPattern]
+    artifactId: Option[String] = None,
+    version: Option[VersionPattern] = None
 ) {
   def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
 }
@@ -46,16 +46,15 @@ object UpdatePattern {
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
     val byArtifactId =
       byGroupId.filter(_.artifactId.forall(_ === artifactForUpdate.artifactId.name))
-//    val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
-//      (byArtifactId.exists(
-//        _.version.forall(_.matches(newVersion.version.value))
-//      ) && versionPredicate(
-//        newVersion
-//      ))
-//        === include
-//    )
-//    MatchResult(byArtifactId, filteredVersions)
-    ???
+    val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
+      (byArtifactId.exists(
+        _.version.forall(_.matches(newVersion.value))
+      ) && versionPredicate(
+        newVersion
+      ))
+        === include
+    )
+    MatchResult(byArtifactId, filteredVersions)
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =
