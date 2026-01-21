@@ -72,7 +72,7 @@ object UpdatePattern {
         _.version.forall(_.matches(newVersion.value))
       ) === includeMatchingVersions
     )
-    MatchResult(patternsMatchingByGroupAndArtifactId, filteredVersions)
+    MatchResult[V](patternsMatchingByGroupAndArtifactId, filteredVersions)
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =

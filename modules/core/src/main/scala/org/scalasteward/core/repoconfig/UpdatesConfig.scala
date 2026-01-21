@@ -99,23 +99,7 @@ final case class UpdatesConfig(
   }
 
   private def isTooNew(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    cooldownOrDefault.collectFirstSome {  c =>
-      val m = UpdatePattern.findMatch[VersionWithFirstSeen](
-        c.artifacts.toList,
-        update,
-        includeMatchingVersions = true
-      )
-
-      Option.when(m.filteredVersions.nonEmpty) {
-        val sufficientlyMatureVersions =
-          m.filteredVersions.filter(_.firstSeen.exists(_.until(currentTime) < c.minimumAge))
-
-        val survivingVersions = (update.newerVersionsWithFirstSeen.toList.toSet -- m.filteredVersions) ++ sufficientlyMatureVersions
-        Nel.fromList(survivingVersions.toList.sortBy(_.version)).map(list => update.copy(newerVersionsWithFirstSeen = list)).toRight(
-          TooYoungForCooldown(update)
-        )
-      }
-    }.getOrElse(Right(update))
+    cooldownOrDefault.collectFirstSome(_.relevantConfigAppliedTo(update, currentTime)).getOrElse(Right(update))
 }
 
 object UpdatesConfig {
