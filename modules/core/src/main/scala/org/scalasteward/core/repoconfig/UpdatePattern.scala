@@ -31,30 +31,48 @@ final case class UpdatePattern(
 }
 
 object UpdatePattern {
-  final case class MatchResult(
+  final case class MatchResult[V](
       byArtifactId: List[UpdatePattern],
-      filteredVersions: List[VersionWithFirstSeen]
-  )
+      filteredVersions: List[V]
+  ) {
+    //val hadMatchingVersions: Boolean = byArtifactId.nonEmpty && filteredVersions.nonEmpty
+  }
 
+
+/*
+  updates.cooldown = [
+  { minimumAge: "1 day", [{groupId = "com.gu"}] },
+  { minimumAge: "1 month", [{groupId = "org.scala", artifactId= "scala-lang", version = "3.9"}] },
+  { minimumAge: "7 days", [{groupId = "*"}] },
+  ]
+*/
+
+  /**
+   * We feel this is doing two things:
+   * 1. Checking whether candidate updates match patterns (mostly for config rules)
+   * 2. Filtering to include/exclude some candidate versions
+   *
+   *
+   * MatchResult
+   * - No patterns matched ArtifactUpdateVersions
+   * - filteredVersions matched against at least one pattern that successfully matched on the group & artifact requirements
+   */
   def findMatch[V](
       patterns: List[UpdatePattern],
       update: ArtifactUpdateVersions[V],
-      include: Boolean,
-      versionPredicate: V => Boolean = (_: V) => true
-  ): MatchResult = {
+      includeMatchingVersions: Boolean
+  ): MatchResult[V] = {
     val artifactForUpdate = update.artifactForUpdate
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
-    val byArtifactId =
+    val patternsMatchingByGroupAndArtifactId =
       byGroupId.filter(_.artifactId.forall(_ === artifactForUpdate.artifactId.name))
+
     val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
-      (byArtifactId.exists(
+      patternsMatchingByGroupAndArtifactId.exists(
         _.version.forall(_.matches(newVersion.value))
-      ) && versionPredicate(
-        newVersion
-      ))
-        === include
+      ) === includeMatchingVersions
     )
-    MatchResult(byArtifactId, filteredVersions)
+    MatchResult(patternsMatchingByGroupAndArtifactId, filteredVersions)
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =

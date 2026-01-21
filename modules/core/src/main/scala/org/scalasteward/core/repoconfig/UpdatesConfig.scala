@@ -66,14 +66,14 @@ final case class UpdatesConfig(
     isAllowedPreReleases(update)
 
   private def isAllowedPreReleases(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(allowPreReleasesOrDefault, update, include = true)
+    val m = UpdatePattern.findMatch(allowPreReleasesOrDefault, update, includeMatchingVersions = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
   private def isAllowed(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
+    val m = UpdatePattern.findMatch(allowOrDefault, update, includeMatchingVersions = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
     else if (allowOrDefault.isEmpty)
@@ -82,7 +82,7 @@ final case class UpdatesConfig(
   }
 
   private def isPinned(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
+    val m = UpdatePattern.findMatch(pinOrDefault, update, includeMatchingVersions = true)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
     else if (m.byArtifactId.isEmpty)
@@ -91,7 +91,7 @@ final case class UpdatesConfig(
   }
 
   private def isIgnored(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
+    val m = UpdatePattern.findMatch(ignoreOrDefault, update, includeMatchingVersions = false)
     if (m.filteredVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
     else
@@ -99,21 +99,23 @@ final case class UpdatesConfig(
   }
 
   private def isTooNew(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    cooldownOrDefault
-      .foldLeft(Right(update): Either[TooYoungForCooldown, ArtifactUpdateCandidates]) { (e, c) =>
-        e.flatMap { u =>
-          val m = UpdatePattern.findMatch[VersionWithFirstSeen](
-            c.artifacts.toList,
-            u,
-            include = false,
-            version => version.firstSeen.exists(_.until(currentTime) < c.minimumAge)
-          )
-          if (m.filteredVersions.nonEmpty)
-            Right(u.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
-          else
-            Left(TooYoungForCooldown(update))
-        }
+    cooldownOrDefault.collectFirstSome {  c =>
+      val m = UpdatePattern.findMatch[VersionWithFirstSeen](
+        c.artifacts.toList,
+        update,
+        includeMatchingVersions = true
+      )
+
+      Option.when(m.filteredVersions.nonEmpty) {
+        val sufficientlyMatureVersions =
+          m.filteredVersions.filter(_.firstSeen.exists(_.until(currentTime) < c.minimumAge))
+
+        val survivingVersions = (update.newerVersionsWithFirstSeen.toList.toSet -- m.filteredVersions) ++ sufficientlyMatureVersions
+        Nel.fromList(survivingVersions.toList.sortBy(_.version)).map(list => update.copy(newerVersionsWithFirstSeen = list)).toRight(
+          TooYoungForCooldown(update)
+        )
       }
+    }.getOrElse(Right(update))
 }
 
 object UpdatesConfig {

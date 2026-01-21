@@ -28,7 +28,7 @@ final case class RetractedArtifact(
   def isRetracted(updateSingle: Update.Single): Boolean =
     updateSingle.forArtifactIds.exists { updateForArtifactId =>
       UpdatePattern
-        .findMatch(artifacts, updateForArtifactId, include = true)
+        .findMatch(artifacts, updateForArtifactId, includeMatchingVersions = true)
         .filteredVersions
         .nonEmpty
     }
