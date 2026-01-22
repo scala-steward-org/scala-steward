@@ -72,25 +72,30 @@ object FilterAlg {
       .flatMap(globalFilter(_, repoConfig))
 
   def scalaLTSFilter(update: ArtifactUpdateCandidates): FilterResult =
-    if (!isScala3Lang(update.artifactForUpdate))
-      Right(update)
-    else {
+    if (isScala3Lang(update)) {
       if (update.artifactForUpdate.currentVersion >= scalaNextMinVersion) {
         // already on Scala Next
         Right(update)
       } else {
+        // on Scala 3.3.x, just keep LTS versions
         val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
         if (filteredVersions.nonEmpty)
           Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
         else
           Left(IgnoreScalaNext(update))
       }
+    } else {
+      Right(update)
     }
 
-  def isScala3Lang(artifactForUpdate: ArtifactForUpdate): Boolean =
+  def isScala3Lang(update: ArtifactUpdateCandidates): Boolean =
     scala3LangModules.exists { case (g, a) =>
-      artifactForUpdate.groupId == g && artifactForUpdate.artifactId.name == a.name
-    }
+      (update.artifactForUpdate.groupId == g && update.artifactForUpdate.artifactId.name == a.name)
+    } || isScalaLibraryFor3(update)
+
+  private def isScalaLibraryFor3(update: ArtifactUpdateCandidates): Boolean =
+    (update.artifactForUpdate.groupId == scalaLangGroupId && update.artifactForUpdate.artifactId.name == scalaLibrary.name && update.newerVersions
+      .forall(_ > scala38))
 
   private def globalFilter(
       update: ArtifactUpdateCandidates,

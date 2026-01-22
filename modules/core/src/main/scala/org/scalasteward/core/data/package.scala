@@ -19,6 +19,8 @@ package org.scalasteward.core
 package object data {
   val scalaLangGroupId: GroupId = GroupId("org.scala-lang")
 
+  val scalaLibrary: ArtifactId = ArtifactId("scala-library")
+
   val scala2LangModules: List[(GroupId, ArtifactId)] =
     List(
       (scalaLangGroupId, ArtifactId("scala-compiler")),
@@ -46,4 +48,6 @@ package object data {
     scala2LangModules ++ scala3LangModules
 
   val scalaNextMinVersion: Version = Version("3.4.0-NIGHTLY")
+
+  val scala38: Version = Version("3.8.0-NIGHTLY")
 }
