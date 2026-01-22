@@ -26,8 +26,14 @@ import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId}
 import org.scalasteward.core.scalafmt
-import org.scalasteward.core.update.FilterAlg.{FilterResult, IgnoredByConfig, NotAllowedByConfig, TooYoungForCooldown, VersionPinnedByConfig}
-import org.scalasteward.core.util.{Nel, Timestamp, combineOptions, intellijThisImportIsUsed}
+import org.scalasteward.core.update.FilterAlg.{
+  FilterResult,
+  IgnoredByConfig,
+  NotAllowedByConfig,
+  TooYoungForCooldown,
+  VersionPinnedByConfig
+}
+import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel, Timestamp}
 
 final case class UpdatesConfig(
     private val pin: Option[List[UpdatePattern]] = None,
@@ -66,7 +72,8 @@ final case class UpdatesConfig(
     isAllowedPreReleases(update)
 
   private def isAllowedPreReleases(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(allowPreReleasesOrDefault, update, includeMatchingVersions = true)
+    val m =
+      UpdatePattern.findMatch(allowPreReleasesOrDefault, update, includeMatchingVersions = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
@@ -99,7 +106,9 @@ final case class UpdatesConfig(
   }
 
   private def isTooNew(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    cooldownOrDefault.collectFirstSome(_.relevantConfigAppliedTo(update, currentTime)).getOrElse(Right(update))
+    cooldownOrDefault
+      .collectFirstSome(_.relevantConfigAppliedTo(update, currentTime))
+      .getOrElse(Right(update))
 }
 
 object UpdatesConfig {

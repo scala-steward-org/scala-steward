@@ -35,28 +35,26 @@ object UpdatePattern {
       byArtifactId: List[UpdatePattern],
       filteredVersions: List[V]
   ) {
-    //val hadMatchingVersions: Boolean = byArtifactId.nonEmpty && filteredVersions.nonEmpty
+    // val hadMatchingVersions: Boolean = byArtifactId.nonEmpty && filteredVersions.nonEmpty
   }
 
-
-/*
+  /*
   updates.cooldown = [
   { minimumAge: "1 day", [{groupId = "com.gu"}] },
   { minimumAge: "1 month", [{groupId = "org.scala", artifactId= "scala-lang", version = "3.9"}] },
   { minimumAge: "7 days", [{groupId = "*"}] },
   ]
-*/
-
-  /**
-   * We feel this is doing two things:
-   * 1. Checking whether candidate updates match patterns (mostly for config rules)
-   * 2. Filtering to include/exclude some candidate versions
-   *
-   *
-   * MatchResult
-   * - No patterns matched ArtifactUpdateVersions
-   * - filteredVersions matched against at least one pattern that successfully matched on the group & artifact requirements
    */
+
+  /** We feel this is doing two things:
+    *   1. Checking whether candidate updates match patterns (mostly for config rules)
+    *   2. Filtering to include/exclude some candidate versions
+    *
+    * MatchResult
+    *   - No patterns matched ArtifactUpdateVersions
+    *   - filteredVersions matched against at least one pattern that successfully matched on the
+    *     group & artifact requirements
+    */
   def findMatch[V](
       patterns: List[UpdatePattern],
       update: ArtifactUpdateVersions[V],

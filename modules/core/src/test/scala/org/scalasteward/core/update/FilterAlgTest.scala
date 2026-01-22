@@ -32,12 +32,18 @@ class FilterAlgTest extends FunSuite {
 
   test("localFilter: update without bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.0" %> Nel.of("1.1.2", "2.0.0")).single
-    assertEquals(localFilter(update, config, currentTime), Right(update.asSpecificUpdate("1.1.2".v)))
+    assertEquals(
+      localFilter(update, config, currentTime),
+      Right(update.asSpecificUpdate("1.1.2".v))
+    )
   }
 
   test("localFilter: update with bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
-    assertEquals(localFilter(update, config, currentTime), Right(update.asSpecificUpdate("2.0.0".v)))
+    assertEquals(
+      localFilter(update, config, currentTime),
+      Right(update.asSpecificUpdate("2.0.0".v))
+    )
   }
 
   test("localFilter: update with bad version 2") {

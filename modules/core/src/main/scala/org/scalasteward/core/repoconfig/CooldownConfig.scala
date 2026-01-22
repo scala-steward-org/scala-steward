@@ -27,19 +27,21 @@ import org.scalasteward.core.util.{Nel, Timestamp}
 
 import scala.concurrent.duration.FiniteDuration
 
-
 final case class CooldownConfig(
     minimumAge: FiniteDuration,
     artifacts: Nel[UpdatePattern]
 ) {
 
-  /**
-   * @return [[None]] if the config rule did not apply for this update, otherwise the result of applying the
-   *         config - either a filtered update, where only sufficiently mature versions remain, or a
-   *         [[TooYoungForCooldown]] [[org.scalasteward.core.update.FilterAlg.RejectionReason]] if there were
-   *         no sufficiently mature versions.
-   */
-  def relevantConfigAppliedTo(update: ArtifactUpdateCandidates, currentTime: Timestamp): Option[Either[TooYoungForCooldown, ArtifactUpdateCandidates]] = {
+  /** @return
+    *   [[None]] if the config rule did not apply for this update, otherwise the result of applying
+    *   the config - either a filtered update, where only sufficiently mature versions remain, or a
+    *   [[TooYoungForCooldown]] [[org.scalasteward.core.update.FilterAlg.RejectionReason]] if there
+    *   were no sufficiently mature versions.
+    */
+  def relevantConfigAppliedTo(
+      update: ArtifactUpdateCandidates,
+      currentTime: Timestamp
+  ): Option[Either[TooYoungForCooldown, ArtifactUpdateCandidates]] = {
     val m = UpdatePattern.findMatch[VersionWithFirstSeen](
       artifacts.toList,
       update,
@@ -49,10 +51,12 @@ final case class CooldownConfig(
     Option.when(m.filteredVersions.nonEmpty) {
       val sufficientlyMatureVersions =
         m.filteredVersions.filter(_.firstSeen.exists(_.until(currentTime) > minimumAge))
-      val versionsWithNoMaturityRequirements = update.newerVersionsWithFirstSeen.toList.toSet -- m.filteredVersions
+      val versionsWithNoMaturityRequirements =
+        update.newerVersionsWithFirstSeen.toList.toSet -- m.filteredVersions
 
       val survivingVersions = versionsWithNoMaturityRequirements ++ sufficientlyMatureVersions
-      Nel.fromList(survivingVersions.toList.sortBy(_.version))
+      Nel
+        .fromList(survivingVersions.toList.sortBy(_.version))
         .map(list => update.copy(newerVersionsWithFirstSeen = list))
         .toRight(TooYoungForCooldown(update))
     }

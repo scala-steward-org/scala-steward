@@ -98,7 +98,7 @@ object TestSyntax {
   }
 
   implicit class DependencyAndNextVersionWithFirstSeenOps(
-    private val self: (Dependency, VersionWithFirstSeen)
+      private val self: (Dependency, VersionWithFirstSeen)
   ) extends AnyVal {
     def single: ArtifactUpdateCandidates =
       ArtifactUpdateCandidates(ArtifactForUpdate(CrossDependency(self._1)), Nel.of(self._2))

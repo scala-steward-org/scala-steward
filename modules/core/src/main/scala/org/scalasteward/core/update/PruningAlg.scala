@@ -169,7 +169,11 @@ final class PruningAlg[F[_]](implicit
       repoConfig.dependencyOverridesOrDefault
         .collectFirstSome { groupRepoConfig =>
           val matchResult = UpdatePattern
-            .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update, includeMatchingVersions = true)
+            .findMatch(
+              List(groupRepoConfig.dependency),
+              dependencyOutdated.update,
+              includeMatchingVersions = true
+            )
           Option.when(matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty)(
             (groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt)
           )
