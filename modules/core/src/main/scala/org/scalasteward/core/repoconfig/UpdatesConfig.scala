@@ -23,14 +23,12 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.refined.*
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
-import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
   NotAllowedByConfig,
-  TooYoungForCooldown,
   VersionPinnedByConfig
 }
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel, Timestamp}
@@ -81,8 +79,9 @@ final case class UpdatesConfig(
 
   private def isAllowed(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(allowOrDefault, update, includeMatchingVersions = true)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
+    val (matchingVersions, _) = m.matches(update.newerVersionsWithFirstSeen)
+    if (matchingVersions.nonEmpty)
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
     else if (allowOrDefault.isEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
@@ -90,8 +89,9 @@ final case class UpdatesConfig(
 
   private def isPinned(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(pinOrDefault, update, includeMatchingVersions = true)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
+    val (matchingVersions, _) = m.matches(update.newerVersionsWithFirstSeen)
+    if (matchingVersions.nonEmpty)
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
     else if (m.byArtifactId.isEmpty)
       Right(update)
     else Left(VersionPinnedByConfig(update))
@@ -99,8 +99,9 @@ final case class UpdatesConfig(
 
   private def isIgnored(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(ignoreOrDefault, update, includeMatchingVersions = false)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(m.filteredVersions)))
+    val (remainingVersions, _) = m.matches(update.newerVersionsWithFirstSeen)
+    if (remainingVersions.nonEmpty)
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(remainingVersions)))
     else
       Left(IgnoredByConfig(update))
   }

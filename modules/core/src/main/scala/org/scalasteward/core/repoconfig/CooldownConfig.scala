@@ -19,7 +19,6 @@ package org.scalasteward.core.repoconfig
 import cats.implicits.*
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
-import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.ArtifactUpdateCandidates
 import org.scalasteward.core.update.FilterAlg.TooYoungForCooldown
 import org.scalasteward.core.util.dateTime.parseFiniteDuration
@@ -42,17 +41,17 @@ final case class CooldownConfig(
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp
   ): Option[Either[TooYoungForCooldown, ArtifactUpdateCandidates]] = {
-    val m = UpdatePattern.findMatch[VersionWithFirstSeen](
+    val m = UpdatePattern.findMatch(
       artifacts.toList,
       update,
       includeMatchingVersions = true
     )
 
     Option.when(m.filteredVersions.nonEmpty) {
+      val (versionsThatRequireChecking, versionsWithNoMaturityRequirements) =
+        m.matches(update.newerVersionsWithFirstSeen)
       val sufficientlyMatureVersions =
-        m.filteredVersions.filter(_.firstSeen.exists(_.until(currentTime) > minimumAge))
-      val versionsWithNoMaturityRequirements =
-        update.newerVersionsWithFirstSeen.toList.toSet -- m.filteredVersions
+        versionsThatRequireChecking.filter(_.firstSeen.exists(_.until(currentTime) > minimumAge))
 
       val survivingVersions = versionsWithNoMaturityRequirements ++ sufficientlyMatureVersions
       Nel

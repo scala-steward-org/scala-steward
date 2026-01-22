@@ -35,7 +35,7 @@ case class ArtifactForUpdate(
   def currentVersion: Version = headDependency.version
 }
 
-trait ArtifactUpdateVersions[V] {
+trait ArtifactUpdateVersions {
   val artifactForUpdate: ArtifactForUpdate
 
   val refersToUpdateVersions: Nel[Version]
@@ -51,7 +51,7 @@ trait ArtifactUpdateVersions[V] {
 case class ArtifactUpdateCandidates(
     artifactForUpdate: ArtifactForUpdate,
     newerVersionsWithFirstSeen: Nel[VersionWithFirstSeen]
-) extends ArtifactUpdateVersions[VersionWithFirstSeen] {
+) extends ArtifactUpdateVersions {
   val newerVersions: Nel[Version] = newerVersionsWithFirstSeen.map(_.version)
 
   override val refersToUpdateVersions: Nel[Version] = newerVersions
@@ -127,7 +127,7 @@ object Update {
       artifactForUpdate: ArtifactForUpdate,
       nextVersion: Version
   ) extends Single
-      with ArtifactUpdateVersions[Version] {
+      with ArtifactUpdateVersions {
     val crossDependency: CrossDependency = artifactForUpdate.crossDependency
 
     override val refersToUpdateVersions: Nel[Version] = Nel.one(nextVersion)

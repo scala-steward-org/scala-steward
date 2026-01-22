@@ -19,8 +19,10 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.*
-import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId}
+import org.scalasteward.core.data.Version
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.util.Nel
 
 final case class UpdatePattern(
     groupId: GroupId,
@@ -31,11 +33,17 @@ final case class UpdatePattern(
 }
 
 object UpdatePattern {
-  final case class MatchResult[V](
+  final case class MatchResult(
       byArtifactId: List[UpdatePattern],
-      filteredVersions: List[V]
+      filteredVersions: List[Version]
   ) {
     // val hadMatchingVersions: Boolean = byArtifactId.nonEmpty && filteredVersions.nonEmpty
+    def matches(
+        versions: Nel[VersionWithFirstSeen]
+    ): (List[VersionWithFirstSeen], List[VersionWithFirstSeen]) = {
+      val versionSet = filteredVersions.toSet
+      versions.toList.partition(vfs => versionSet.contains(vfs.version))
+    }
   }
 
   /*
@@ -55,11 +63,11 @@ object UpdatePattern {
     *   - filteredVersions matched against at least one pattern that successfully matched on the
     *     group & artifact requirements
     */
-  def findMatch[V](
+  def findMatch(
       patterns: List[UpdatePattern],
-      update: ArtifactUpdateVersions[V],
+      update: ArtifactUpdateVersions,
       includeMatchingVersions: Boolean
-  ): MatchResult[V] = {
+  ): MatchResult = {
     val artifactForUpdate = update.artifactForUpdate
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
     val patternsMatchingByGroupAndArtifactId =
@@ -70,7 +78,7 @@ object UpdatePattern {
         _.version.forall(_.matches(newVersion.value))
       ) === includeMatchingVersions
     )
-    MatchResult[V](patternsMatchingByGroupAndArtifactId, filteredVersions)
+    MatchResult(patternsMatchingByGroupAndArtifactId, filteredVersions)
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =
