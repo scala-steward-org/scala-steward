@@ -109,7 +109,10 @@ object VersionsCache {
   final case class VersionWithFirstSeen(
       version: Version,
       firstSeen: Option[Timestamp]
-  )
+  ) {
+    def isOlderThan(age: FiniteDuration, currentTime: Timestamp): Boolean =
+      firstSeen.exists(_.until(currentTime) > age)
+  }
 
   object VersionWithFirstSeen {
     implicit val valueEncoder: Encoder[VersionWithFirstSeen] = deriveEncoder

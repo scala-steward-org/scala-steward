@@ -61,6 +61,11 @@ case class ArtifactUpdateCandidates(
 
   override def show: String =
     s"${artifactForUpdate.groupId}:${artifactForUpdate.crossDependency.showArtifactNames} : ${Version.show((artifactForUpdate.currentVersion +: newerVersionsWithFirstSeen.map(_.version).toList)*)}"
+
+  def filterVersions(p: VersionWithFirstSeen => Boolean): Option[ArtifactUpdateCandidates] =
+    Nel
+      .fromList(newerVersionsWithFirstSeen.filter(p))
+      .map(x => copy(newerVersionsWithFirstSeen = x))
 }
 
 sealed trait Update {

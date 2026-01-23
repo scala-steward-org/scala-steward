@@ -29,6 +29,7 @@ import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
   NotAllowedByConfig,
+  TooYoungForCooldown,
   VersionPinnedByConfig
 }
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel, Timestamp}
@@ -41,7 +42,7 @@ final case class UpdatesConfig(
     private val retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = UpdatesConfig.defaultLimit,
     private val fileExtensions: Option[List[String]] = None,
-    private val cooldown: Option[List[CooldownConfig]] = None
+    private val cooldown: Option[CooldownConfig] = None
 ) {
   private[repoconfig] def pinOrDefault: List[UpdatePattern] =
     pin.getOrElse(Nil)
@@ -60,8 +61,6 @@ final case class UpdatesConfig(
 
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
-
-  def cooldownOrDefault: List[CooldownConfig] = cooldown.getOrElse(Nil)
 
   def keep(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
     isAllowed(update).flatMap(isPinned).flatMap(isIgnored).flatMap(isTooNew(_, currentTime))
@@ -107,8 +106,8 @@ final case class UpdatesConfig(
   }
 
   private def isTooNew(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    cooldownOrDefault
-      .collectFirstSome(_.relevantConfigAppliedTo(update, currentTime))
+    cooldown
+      .map(_.filterForAge(update, currentTime).toRight(TooYoungForCooldown(update)))
       .getOrElse(Right(update))
 }
 
@@ -151,7 +150,7 @@ object UpdatesConfig {
           retracted = x.retracted |+| y.retracted,
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions),
-          cooldown = x.cooldown |+| y.cooldown
+          cooldown = mergeCooldown(x.cooldown, y.cooldown)
         )
     )
 
@@ -244,6 +243,11 @@ object UpdatesConfig {
       y: Option[List[String]]
   ): Option[List[String]] =
     combineOptions(x, y)(_.intersect(_))
+
+  private[repoconfig] def mergeCooldown(
+      x: Option[CooldownConfig],
+      y: Option[CooldownConfig]
+  ): Option[CooldownConfig] = (y ++ x).headOption // for now, simply let local override global
 
   intellijThisImportIsUsed(refinedDecoder: Decoder[NonNegInt])
 }
