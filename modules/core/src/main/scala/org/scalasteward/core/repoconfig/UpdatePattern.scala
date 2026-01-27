@@ -19,8 +19,7 @@ package org.scalasteward.core.repoconfig
 import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.*
-import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId}
-import org.scalasteward.core.data.Version
+import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId, Version}
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.util.Nel
 
