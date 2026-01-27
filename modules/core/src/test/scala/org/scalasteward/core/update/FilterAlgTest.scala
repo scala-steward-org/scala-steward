@@ -369,7 +369,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    // exclude update that is too new
+    // exclude update that is too recent
     val update1 =
       ("eu.timepit".g % "refined".a % "1.0.0" %> VersionWithFirstSeen(
         "1.0.2".v,
