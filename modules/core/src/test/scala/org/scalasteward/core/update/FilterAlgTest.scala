@@ -360,7 +360,7 @@ class FilterAlgTest extends FunSuite {
       )).single
     assert(!isScala3Lang(updateScalaLibrary213))
   }
-  test("exclude young updates via config updates.cooldown") {
+  test("exclude too-recent updates via config updates.cooldown") {
     val config = RepoConfig(updates =
       UpdatesConfig(cooldown =
         CooldownConfig(
@@ -369,7 +369,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    // exclude update that is too young
+    // exclude update that is too new
     val update1 =
       ("eu.timepit".g % "refined".a % "1.0.0" %> VersionWithFirstSeen(
         "1.0.2".v,
@@ -377,7 +377,7 @@ class FilterAlgTest extends FunSuite {
       )).single
     assertEquals(
       FilterAlg.localFilter(update1, config, Timestamp(10)),
-      Left(TooYoungForCooldown(update1))
+      Left(TooRecentForCooldown(update1))
     )
 
     // allow older update

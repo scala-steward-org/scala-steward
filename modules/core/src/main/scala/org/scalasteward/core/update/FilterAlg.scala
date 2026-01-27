@@ -55,12 +55,12 @@ object FilterAlg {
         case NoSuitableNextVersion(_)   => "no suitable next version"
         case VersionOrderingConflict(_) => "version ordering conflict"
         case IgnoreScalaNext(_)         => "not upgrading from Scala LTS to Next version"
-        case TooYoungForCooldown(_)     => "too young for cooldown config"
+        case TooRecentForCooldown(_)    => "too recent for cooldown config"
       }
   }
 
   final case class IgnoredByConfig(update: ArtifactUpdateCandidates) extends RejectionReason
-  final case class TooYoungForCooldown(update: ArtifactUpdateCandidates) extends RejectionReason
+  final case class TooRecentForCooldown(update: ArtifactUpdateCandidates) extends RejectionReason
   final case class VersionPinnedByConfig(update: ArtifactUpdateCandidates) extends RejectionReason
   final case class NotAllowedByConfig(update: ArtifactUpdateCandidates) extends RejectionReason
   final case class NoSuitableNextVersion(update: ArtifactUpdateCandidates) extends RejectionReason

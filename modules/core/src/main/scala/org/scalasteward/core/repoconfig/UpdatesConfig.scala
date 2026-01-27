@@ -29,7 +29,7 @@ import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
   NotAllowedByConfig,
-  TooYoungForCooldown,
+  TooRecentForCooldown,
   VersionPinnedByConfig
 }
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel, Timestamp}
@@ -63,7 +63,7 @@ final case class UpdatesConfig(
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
   def keep(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    isAllowed(update).flatMap(isPinned).flatMap(isIgnored).flatMap(isTooNew(_, currentTime))
+    isAllowed(update).flatMap(isPinned).flatMap(isIgnored).flatMap(isTooRecent(_, currentTime))
 
   def preRelease(update: ArtifactUpdateCandidates): FilterResult =
     isAllowedPreReleases(update)
@@ -78,7 +78,7 @@ final case class UpdatesConfig(
 
   private def isAllowed(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(allowOrDefault, update, includeMatchingVersions = true)
-    val (matchingVersions, _) = m.matches(update.newerVersionsWithFirstSeen)
+    val matchingVersions = m.matches(update.newerVersionsWithFirstSeen)
     if (matchingVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
     else if (allowOrDefault.isEmpty)
@@ -88,7 +88,7 @@ final case class UpdatesConfig(
 
   private def isPinned(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(pinOrDefault, update, includeMatchingVersions = true)
-    val (matchingVersions, _) = m.matches(update.newerVersionsWithFirstSeen)
+    val matchingVersions = m.matches(update.newerVersionsWithFirstSeen)
     if (matchingVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
     else if (m.byArtifactId.isEmpty)
@@ -98,16 +98,16 @@ final case class UpdatesConfig(
 
   private def isIgnored(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(ignoreOrDefault, update, includeMatchingVersions = false)
-    val (remainingVersions, _) = m.matches(update.newerVersionsWithFirstSeen)
+    val remainingVersions = m.matches(update.newerVersionsWithFirstSeen)
     if (remainingVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(remainingVersions)))
     else
       Left(IgnoredByConfig(update))
   }
 
-  private def isTooNew(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
+  private def isTooRecent(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
     cooldown
-      .map(_.filterForAge(update, currentTime).toRight(TooYoungForCooldown(update)))
+      .map(_.filterForAge(update, currentTime).toRight(TooRecentForCooldown(update)))
       .getOrElse(Right(update))
 }
 
