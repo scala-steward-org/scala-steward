@@ -70,14 +70,14 @@ final case class UpdatesConfig(
 
   private def isAllowedPreReleases(update: ArtifactUpdateCandidates): FilterResult = {
     val m =
-      UpdatePattern.findMatch(allowPreReleasesOrDefault, update, includeMatchingVersions = true)
+      UpdatePattern.findMatch(allowPreReleasesOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
   }
 
   private def isAllowed(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(allowOrDefault, update, includeMatchingVersions = true)
+    val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
     val matchingVersions = m.matches(update.newerVersionsWithFirstSeen)
     if (matchingVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
@@ -87,7 +87,7 @@ final case class UpdatesConfig(
   }
 
   private def isPinned(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(pinOrDefault, update, includeMatchingVersions = true)
+    val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
     val matchingVersions = m.matches(update.newerVersionsWithFirstSeen)
     if (matchingVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
@@ -97,7 +97,7 @@ final case class UpdatesConfig(
   }
 
   private def isIgnored(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(ignoreOrDefault, update, includeMatchingVersions = false)
+    val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
     val remainingVersions = m.matches(update.newerVersionsWithFirstSeen)
     if (remainingVersions.nonEmpty)
       Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(remainingVersions)))

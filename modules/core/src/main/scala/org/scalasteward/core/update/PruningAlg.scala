@@ -172,7 +172,7 @@ final class PruningAlg[F[_]](implicit
             .findMatch(
               List(groupRepoConfig.dependency),
               dependencyOutdated.update,
-              includeMatchingVersions = true
+              include = true
             )
           Option.when(matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty)(
             (groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt)

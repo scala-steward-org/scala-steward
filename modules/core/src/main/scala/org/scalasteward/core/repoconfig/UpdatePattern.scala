@@ -48,19 +48,16 @@ object UpdatePattern {
   def findMatch(
       patterns: List[UpdatePattern],
       update: ArtifactUpdateVersions,
-      includeMatchingVersions: Boolean
+      include: Boolean
   ): MatchResult = {
     val artifactForUpdate = update.artifactForUpdate
     val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
-    val patternsMatchingByGroupAndArtifactId =
+    val byArtifactId =
       byGroupId.filter(_.artifactId.forall(_ === artifactForUpdate.artifactId.name))
-
     val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>
-      patternsMatchingByGroupAndArtifactId.exists(
-        _.version.forall(_.matches(newVersion.value))
-      ) === includeMatchingVersions
+      byArtifactId.exists(_.version.forall(_.matches(newVersion.value))) === include
     )
-    MatchResult(patternsMatchingByGroupAndArtifactId, filteredVersions)
+    MatchResult(byArtifactId, filteredVersions)
   }
 
   implicit val updatePatternCodec: Codec[UpdatePattern] =
