@@ -122,7 +122,10 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     data.update.on(
       update = pullRequestRepository
-        .getObsoleteOpenPullRequests(data.repo, _)
+        .getObsoleteOpenPullRequests(
+          data.repo,
+          _
+        ) // introduce PullRequestService? That reads from pullRequestRepository, but then refreshes state from API?
         .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr))),
       // We don't support closing obsolete PRs for `GroupedUpdate`s
       grouped = _ => Applicative[F].unit
@@ -137,7 +140,11 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show} in PR #$newNumber - will not comment due to https://github.com/scala-steward-org/scala-steward/issues/3797"
     ) {
       for {
-        _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
+        _ <- pullRequestRepository.changeState(
+          data.repo,
+          oldPr.url,
+          PullRequestState.Closed
+        ) // separate issue, but maybe this should only be called if forgeApiAlg.closePullRequest succeeds?
         oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
