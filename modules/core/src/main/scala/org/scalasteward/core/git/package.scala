@@ -26,7 +26,7 @@ package object git {
 
   val updateBranchPrefix = "update"
 
-  def branchFor(update: Update, baseBranch: Option[Branch]): Branch = {
+  def branchFor(update: Update, baseBranch: Option[Branch] = None): Branch = {
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
     update.on(
       update = u => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}"),

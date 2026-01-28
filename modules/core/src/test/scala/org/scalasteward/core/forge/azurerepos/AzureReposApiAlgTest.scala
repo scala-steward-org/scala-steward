@@ -1,6 +1,6 @@
 package org.scalasteward.core.forge.azurerepos
 
-import io.circe.literal.JsonStringContext
+import io.circe.literal.*
 import munit.CatsEffectSuite
 import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
