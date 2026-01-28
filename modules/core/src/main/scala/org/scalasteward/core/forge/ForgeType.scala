@@ -44,8 +44,8 @@ sealed trait ForgeType extends Product with Serializable {
   def supportsForking: Boolean = true
   def supportsLabels: Boolean = true
 
-  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter for searching
-    * for already existing pull requests or creating new pull requests.
+  /** Determines the `head` (GitHub) / `source_branch` (GitLab, Bitbucket) parameter value for
+    * searching for already existing pull requests or creating new pull requests.
     */
   def pullRequestHeadFor(@nowarn fork: Repo, updateBranch: Branch): String = updateBranch.name
 
