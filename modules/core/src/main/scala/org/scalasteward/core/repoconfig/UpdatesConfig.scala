@@ -29,9 +29,10 @@ import org.scalasteward.core.update.FilterAlg.{
   FilterResult,
   IgnoredByConfig,
   NotAllowedByConfig,
+  TooRecentForCooldown,
   VersionPinnedByConfig
 }
-import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel}
+import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Nel, Timestamp}
 
 final case class UpdatesConfig(
     private val pin: Option[List[UpdatePattern]] = None,
@@ -40,7 +41,8 @@ final case class UpdatesConfig(
     private val ignore: Option[List[UpdatePattern]] = None,
     private val retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = UpdatesConfig.defaultLimit,
-    private val fileExtensions: Option[List[String]] = None
+    private val fileExtensions: Option[List[String]] = None,
+    private val cooldown: Option[CooldownConfig] = None
 ) {
   private[repoconfig] def pinOrDefault: List[UpdatePattern] =
     pin.getOrElse(Nil)
@@ -60,14 +62,15 @@ final case class UpdatesConfig(
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def keep(update: ArtifactUpdateCandidates): FilterResult =
-    isAllowed(update).flatMap(isPinned).flatMap(isIgnored)
+  def keep(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
+    isAllowed(update).flatMap(isPinned).flatMap(isIgnored).flatMap(isTooRecent(_, currentTime))
 
   def preRelease(update: ArtifactUpdateCandidates): FilterResult =
     isAllowedPreReleases(update)
 
   private def isAllowedPreReleases(update: ArtifactUpdateCandidates): FilterResult = {
-    val m = UpdatePattern.findMatch(allowPreReleasesOrDefault, update, include = true)
+    val m =
+      UpdatePattern.findMatch(allowPreReleasesOrDefault, update, include = true)
     if (m.filteredVersions.nonEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
@@ -75,8 +78,9 @@ final case class UpdatesConfig(
 
   private def isAllowed(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(allowOrDefault, update, include = true)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    val matchingVersions = m.matches(update.newerVersionsWithFirstSeen)
+    if (matchingVersions.nonEmpty)
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
     else if (allowOrDefault.isEmpty)
       Right(update)
     else Left(NotAllowedByConfig(update))
@@ -84,8 +88,9 @@ final case class UpdatesConfig(
 
   private def isPinned(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(pinOrDefault, update, include = true)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    val matchingVersions = m.matches(update.newerVersionsWithFirstSeen)
+    if (matchingVersions.nonEmpty)
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(matchingVersions)))
     else if (m.byArtifactId.isEmpty)
       Right(update)
     else Left(VersionPinnedByConfig(update))
@@ -93,11 +98,17 @@ final case class UpdatesConfig(
 
   private def isIgnored(update: ArtifactUpdateCandidates): FilterResult = {
     val m = UpdatePattern.findMatch(ignoreOrDefault, update, include = false)
-    if (m.filteredVersions.nonEmpty)
-      Right(update.copy(newerVersions = Nel.fromListUnsafe(m.filteredVersions)))
+    val remainingVersions = m.matches(update.newerVersionsWithFirstSeen)
+    if (remainingVersions.nonEmpty)
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.fromListUnsafe(remainingVersions)))
     else
       Left(IgnoredByConfig(update))
   }
+
+  private def isTooRecent(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
+    cooldown
+      .map(_.filterForAge(update, currentTime).toRight(TooRecentForCooldown(update)))
+      .getOrElse(Right(update))
 }
 
 object UpdatesConfig {
@@ -138,7 +149,8 @@ object UpdatesConfig {
           ignore = mergeIgnore(x.ignore, y.ignore),
           retracted = x.retracted |+| y.retracted,
           limit = x.limit.orElse(y.limit),
-          fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions)
+          fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions),
+          cooldown = mergeCooldown(x.cooldown, y.cooldown)
         )
     )
 
@@ -231,6 +243,11 @@ object UpdatesConfig {
       y: Option[List[String]]
   ): Option[List[String]] =
     combineOptions(x, y)(_.intersect(_))
+
+  private[repoconfig] def mergeCooldown(
+      x: Option[CooldownConfig],
+      y: Option[CooldownConfig]
+  ): Option[CooldownConfig] = (y ++ x).headOption // for now, simply let local override global
 
   intellijThisImportIsUsed(refinedDecoder: Decoder[NonNegInt])
 }

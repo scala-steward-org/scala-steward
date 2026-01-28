@@ -20,11 +20,13 @@ import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.*
 import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId, Version}
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.util.Nel
 
 final case class UpdatePattern(
     groupId: GroupId,
-    artifactId: Option[String],
-    version: Option[VersionPattern]
+    artifactId: Option[String] = None,
+    version: Option[VersionPattern] = None
 ) {
   def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
 }
@@ -33,7 +35,14 @@ object UpdatePattern {
   final case class MatchResult(
       byArtifactId: List[UpdatePattern],
       filteredVersions: List[Version]
-  )
+  ) {
+    def matches(
+        versions: Nel[VersionWithFirstSeen]
+    ): List[VersionWithFirstSeen] = {
+      val versionSet = filteredVersions.toSet
+      versions.toList.filter(vfs => versionSet.contains(vfs.version))
+    }
+  }
 
   def findMatch(
       patterns: List[UpdatePattern],

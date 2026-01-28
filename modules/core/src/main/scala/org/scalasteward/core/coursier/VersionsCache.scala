@@ -18,12 +18,13 @@ package org.scalasteward.core.coursier
 
 import cats.implicits.*
 import cats.{MonadThrow, Parallel}
-import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, KeyEncoder}
-import org.scalasteward.core.coursier.VersionsCache.{Key, Value}
+import io.circe.generic.semiauto.{deriveCodec, deriveDecoder, deriveEncoder}
+import io.circe.{Codec, Decoder, Encoder, KeyEncoder}
+import org.scalasteward.core.coursier.VersionsCache.{Key, Value, VersionWithFirstSeen}
 import org.scalasteward.core.data.{Dependency, Resolver, Scope, Version}
 import org.scalasteward.core.persistence.KeyValueStore
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
+
 import scala.concurrent.duration.FiniteDuration
 
 final class VersionsCache[F[_]](
@@ -35,16 +36,19 @@ final class VersionsCache[F[_]](
     parallel: Parallel[F],
     F: MonadThrow[F]
 ) {
-  def getVersions(dependency: Scope.Dependency, maxAge: Option[FiniteDuration]): F[List[Version]] =
+  def getVersions(
+      dependency: Scope.Dependency,
+      maxAge: Option[FiniteDuration]
+  ): F[List[VersionWithFirstSeen]] =
     dependency.resolvers
       .parFlatTraverse(getVersionsImpl(dependency.value, _, maxAge.getOrElse(cacheTtl)))
-      .map(_.distinct.sorted)
+      .map(_.distinct.sortBy(_.version))
 
   private def getVersionsImpl(
       dependency: Dependency,
       resolver: Resolver,
       maxAge: FiniteDuration
-  ): F[List[Version]] =
+  ): F[List[VersionWithFirstSeen]] =
     dateTimeAlg.currentTimestamp.flatMap { now =>
       val key = Key(dependency, resolver)
       store.get(key).flatMap {
@@ -53,7 +57,18 @@ final class VersionsCache[F[_]](
         case maybeValue =>
           coursierAlg.getVersions(dependency, resolver).attempt.flatMap {
             case Right(versions) =>
-              store.put(key, Value(now, versions, None)).as(versions)
+              val existingFirstSeenByVersion: Map[Version, Timestamp] =
+                maybeValue
+                  .map(_.versions.flatMap(vwfs => vwfs.firstSeen.map(vwfs.version -> _)).toMap)
+                  .getOrElse(Map.empty)
+              val updatedVersionsWithFirstSeen =
+                versions.map(v =>
+                  VersionWithFirstSeen(v, Some(existingFirstSeenByVersion.getOrElse(v, now)))
+                )
+
+              store
+                .put(key, Value(now, updatedVersionsWithFirstSeen, None))
+                .as(updatedVersionsWithFirstSeen)
             case Left(throwable) =>
               val versions = maybeValue.map(_.versions).getOrElse(List.empty)
               store.put(key, Value(now, versions, Some(throwable.toString))).as(versions)
@@ -79,7 +94,7 @@ object VersionsCache {
 
   final case class Value(
       updatedAt: Timestamp,
-      versions: List[Version],
+      versions: List[VersionWithFirstSeen],
       maybeError: Option[String]
   ) {
     def maxAgeFactor: Long =
@@ -89,5 +104,22 @@ object VersionsCache {
   object Value {
     implicit val valueCodec: Codec[Value] =
       deriveCodec
+  }
+
+  final case class VersionWithFirstSeen(
+      version: Version,
+      firstSeen: Option[Timestamp]
+  ) {
+    def isOlderThan(age: FiniteDuration, currentTime: Timestamp): Boolean =
+      firstSeen.exists(_.until(currentTime) > age)
+  }
+
+  object VersionWithFirstSeen {
+    implicit val valueEncoder: Encoder[VersionWithFirstSeen] = deriveEncoder
+    implicit val valueDecoder: Decoder[VersionWithFirstSeen] = {
+      val legacyVersionStringDecoder = Decoder[Version].map(VersionWithFirstSeen(_, None))
+
+      deriveDecoder[VersionWithFirstSeen].or(legacyVersionStringDecoder)
+    }
   }
 }
