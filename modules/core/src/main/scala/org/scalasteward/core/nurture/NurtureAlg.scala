@@ -24,7 +24,6 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
-import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
@@ -135,18 +134,10 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       oldPr: PullRequestData[Id]
   ): F[Unit] =
     logger.attemptWarn.label_(
-      s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show}"
+      s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show} in PR #$newNumber - will not comment due to https://github.com/scala-steward-org/scala-steward/issues/3797"
     ) {
       for {
         _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
-        comment = config.tpe match {
-          // If a PR is part of a list element, GitHub renders its title
-          case GitHub => s"""|Superseded by
-                             |- ${forgeApiAlg.referencePullRequest(newNumber)}
-                             |""".stripMargin.trim
-          case _ => s"Superseded by ${forgeApiAlg.referencePullRequest(newNumber)}."
-        }
-        _ <- forgeApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
         oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
