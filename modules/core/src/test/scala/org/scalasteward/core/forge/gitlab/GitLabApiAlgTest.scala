@@ -413,6 +413,19 @@ class GitLabApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     )
   }
 
+  test("getPullRequest") {
+    val prOut = gitlabApiAlgNoFork
+      .getPullRequest(Repo("foo", "bar"), PullRequestNumber(150))
+      .runA(state)
+    val expected = PullRequestOut(
+      uri"https://gitlab.com/foo/bar/merge_requests/150",
+      PullRequestState.Open,
+      PullRequestNumber(150),
+      "title"
+    )
+    assertIO(prOut, expected)
+  }
+
   private val getMr = json"""
     {
       "id": 26328,
