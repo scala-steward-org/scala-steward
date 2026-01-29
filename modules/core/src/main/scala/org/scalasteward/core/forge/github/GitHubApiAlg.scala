@@ -89,6 +89,10 @@ final class GitHubApiAlg[F[_]](
     } yield ()
   }
 
+  /** https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request */
+  override def getPullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
+    client.get(url.pull(repo, number), modify)
+
   /** https://docs.github.com/en/rest/branches/branches?apiVersion=2022-11-28#get-a-branch */
   override def getBranch(repo: Repo, branch: Branch): F[BranchOut] =
     client.get(url.branches(repo, branch), modify)

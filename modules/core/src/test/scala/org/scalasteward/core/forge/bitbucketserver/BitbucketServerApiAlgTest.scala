@@ -186,6 +186,18 @@ class BitbucketServerApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] 
     assertIO(obtained, expected)
   }
 
+  test("getPullRequest") {
+    val obtained =
+      bitbucketServerApiAlg.getPullRequest(repo, PullRequestNumber(4711)).runA(state)
+    val expected = PullRequestOut(
+      Uri.unsafeFromString("http://example.org"),
+      PullRequestState.Open,
+      PullRequestNumber(4711),
+      "Update sbt to 1.4.6"
+    )
+    assertIO(obtained, expected)
+  }
+
   test("commentPullRequest") {
     val comment = bitbucketServerApiAlg
       .commentPullRequest(repo, PullRequestNumber(1347), "Superseded by #1234")

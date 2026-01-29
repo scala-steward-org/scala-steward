@@ -39,7 +39,7 @@ final class BitbucketServerApiAlg[F[_]](
   private val url = new Url(bitbucketApiHost)
 
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
-    getPullRequest(repo, number).flatMap { pr =>
+    getBitbucketSpecificPullRequest(repo, number).flatMap { pr =>
       val out = pr.toPullRequestOut.copy(state = PullRequestState.Closed)
       declinePullRequest(repo, number, pr.version).as(out)
     }
@@ -114,8 +114,11 @@ final class BitbucketServerApiAlg[F[_]](
   private def getDefaultBranch(repo: Repo): F[Json.Branch] =
     client.get[Json.Branch](url.defaultBranch(repo), modify)
 
-  private def getPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
+  private def getBitbucketSpecificPullRequest(repo: Repo, number: PullRequestNumber): F[PR] =
     client.get[Json.PR](url.pullRequest(repo, number), modify)
+
+  override def getPullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
+    getBitbucketSpecificPullRequest(repo, number).map(_.toPullRequestOut)
 
   override def getRepo(repo: Repo): F[RepoOut] =
     for {

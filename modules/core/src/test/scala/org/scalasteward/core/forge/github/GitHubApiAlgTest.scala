@@ -21,6 +21,13 @@ import org.scalasteward.core.mock.MockForgeAuthAlg.noAuth
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 
 class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+  private val pr1347 = json"""{
+    "html_url": "https://github.com/octocat/Hello-World/pull/1347",
+    "state": "open",
+    "number": 1347,
+    "title": "new-feature"
+  }"""
+
   private val httpApp = HttpApp[MockEff] {
     case GET -> Root / "repos" / "fthomas" / "base.g8" =>
       Ok(
@@ -50,14 +57,10 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       )
 
     case GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls" =>
-      Ok(
-        json"""[{
-            "html_url": "https://github.com/octocat/Hello-World/pull/1347",
-            "state": "open",
-            "number": 1347,
-            "title": "new-feature"
-          }]"""
-      )
+      Ok(Json.arr(pr1347))
+
+    case GET -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(1347) =>
+      Ok(pr1347)
 
     case req @ PATCH -> Root / "repos" / "fthomas" / "base.g8" / "pulls" / IntVar(42) =>
       req.as[Json].flatMapF(_.hcursor.get[String]("title").liftTo[IO]).flatMap { title =>
@@ -502,6 +505,11 @@ class GitHubApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test("listPullRequests") {
     val prs = gitHubApiAlg.listPullRequests(repo, "master", Branch("master")).runA(state)
     assertIO(prs, List(pullRequest))
+  }
+
+  test("getPullRequest") {
+    val prOut = gitHubApiAlg.getPullRequest(repo, PullRequestNumber(1347)).runA(state)
+    assertIO(prOut, pullRequest)
   }
 
   test("closePullRequest") {

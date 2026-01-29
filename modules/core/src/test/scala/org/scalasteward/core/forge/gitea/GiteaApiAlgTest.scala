@@ -1,5 +1,6 @@
 package org.scalasteward.core.forge.gitea
 
+import io.circe.Json
 import io.circe.literal.*
 import munit.CatsEffectSuite
 import org.http4s.HttpApp
@@ -29,6 +30,8 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       Ok(getBranch)
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" :? PageQ(page) =>
       if (page == 1) Ok(listPulls) else Ok(json"[]")
+    case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" / IntVar(1) =>
+      Ok(getPull1)
     case PATCH -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" / "1" =>
       Ok(closePull1)
     case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "issues" / "1" / "comments" =>
@@ -81,6 +84,21 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       .runA(state)
       .map { branchOut =>
         assertEquals(branchOut, BranchOut(name = Branch("main"), commit = CommitOut(sha1)))
+      }
+  }
+
+  test("getPullRequest") {
+    giteaAlg
+      .getPullRequest(repo, PullRequestNumber(1))
+      .runA(state)
+      .map { pull =>
+        val out = PullRequestOut(
+          html_url = uri"https://git.example.com/foo/baz/pulls/1",
+          state = PullRequestState.Open,
+          number = PullRequestNumber(1),
+          title = "update README"
+        )
+        assertEquals(pull, out)
       }
   }
 
@@ -328,9 +346,8 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
             "effective_branch_protection_name": ""
           } """
 
-  def listPulls =
-    json""" [
-            {
+  val getPull1: Json =
+    json"""{
               "id": 1,
               "url": "https://git.example.com/foo/baz/pulls/1",
               "number": 1,
@@ -552,8 +569,9 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
               "created_at": "2023-02-07T16:59:26+09:00",
               "updated_at": "2023-02-07T16:59:27+09:00",
               "closed_at": null
-            }
-          ] """
+            }"""
+
+  val listPulls: Json = Json.arr(getPull1)
 
   def closePull1 =
     json""" {

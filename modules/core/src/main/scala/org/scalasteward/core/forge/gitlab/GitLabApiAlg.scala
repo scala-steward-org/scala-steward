@@ -173,6 +173,9 @@ final class GitLabApiAlg[F[_]: Parallel](
   override def listPullRequests(repo: Repo, head: String, base: Branch): F[List[PullRequestOut]] =
     client.get(url.listMergeRequests(repo, head, base.name), modify)
 
+  override def getPullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
+    client.get(url.existingMergeRequest(repo, number), modify)
+
   override def createFork(repo: Repo): F[RepoOut] = {
     val userOwnedRepo = repo.copy(owner = forgeCfg.login)
     val data = ForkPayload(url.encodedProjectId(userOwnedRepo), forgeCfg.login)

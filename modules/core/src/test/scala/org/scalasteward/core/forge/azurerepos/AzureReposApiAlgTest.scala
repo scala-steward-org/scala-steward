@@ -1,6 +1,8 @@
 package org.scalasteward.core.forge.azurerepos
 
+import io.circe.literal.JsonStringContext
 import munit.CatsEffectSuite
+import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.syntax.literals.*
 import org.http4s.{HttpApp, Uri}
@@ -18,6 +20,28 @@ import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val repo = Repo("scala-steward-org", "scala-steward")
   private val apiHost = uri"https://dev.azure.com"
+
+  private val pr26 = json"""{
+    "repository": {
+      "id": "3846fbbd-71a0-402b-8352-6b1b9b2088aa",
+      "name": "scala-steward",
+      "url": "https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward",
+      "project": {
+        "id": "a7573007-bbb3-4341-b726-0c4148a07853",
+        "name": "scala-steward-org"
+      },
+      "remoteUrl": "https://steward-user@dev.azure.com/azure-org/scala-steward-org/_git/scala-steward"
+    },
+    "pullRequestId": 26,
+    "status": "active",
+    "creationDate": "2016-11-01T16:30:31.6655471Z",
+    "title": "Update cats-effect to 3.3.14",
+    "description": "Updates org.typelevel:cats-effect  from 3.3.13 to 3.3.14.",
+    "sourceRefName": "refs/heads/update/cats-effect-3.3.14",
+    "targetRefName": "refs/heads/main",
+    "url": "https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/26",
+    "supportsIterations": true
+  }"""
 
   object branchNameMatcher extends QueryParamDecoderMatcher[String]("name")
   object sourceRefNameMatcher
@@ -81,28 +105,13 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" :?
         sourceRefNameMatcher("refs/heads/update/cats-effect-3.3.14")
         +& targetRefNameMatcher("refs/heads/main") =>
-      Ok("""{
-           |   "value":[
-           |      {
-           |         "pullRequestId":26,
-           |         "status":"active",
-           |         "creationDate":"2022-07-24T16:58:51.0719239Z",
-           |         "title":"Update cats-effect to 3.3.14",
-           |         "description":"Updates [org.typelevel:cats-effect]",
-           |         "sourceRefName":"refs/heads/update/cats-effect-3.3.14",
-           |         "targetRefName":"refs/heads/main",
-           |         "mergeStatus":"succeeded",
-           |         "isDraft":false,
-           |         "mergeId":"3ff8afa0-1147-4158-b215-74a0b5a2e162",
-           |         "reviewers":[
-           |
-           |         ],
-           |         "url":"https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/26",
-           |         "supportsIterations":true
-           |      }
-           |   ],
-           |   "count":1
-           |}""".stripMargin)
+      Ok(json"""{
+               "value":[$pr26],
+               "count":1
+            }""")
+
+    case GET -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" =>
+      Ok(pr26)
 
     case PATCH -> Root / "azure-org" / repo.owner / "_apis/git/repositories" / repo.repo / "pullrequests" / "26" =>
       Ok("""{
@@ -227,6 +236,17 @@ class AzureReposApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         PullRequestNumber(26),
         "Update cats-effect to 3.3.14"
       )
+    )
+    assertIO(obtained, expected)
+  }
+
+  test("getPullRequest") {
+    val obtained = azureReposApiAlg.getPullRequest(repo, PullRequestNumber(26)).runA(state)
+    val expected = PullRequestOut(
+      uri"https://dev.azure.com/azure-org/scala-steward-org/_apis/git/repositories/scala-steward/pullRequests/26",
+      PullRequestState.Open,
+      PullRequestNumber(26),
+      "Update cats-effect to 3.3.14"
     )
     assertIO(obtained, expected)
   }
