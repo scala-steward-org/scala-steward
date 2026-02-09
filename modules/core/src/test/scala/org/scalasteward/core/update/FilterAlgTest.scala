@@ -4,50 +4,60 @@ import cats.effect.unsafe.implicits.global
 import cats.syntax.all.*
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax.*
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.GroupId
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.*
 import org.scalasteward.core.update.FilterAlg.*
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{Nel, Timestamp}
+
+import scala.concurrent.duration.DurationInt
 
 class FilterAlgTest extends FunSuite {
   private val config = RepoConfig.empty
+  val currentTime = Timestamp(0)
 
   test("localFilter: SNAP -> SNAP") {
     val update =
       ("org.scalatest".g % "scalatest".a % "3.0.8-SNAP2" %> Nel.of("3.0.8-SNAP10")).single
-    assertEquals(localFilter(update, config), Right(update.asSoleUpdate))
+    assertEquals(localFilter(update, config, currentTime), Right(update.asSoleUpdate))
   }
 
   test("localFilter: RC -> SNAP") {
     val update = ("org.scalatest".g % "scalatest".a % "3.0.8-RC2" %> Nel.of("3.1.0-SNAP10")).single
-    assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))
+    assertEquals(localFilter(update, config, currentTime), Left(NoSuitableNextVersion(update)))
   }
 
   test("localFilter: update without bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.0" %> Nel.of("1.1.2", "2.0.0")).single
-    assertEquals(localFilter(update, config), Right(update.asSpecificUpdate("1.1.2".v)))
+    assertEquals(
+      localFilter(update, config, currentTime),
+      Right(update.asSpecificUpdate("1.1.2".v))
+    )
   }
 
   test("localFilter: update with bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
-    assertEquals(localFilter(update, config), Right(update.asSpecificUpdate("2.0.0".v)))
+    assertEquals(
+      localFilter(update, config, currentTime),
+      Right(update.asSpecificUpdate("2.0.0".v))
+    )
   }
 
   test("localFilter: update with bad version 2") {
     val update = ("net.sourceforge.plantuml".g % "plantuml".a % "1.2019.11" %>
       Nel.of("7726", "8020", "2017.09", "1.2019.12")).single
     assertEquals(
-      localFilter(update, config),
+      localFilter(update, config, currentTime),
       Right(update.asSpecificUpdate("1.2019.12".v))
     )
   }
 
   test("localFilter: update to pre-releases of a different series") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
-    assertEquals(localFilter(update, config), Left(NoSuitableNextVersion(update)))
+    assertEquals(localFilter(update, config, currentTime), Left(NoSuitableNextVersion(update)))
   }
 
   test("localFilter: allowed update to pre-releases of a different series") {
@@ -59,7 +69,7 @@ class FilterAlgTest extends FunSuite {
     )
 
     val expected = Right(update.asSpecificUpdate("2.0.1-M3".v))
-    assertEquals(localFilter(update, configWithAllowed), expected)
+    assertEquals(localFilter(update, configWithAllowed, currentTime), expected)
   }
 
   test("ignore update via config updates.ignore") {
@@ -112,7 +122,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
     val expected = Right(update.asSpecificUpdate("2.13.7".v))
-    assertEquals(localFilter(update, config), expected)
+    assertEquals(localFilter(update, config, currentTime), expected)
   }
 
   test("ignore update via config updates.pin") {
@@ -217,7 +227,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    val filtered = localFilter(update, config)
+    val filtered = localFilter(update, config, currentTime)
     assertEquals(filtered, Right(update.asSpecificUpdate("7.3.0.jre8".v)))
   }
 
@@ -237,7 +247,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    val filtered = localFilter(update, config)
+    val filtered = localFilter(update, config, currentTime)
     assertEquals(filtered, Right(update.asSpecificUpdate("7.3.0.jre8".v)))
   }
 
@@ -258,7 +268,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    assertEquals(localFilter(update, config), Left(VersionPinnedByConfig(update)))
+    assertEquals(localFilter(update, config, currentTime), Left(VersionPinnedByConfig(update)))
   }
 
   test("ignore version with 'contains' matcher") {
@@ -267,7 +277,7 @@ class FilterAlgTest extends FunSuite {
     val repoConfig = RepoConfigAlg.parseRepoConfig(
       """updates.ignore = [ { groupId = "sqlserver", version = { contains = "feature" } } ]"""
     )
-    val obtained = repoConfig.flatMap(localFilter(update, _).leftMap(_.show))
+    val obtained = repoConfig.flatMap(localFilter(update, _, currentTime).leftMap(_.show))
     assertEquals(obtained.map(_.nextVersion), Right("7.3.0".v))
   }
 
@@ -292,7 +302,10 @@ class FilterAlgTest extends FunSuite {
         "3.3.3",
         "3.4.0"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update.copy(newerVersions = Nel.of("3.3.3".v))))
+    assertEquals(
+      scalaLTSFilter(update),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.3.3".vfs)))
+    )
   }
 
   test("scalaLTSFilter: Next") {
@@ -346,5 +359,37 @@ class FilterAlgTest extends FunSuite {
         "2.13.18"
       )).single
     assert(!isScala3Lang(updateScalaLibrary213))
+  }
+  test("exclude too-recent updates via config updates.cooldown") {
+    val config = RepoConfig(updates =
+      UpdatesConfig(cooldown =
+        CooldownConfig(
+          minimumAge = 5.millis
+        ).some
+      ).some
+    )
+
+    // exclude update that is too recent
+    val update1 =
+      ("eu.timepit".g % "refined".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.2".v,
+        Some(Timestamp(8))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(update1, config, Timestamp(10)),
+      Left(TooRecentForCooldown(update1))
+    )
+
+    // allow older update
+    val update2 = ("eu.timepit".g % "refined".a % "1.0.0" %> VersionWithFirstSeen(
+      "1.0.1".v,
+      Some(Timestamp(3))
+    )).single
+    assertEquals(FilterAlg.localFilter(update2, config, Timestamp(10)), Right(update2.asSoleUpdate))
+
+    val update3 = update1.copy(newerVersionsWithFirstSeen =
+      update1.newerVersionsWithFirstSeen.concatNel(update2.newerVersionsWithFirstSeen)
+    )
+    assertEquals(FilterAlg.localFilter(update3, config, Timestamp(10)), Right(update2.asSoleUpdate))
   }
 }

@@ -21,22 +21,25 @@ import cats.syntax.all.*
 import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg.*
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.typelevel.log4cats.Logger
 
 final class FilterAlg[F[_]](implicit
     logger: Logger[F],
+    dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {
   def localFilterSingle(
       config: RepoConfig,
       update: ArtifactUpdateCandidates
-  ): F[Option[Update.ForArtifactId]] =
-    localFilter(update, config) match {
+  ): F[Option[Update.ForArtifactId]] = for {
+    currentTime <- dateTimeAlg.currentTimestamp
+    result <- localFilter(update, config, currentTime) match {
       case Right(update) => F.pure(update.some)
       case Left(reason)  =>
         logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})").as(None)
     }
+  } yield result
 }
 
 object FilterAlg {
@@ -52,10 +55,12 @@ object FilterAlg {
         case NoSuitableNextVersion(_)   => "no suitable next version"
         case VersionOrderingConflict(_) => "version ordering conflict"
         case IgnoreScalaNext(_)         => "not upgrading from Scala LTS to Next version"
+        case TooRecentForCooldown(_)    => "too recent for cooldown config"
       }
   }
 
   final case class IgnoredByConfig(update: ArtifactUpdateCandidates) extends RejectionReason
+  final case class TooRecentForCooldown(update: ArtifactUpdateCandidates) extends RejectionReason
   final case class VersionPinnedByConfig(update: ArtifactUpdateCandidates) extends RejectionReason
   final case class NotAllowedByConfig(update: ArtifactUpdateCandidates) extends RejectionReason
   final case class NoSuitableNextVersion(update: ArtifactUpdateCandidates) extends RejectionReason
@@ -64,10 +69,11 @@ object FilterAlg {
 
   def localFilter(
       update: ArtifactUpdateCandidates,
-      repoConfig: RepoConfig
+      repoConfig: RepoConfig,
+      currentTime: Timestamp
   ): Either[RejectionReason, Update.ForArtifactId] =
     repoConfig.updatesOrDefault
-      .keep(update)
+      .keep(update, currentTime)
       .flatMap(scalaLTSFilter)
       .flatMap(globalFilter(_, repoConfig))
 
@@ -78,11 +84,7 @@ object FilterAlg {
         Right(update)
       } else {
         // on Scala 3.3.x, just keep LTS versions
-        val filteredVersions = update.newerVersions.filterNot(_ >= scalaNextMinVersion)
-        if (filteredVersions.nonEmpty)
-          Right(update.copy(newerVersions = Nel.fromListUnsafe(filteredVersions)))
-        else
-          Left(IgnoreScalaNext(update))
+        update.filterVersions(_ < scalaNextMinVersion).toRight(IgnoreScalaNext(update))
       }
     } else {
       Right(update)
