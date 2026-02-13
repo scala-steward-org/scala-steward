@@ -124,7 +124,7 @@ class PullRequestRepositoryTest extends FunSuite {
 
   test("getRetractedPullRequests with no retractions defined") {
     val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
-      pullRequestRepository.getRetractedPullRequests(repo, List.empty)
+      pullRequestRepository.getRetractedOpenPullRequests(repo, List.empty)
     }
     assertEquals(obtained, List.empty[(PullRequestData[Id], RetractedArtifact)])
   }
@@ -142,7 +142,7 @@ class PullRequestRepositoryTest extends FunSuite {
       )
     )
     val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
-      pullRequestRepository.getRetractedPullRequests(repo, List(retractedPortableScala))
+      pullRequestRepository.getRetractedOpenPullRequests(repo, List(retractedPortableScala))
     }
     assertEquals(obtained.size, 1)
     assertEquals(obtained.head._1.update, portableScala)
@@ -162,7 +162,7 @@ class PullRequestRepositoryTest extends FunSuite {
       )
     )
     val (_, obtained) = beforeAndAfterPRCreation(portableScala) { repo =>
-      pullRequestRepository.getRetractedPullRequests(repo, List(retractedPortableScala))
+      pullRequestRepository.getRetractedOpenPullRequests(repo, List(retractedPortableScala))
     }
     assertEquals(obtained, List.empty[(PullRequestData[Id], RetractedArtifact)])
   }
