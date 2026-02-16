@@ -20,7 +20,7 @@ import cats.Eq
 import cats.syntax.all.*
 import io.circe.{Decoder, Encoder}
 
-final case class BuildRootConfig(relativePath: String, subProject: String = "")
+final case class BuildRootConfig(relativePath: String, subProject: String)
 
 object BuildRootConfig {
   val repoRoot: BuildRootConfig = BuildRootConfig(".", "")

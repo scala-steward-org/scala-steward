@@ -43,7 +43,10 @@ final class BuildToolDispatcher[F[_]](implicit
     getBuildRootsAndTools(repo, repoConfig).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
       for {
         dependencies <- buildTools.flatTraverse { buildTool =>
-          logger.info(s"Get dependencies in ${buildRoot.relativePath} from ${buildTool.name}") >>
+          logger.info {
+            val subProjStr = if (buildRoot.subProject.isEmpty) "" else "/" + buildRoot.subProject
+            s"Get dependencies in ${buildRoot.relativePath}$subProjStr from ${buildTool.name}"
+          } >>
             buildTool.getDependencies(buildRoot)
         }
         maybeScalafmtDependency <- scalafmtAlg.getScopedScalafmtDependency(buildRoot)
