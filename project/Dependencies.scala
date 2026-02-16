@@ -28,7 +28,7 @@ object Dependencies {
   val http4sEmberServer = "org.http4s" %% "http4s-ember-server" % http4sCore.revision
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M10"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.7.1"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.31"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.5.32"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.13.0"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
