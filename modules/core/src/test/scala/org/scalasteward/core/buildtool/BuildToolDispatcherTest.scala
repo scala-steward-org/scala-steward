@@ -16,7 +16,7 @@ class BuildToolDispatcherTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("build-tool-dispatcher", "test-1")
     val repoConfig = RepoConfig.empty.copy(buildRoots =
-      Some(List(BuildRootConfig("."), BuildRootConfig("mvn-build")))
+      Some(List(BuildRootConfig(".", ""), BuildRootConfig("mvn-build", "")))
     )
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val initial = MockState.empty
@@ -69,7 +69,7 @@ class BuildToolDispatcherTest extends FunSuite {
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
           "-Dsbt.server.forcestart=true",
-          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          s";${crossStewardDependencies("")};$reloadPlugins;${stewardDependencies("")}"
         ) +:
         Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_0_0.scala") +:
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_0_0.scala") +:
