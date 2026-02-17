@@ -17,41 +17,35 @@
 package org.scalasteward.core.buildtool.giter8
 
 import cats.Monad
+import cats.data.OptionT
 import cats.syntax.all.*
-import org.scalasteward.core.buildtool.{BuildRoot, BuildToolCandidates}
+import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.io.WorkspaceAlg
 
 final class Giter8Alg[F[_]](implicit
-    buildToolCandidates: BuildToolCandidates[F],
-    workspaceAlg: WorkspaceAlg[F],
-    F: Monad[F]
-) {
+                            workspaceAlg: WorkspaceAlg[F],
+                            F: Monad[F]
+                           ) {
   private val giter8TemplateDir = "src/main/g8"
 
-  def isGiter8Template(repo: Repo): F[Boolean] =
+  def getGiter8BuildRoot(repo: Repo): F[Option[BuildRoot]] = {
+    val g8BuildRoot = BuildRoot(repo, giter8TemplateDir)
+    // Not the prettiest version of this, but I'm not sure how to deal
+    // with the Option.when(F[_])(A), closest is OptionT.whenM( but that requires an F[A].
+    OptionT(isGiter8Template(repo).map(Option.when(_)(g8BuildRoot)))
+      .value
+  }
+
+  private def isGiter8Template(repo: Repo): F[Boolean] =
     workspaceAlg.repoDir(repo).map { repoDir =>
       repo.repo.endsWith(".g8") || (repoDir / giter8TemplateDir).isDirectory
     }
-
-  def getGiter8BuildRoot(repo: Repo): F[Option[BuildRoot]] =
-    for {
-      isG8Template <- isGiter8Template(repo)
-      buildRoot <- if (isG8Template) {
-        val g8BuildRoot = BuildRoot(repo, giter8TemplateDir)
-        buildToolCandidates.findBuildTools(g8BuildRoot).map { case (_, buildTools) =>
-          if (buildTools.nonEmpty) Some(g8BuildRoot) else None
-        }
-      } else {
-        F.pure(None)
-      }
-    } yield buildRoot
 }
 
 object Giter8Alg {
   def create[F[_]](implicit
-      buildToolCandidates: BuildToolCandidates[F],
-      workspaceAlg: WorkspaceAlg[F],
-      F: Monad[F]
-  ): Giter8Alg[F] = new Giter8Alg
+                   workspaceAlg: WorkspaceAlg[F],
+                   F: Monad[F]
+                  ): Giter8Alg[F] = new Giter8Alg
 }
