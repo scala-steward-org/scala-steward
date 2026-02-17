@@ -204,7 +204,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         .traverse { case (_, dependency) =>
           coursierAlg
             .getMetadata(dependency, resolvers)
-            .flatMap(_.filterUrls(urlChecker.exists))
+            .flatMap(_.filterUrls(uri => urlChecker.validate(uri).map(_.exists)))
             .tupleLeft(dependency)
         }
         .map(_.toMap)
