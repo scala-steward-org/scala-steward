@@ -64,6 +64,7 @@ final class Context[F[_]](implicit
     val filterAlg: FilterAlg[F],
     val forgeRepoAlg: ForgeRepoAlg[F],
     val gitAlg: GitAlg[F],
+    val giter8Alg: Giter8Alg[F],
     val gradleAlg: GradleAlg[F],
     val hookExecutor: HookExecutor[F],
     val httpJsonClient: HttpJsonClient[F],
