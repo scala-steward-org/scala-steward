@@ -158,9 +158,12 @@ commits.message = "Update ${artifactName} from ${currentVersion} to ${nextVersio
 scalafmt.runAfterUpgrading = false
 
 # It is possible to have multiple scala projects in a single repository. In that case the folders containing the projects (build.sbt folders)
-# are specified using the buildRoots property. Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
+# are specified using the buildRoots property. Also, an inner subproject for every build root can be specified after `:` (colon).
+# It can be useful when there are subprojects in the build that are not aggregated into the root project. The subproject part cannot be empty.
+# If there's no subproject part (the default) then the root project is assumed.
+# Note that the paths used there are relative and if the repo directory itself also contains a build.sbt the dot can be used to specify it.
 # Default: ["."]
-buildRoots = [ ".", "subfolder/projectA" ]
+buildRoots=[ ".", "subfolder/projectA", ".:subprojectX", "subfolder/projectB:subprojectY" ]
 
 # Define commands that are executed after an update via a hook.
 # A groupId and/or artifactId can be defined to only execute after certain dependencies are updated. If neither is defined, the hook runs for every update.
