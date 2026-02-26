@@ -11,6 +11,7 @@ object Dependencies {
   val circeGeneric = "io.circe" %% "circe-generic" % "0.14.15"
   val circeLiteral = "io.circe" %% "circe-literal" % circeGeneric.revision
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
+  val circeTesting = "io.circe" %% "circe-testing" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % "0.15.1"
   val commonsIo = "commons-io" % "commons-io" % "2.21.0"
   val coursierCore = "io.get-coursier" %% "coursier" % "2.1.24"

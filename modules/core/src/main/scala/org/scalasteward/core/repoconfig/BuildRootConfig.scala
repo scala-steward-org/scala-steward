@@ -17,18 +17,34 @@
 package org.scalasteward.core.repoconfig
 
 import cats.Eq
+import cats.syntax.all.*
 import io.circe.{Decoder, Encoder}
 
-final case class BuildRootConfig(relativePath: String)
+final case class BuildRootConfig(relativePath: String, subProject: String)
 
 object BuildRootConfig {
-  val repoRoot: BuildRootConfig = BuildRootConfig(".")
+  val repoRoot: BuildRootConfig = BuildRootConfig(".", "")
 
   implicit val buildRootConfigDecoder: Decoder[BuildRootConfig] =
-    Decoder[String].map(BuildRootConfig.apply)
+    Decoder[String].emap { str =>
+      str.indexOf(':') match {
+        case -1  => BuildRootConfig(str, "").asRight
+        case cln =>
+          val relPath = str.substring(0, cln)
+          val subProj = str.substring(cln + 1, str.length)
+          Either.cond(
+            subProj.nonEmpty,
+            BuildRootConfig(relPath, subProj),
+            s"$str\nThe subproject part cannot be empty after ':'"
+          )
+      }
+    }
 
   implicit val buildRootConfigEncoder: Encoder[BuildRootConfig] =
-    Encoder[String].contramap(_.relativePath)
+    Encoder[String].contramap {
+      case brc if brc.subProject.isEmpty => brc.relativePath
+      case brc                           => s"${brc.relativePath}:${brc.subProject}"
+    }
 
   implicit val buildRootConfigEq: Eq[BuildRootConfig] =
     Eq.fromUniversalEquals
