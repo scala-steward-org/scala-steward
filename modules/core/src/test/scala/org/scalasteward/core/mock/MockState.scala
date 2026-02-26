@@ -7,6 +7,7 @@ import org.http4s.{HttpApp, Uri}
 import org.scalasteward.core.git.FileGitAlg
 import org.scalasteward.core.git.FileGitAlgTest.ioAuxGitAlg
 import org.scalasteward.core.io.FileAlgTest.ioFileAlg
+import org.scalasteward.core.mock.MockForgeApiAlg.MockForgeState
 import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 
@@ -16,7 +17,8 @@ final case class MockState(
     execCommands: Boolean,
     files: Map[File, String],
     uris: Map[Uri, String],
-    clientResponses: HttpApp[MockEff]
+    clientResponses: HttpApp[MockEff],
+    forgeState: MockForgeState
 ) {
   def addFiles(newFiles: (File, String)*): IO[MockState] =
     newFiles.toList
@@ -45,19 +47,21 @@ final case class MockState(
   def appendTraceEntry(entry: TraceEntry): MockState =
     copy(trace = trace :+ entry)
 
-  def toRef: IO[Ref[IO, MockState]] =
+  def toRef: IO[MockCtx] =
     Ref[IO].of(this)
 }
 
 object MockState {
-  def empty: MockState =
+
+  val empty: MockState =
     MockState(
       trace = Vector.empty,
       commandOutputs = Map.empty,
       execCommands = false,
       files = Map.empty,
       uris = Map.empty,
-      clientResponses = HttpApp.notFound
+      clientResponses = HttpApp.notFound,
+      forgeState = MockForgeState.empty
     )
 
   sealed trait TraceEntry extends Product with Serializable

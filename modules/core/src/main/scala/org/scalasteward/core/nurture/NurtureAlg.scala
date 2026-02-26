@@ -41,7 +41,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     forgeRepoAlg: ForgeRepoAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
-    pullRequestRepository: PullRequestRepository[F],
+    pullRequestService: PullRequestService[F],
     updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
@@ -92,8 +92,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      head = config.tpe.pullRequestHeadFor(data.fork, data.updateBranch)
-      pullRequests <- forgeApiAlg.listPullRequests(data.repo, head, data.baseBranch)
+      pullRequests <- pullRequestService.listPullRequestsForUpdate(data, config.tpe)
       result <- pullRequests.headOption match {
         case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
           logger.info(s"PR ${pr.html_url} is closed") >>
@@ -106,22 +105,11 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
             case _                    => F.unit
           }
       }
-      _ <- pullRequests.headOption.traverse_ { pr =>
-        val prData = PullRequestData[Id](
-          pr.html_url,
-          data.baseSha1,
-          data.update,
-          pr.state,
-          pr.number,
-          data.updateBranch
-        )
-        pullRequestRepository.createOrUpdate(data.repo, prData)
-      }
     } yield result
 
   private def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     data.update.on(
-      update = pullRequestRepository
+      update = pullRequestService
         .getObsoleteOpenPullRequests(data.repo, _)
         .flatMap(_.traverse_(oldPr => closeObsoletePullRequest(data, newNumber, oldPr))),
       // We don't support closing obsolete PRs for `GroupedUpdate`s
@@ -136,15 +124,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     logger.attemptWarn.label_(
       s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show} in PR #$newNumber - will not comment due to https://github.com/scala-steward-org/scala-steward/issues/3797"
     ) {
+      val oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
       for {
-        _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
-        oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
           if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
           else List.empty.pure[F]
         _ <- F.whenA(authors.size <= 1) {
-          forgeApiAlg.closePullRequest(data.repo, oldPr.number) >>
+          pullRequestService.closePullRequest(data.repo, oldPr.number) >>
             deleteRemoteBranch(data.repo, oldPr.updateBranch)
         }
       } yield ()
@@ -249,16 +236,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     for {
       _ <- logger.info(s"Create PR ${data.updateBranch.name}")
       requestData <- preparePullRequest(data, edits)
-      pr <- forgeApiAlg.createPullRequest(data.repo, requestData)
-      prData = PullRequestData[Id](
-        pr.html_url,
-        data.baseSha1,
-        data.update,
-        pr.state,
-        pr.number,
-        data.updateBranch
-      )
-      _ <- pullRequestRepository.createOrUpdate(data.repo, prData)
+      pr <- pullRequestService.createPullRequest(data, requestData)
       _ <- logger.info(s"Created PR ${pr.html_url}")
     } yield Created(pr.number)
 
@@ -310,8 +288,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     } yield result
 
   def closeRetractedPullRequests(data: RepoData): F[Unit] =
-    pullRequestRepository
-      .getRetractedPullRequests(data.repo, data.config.updatesOrDefault.retractedOrDefault)
+    pullRequestService
+      .getRetractedOpenPullRequests(data.repo, data.config.updatesOrDefault.retractedOrDefault)
       .flatMap {
         _.traverse_ { case (oldPr, retractedArtifact) =>
           closeRetractedPullRequest(data, oldPr, retractedArtifact)
@@ -327,10 +305,12 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       s"Closing retracted PR ${oldPr.url.renderString} for ${oldPr.update.show} because of '${retractedArtifact.reason}'"
     ) {
       for {
-        _ <- pullRequestRepository.changeState(data.repo, oldPr.url, PullRequestState.Closed)
-        comment = retractedArtifact.retractionMsg
-        _ <- forgeApiAlg.commentPullRequest(data.repo, oldPr.number, comment)
-        _ <- forgeApiAlg.closePullRequest(data.repo, oldPr.number)
+        _ <- forgeApiAlg.commentPullRequest(
+          data.repo,
+          oldPr.number,
+          comment = retractedArtifact.retractionMsg
+        )
+        _ <- pullRequestService.closePullRequest(data.repo, oldPr.number)
         _ <- deleteRemoteBranch(data.repo, oldPr.updateBranch)
       } yield F.unit
     }

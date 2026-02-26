@@ -61,6 +61,10 @@ final class AzureReposApiAlg[F[_]](
   ): F[Unit] =
     logger.warn("Updating PRs is not yet supported for Azure Repos")
 
+  // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-request?view=azure-devops-rest-7.1
+  override def getPullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
+    client.get[PullRequestOut](url.pullRequest(repo, number), modify)
+
   // https://docs.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-7.1
   override def closePullRequest(repo: Repo, number: PullRequestNumber): F[PullRequestOut] =
     client.patchWithBody[PullRequestOut, ClosePullRequestPayload](

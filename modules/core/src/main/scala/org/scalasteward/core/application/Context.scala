@@ -40,7 +40,12 @@ import org.scalasteward.core.edit.update.ScannerAlg
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeAuthAlg, ForgeRepoAlg, ForgeSelection}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
-import org.scalasteward.core.nurture.{NurtureAlg, PullRequestRepository, UpdateInfoUrlFinder}
+import org.scalasteward.core.nurture.{
+  NurtureAlg,
+  PullRequestRepository,
+  PullRequestService,
+  UpdateInfoUrlFinder
+}
 import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
 import org.scalasteward.core.repocache.*
 import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
@@ -171,6 +176,8 @@ object Context {
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
+      implicit val pullRequestService: PullRequestService[F] =
+        new PullRequestService[F](pullRequestRepository, forgeApiAlg)
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolvers)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
