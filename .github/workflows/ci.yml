@@ -228,19 +228,7 @@ jobs:
       - name: Publish Docker images
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-
-          export DOCKER_JDK_VERSION=11
-          sbt core/Docker/publish
-
-          
-          export DOCKER_JDK_VERSION=17
-          sbt core/Docker/publish
-
-          
-          export DOCKER_JDK_VERSION=21
-          sbt core/Docker/publish
-
-          
-          export DOCKER_JDK_VERSION=25
-          sbt core/Docker/publish
-          
+          DOCKER_JDK_VERSION=11 sbt core/Docker/publish
+          DOCKER_JDK_VERSION=17 sbt core/Docker/publish
+          DOCKER_JDK_VERSION=21 sbt core/Docker/publish
+          DOCKER_JDK_VERSION=25 sbt core/Docker/publish
