@@ -229,22 +229,18 @@ jobs:
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
-          DOCKER_JDK_VERSION=11
-          DOCKER_BASE_IMAGE=eclipse-temurin:11-alpine
+          export DOCKER_JDK_VERSION=11
           sbt core/Docker/publish
 
           
-          DOCKER_JDK_VERSION=17
-          DOCKER_BASE_IMAGE=eclipse-temurin:17-alpine
+          export DOCKER_JDK_VERSION=17
           sbt core/Docker/publish
 
           
-          DOCKER_JDK_VERSION=21
-          DOCKER_BASE_IMAGE=eclipse-temurin:21-alpine
+          export DOCKER_JDK_VERSION=21
           sbt core/Docker/publish
 
           
-          DOCKER_JDK_VERSION=25
-          DOCKER_BASE_IMAGE=eclipse-temurin:25-alpine
+          export DOCKER_JDK_VERSION=25
           sbt core/Docker/publish
           
