@@ -48,8 +48,7 @@ ThisBuild / githubWorkflowPublish := Seq(
     "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}" ::
       jdkVersions.map { jdk =>
         s"""
-           |DOCKER_JDK_VERSION=$jdk
-           |DOCKER_BASE_IMAGE=eclipse-temurin:$jdk-alpine
+           |export DOCKER_JDK_VERSION=$jdk
            |sbt core/Docker/publish
            |""".stripMargin
       },
@@ -370,8 +369,10 @@ lazy val metadataSettings = Def.settings(
 )
 
 lazy val dockerSettings = Def.settings(
-  dockerBaseImage := Option(System.getenv("DOCKER_BASE_IMAGE"))
-    .getOrElse("eclipse-temurin:11-alpine"),
+  dockerBaseImage := {
+    val jdk = sys.env.get("DOCKER_JDK_VERSION").map(_.toInt).getOrElse(11)
+    "eclipse-temurin:$jdk-alpine"
+  },
   dockerCommands ++= {
     val curl = "curl -fL --output"
     val binDir = "/usr/local/bin"
