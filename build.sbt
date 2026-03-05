@@ -365,7 +365,7 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := {
-    val jdk = sys.env.get("DOCKER_JDK_VERSION").map(_.toInt).getOrElse(11)
+    val jdk = sys.env.getOrElse("DOCKER_JDK_VERSION", "11")
     "eclipse-temurin:$jdk-alpine"
   },
   dockerCommands ++= {
