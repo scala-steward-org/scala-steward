@@ -46,12 +46,7 @@ ThisBuild / githubWorkflowPublish := Seq(
   ),
   WorkflowStep.Run(
     "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}" ::
-      jdkVersions.map { jdk =>
-        s"""
-           |export DOCKER_JDK_VERSION=$jdk
-           |sbt core/Docker/publish
-           |""".stripMargin
-      },
+      jdkVersions.map(jdk => s"DOCKER_JDK_VERSION=$jdk sbt core/Docker/publish"),
     name = Some("Publish Docker images")
   )
 )
