@@ -39,6 +39,9 @@ class Url(apiHost: Uri, organization: String) {
   def pullRequests(repo: Repo): Uri =
     repos(repo) / "pullrequests"
 
+  def pullRequest(repo: Repo, number: PullRequestNumber): Uri =
+    pullRequests(repo) / number.value
+
   def listPullRequests(repo: Repo, source: String, target: Branch): Uri =
     pullRequests(repo).withQueryParams(
       Map("searchCriteria.sourceRefName" -> source, "searchCriteria.targetRefName" -> target.name)

@@ -79,7 +79,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       }.flatten.toList.sortBy(_.number.value)
     }
 
-  def getRetractedPullRequests(
+  def getRetractedOpenPullRequests(
       repo: Repo,
       allRetractedArtifacts: List[RetractedArtifact]
   ): F[List[(PullRequestData[Id], RetractedArtifact)]] =

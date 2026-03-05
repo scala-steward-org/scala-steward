@@ -16,9 +16,10 @@
 
 package org.scalasteward.core.nurture
 
+import cats.Id
 import org.http4s.Uri
-import org.scalasteward.core.data.Update
-import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
+import org.scalasteward.core.data.{Update, UpdateData}
+import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestOut, PullRequestState}
 import org.scalasteward.core.git.{Branch, Sha1}
 
 final case class PullRequestData[F[_]](
@@ -29,3 +30,14 @@ final case class PullRequestData[F[_]](
     number: F[PullRequestNumber],
     updateBranch: F[Branch]
 )
+
+object PullRequestData {
+  def apply(pr: PullRequestOut, updateData: UpdateData): PullRequestData[Id] = PullRequestData[Id](
+    pr.html_url,
+    updateData.baseSha1,
+    updateData.update,
+    pr.state,
+    pr.number,
+    updateData.updateBranch
+  )
+}
