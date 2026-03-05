@@ -31,6 +31,8 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch(mainBranch)),
   RefPredicate.StartsWith(Ref.Tag("v"))
 )
+val jdkVersions = List("11", "17", "21", "25")
+
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Run(
     List("sbt ci-release"),
@@ -43,14 +45,18 @@ ThisBuild / githubWorkflowPublish := Seq(
     )
   ),
   WorkflowStep.Run(
-    List(
-      "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}",
-      "sbt core/Docker/publish"
-    ),
-    name = Some("Publish Docker image")
+    "docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}" ::
+      jdkVersions.map { jdk =>
+        s"""
+           |DOCKER_JDK_VERSION=$jdk
+           |DOCKER_BASE_IMAGE=eclipse-temurin:$jdk-alpine
+           |sbt core/Docker/publish
+           |""".stripMargin
+      },
+    name = Some("Publish Docker images")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq("21", "17", "11").map(JavaSpec(Temurin, _))
+ThisBuild / githubWorkflowJavaVersions := jdkVersions.map(JavaSpec(Temurin, _))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Use(
@@ -231,6 +237,7 @@ lazy val core = myCrossProject("core")
     Test / fork := true,
     Compile / resourceGenerators += Def.task {
       val outDir = (Compile / resourceManaged).value
+
       def downloadPlugin(v: String): File = {
         val outFile = outDir / s"StewardPlugin_$v.scala"
         if (!outFile.exists()) {
@@ -241,6 +248,7 @@ lazy val core = myCrossProject("core")
         }
         outFile
       }
+
       Seq(downloadPlugin("1_0_0"), downloadPlugin("1_3_11"), downloadPlugin("2_0_0"))
     }.taskValue
   )
@@ -267,11 +275,12 @@ lazy val docs = myCrossProject("docs")
       catch {
         case t: Throwable =>
           val diff = git.runner.value.apply("diff", outDir)(rootDir, streams.value.log)
-          val msg = s"""|Docs in $inDir and $outDir are out of sync.
-                        |Run 'sbt docs/mdoc' and commit the changes to fix this.
-                        |The diff is:
-                        |$diff
-                        |""".stripMargin
+          val msg =
+            s"""|Docs in $inDir and $outDir are out of sync.
+                |Run 'sbt docs/mdoc' and commit the changes to fix this.
+                |The diff is:
+                |$diff
+                |""".stripMargin
           throw new Throwable(msg, t)
       }
       ()
@@ -411,7 +420,14 @@ lazy val dockerSettings = Def.settings(
   Docker / packageName := s"fthomas/${name.value}",
   dockerUpdateLatest := true,
   dockerAliases ++= {
-    if (!isSnapshot.value) Seq(dockerAlias.value.withTag(Option("latest-release"))) else Nil
+    def dockerTag(tag: String) = dockerAlias.value.withTag(Some(tag))
+
+    val jdkVersion = System.getenv("DOCKER_JDK_VERSION")
+    val jdkAlias = Some(dockerTag(s"jdk$jdkVersion"))
+    val releaseAlias = if (!isSnapshot.value) Some(dockerTag("latest-release")) else None
+    val versionTag = if (!isSnapshot.value) Some(dockerTag(s"${version.value}-jdk$jdkVersion")) else None
+
+    Seq(jdkAlias, releaseAlias, versionTag).flatten
   },
   dockerEnvVars := Map(
     "PATH" -> "/opt/docker/sbt/bin:${PATH}",
