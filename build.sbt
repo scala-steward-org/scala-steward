@@ -23,6 +23,9 @@ val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
 val Scala213 = "2.13.18"
 val Scala3 = "3.3.7"
 
+val jdkVersions = List("11", "17", "21", "25")
+val jdkReleaseVersion = "11"
+
 /// sbt-typelevel configuration
 
 ThisBuild / crossScalaVersions := Seq(Scala213, Scala3)
@@ -31,8 +34,6 @@ ThisBuild / githubWorkflowPublishTargetBranches := Seq(
   RefPredicate.Equals(Ref.Branch(mainBranch)),
   RefPredicate.StartsWith(Ref.Tag("v"))
 )
-val jdkVersions = List("11", "17", "21", "25")
-
 ThisBuild / githubWorkflowPublish := Seq(
   WorkflowStep.Run(
     List("sbt ci-release"),
@@ -365,7 +366,7 @@ lazy val metadataSettings = Def.settings(
 
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := {
-    val jdk = sys.env.getOrElse("DOCKER_JDK_VERSION", "11")
+    val jdk = sys.env.getOrElse("DOCKER_JDK_VERSION", jdkReleaseVersion)
     "eclipse-temurin:$jdk-alpine"
   },
   dockerCommands ++= {
@@ -420,7 +421,7 @@ lazy val dockerSettings = Def.settings(
 
     val jdkVersion = System.getenv("DOCKER_JDK_VERSION")
     val jdkAlias = Some(dockerTag(s"jdk$jdkVersion"))
-    val releaseAlias = if (!isSnapshot.value) Some(dockerTag("latest-release")) else None
+    val releaseAlias = if (!isSnapshot.value && jdkVersion == jdkReleaseVersion) Some(dockerTag("latest-release")) else None
     val versionTag = if (!isSnapshot.value) Some(dockerTag(s"${version.value}-jdk$jdkVersion")) else None
 
     Seq(jdkAlias, releaseAlias, versionTag).flatten
