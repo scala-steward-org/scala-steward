@@ -24,6 +24,7 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
+import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
@@ -122,10 +123,12 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       oldPr: PullRequestData[Id]
   ): F[Unit] =
     logger.attemptWarn.label_(
-      s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show} in PR #$newNumber - will not comment due to https://github.com/scala-steward-org/scala-steward/issues/3797"
+      s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show} in PR #$newNumber"
     ) {
       val oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
       for {
+        _ <- forgeApiAlg
+          .commentPullRequest(data.repo, oldPr.number, commentForBeingSupersededBy(newNumber))
         oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
         authors <-
           if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
@@ -136,6 +139,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         }
       } yield ()
     }
+
+  private def commentForBeingSupersededBy(newNumber: PullRequestNumber): String = config.tpe match {
+    // If a PR is part of a list element, GitHub renders its title
+    case GitHub => s"""|Superseded by
+                       |- ${forgeApiAlg.referencePullRequest(newNumber)}
+                       |""".stripMargin.trim
+    case _ => s"Superseded by ${forgeApiAlg.referencePullRequest(newNumber)}."
+  }
 
   private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
     logger.attemptWarn.log_(s"Deleting remote branch ${branch.name} failed") {
