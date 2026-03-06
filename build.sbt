@@ -421,8 +421,11 @@ lazy val dockerSettings = Def.settings(
 
     val jdkVersion = System.getenv("DOCKER_JDK_VERSION")
     val jdkAlias = Some(dockerTag(s"jdk$jdkVersion"))
-    val releaseAlias = if (!isSnapshot.value && jdkVersion == jdkReleaseVersion) Some(dockerTag("latest-release")) else None
-    val versionTag = if (!isSnapshot.value) Some(dockerTag(s"${version.value}-jdk$jdkVersion")) else None
+    val releaseAlias =
+      if (!isSnapshot.value && jdkVersion == jdkReleaseVersion) Some(dockerTag("latest-release"))
+      else None
+    val versionTag =
+      if (!isSnapshot.value) Some(dockerTag(s"${version.value}-jdk$jdkVersion")) else None
 
     Seq(jdkAlias, releaseAlias, versionTag).flatten
   },
