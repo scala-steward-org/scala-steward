@@ -367,7 +367,7 @@ lazy val metadataSettings = Def.settings(
 lazy val dockerSettings = Def.settings(
   dockerBaseImage := {
     val jdk = sys.env.getOrElse("DOCKER_JDK_VERSION", jdkReleaseVersion)
-    "eclipse-temurin:$jdk-alpine"
+    s"eclipse-temurin:$jdk-alpine"
   },
   dockerCommands ++= {
     val curl = "curl -fL --output"
