@@ -122,7 +122,10 @@ final case class Version(value: String) {
 }
 
 object Version {
-  case class Update(currentVersion: Version, nextVersion: Version)
+  case class Update(currentVersion: Version, nextVersion: Version) {
+    def obeysCoursierOrdering: Boolean =
+      coursier.core.Version(nextVersion.value) >= coursier.core.Version(currentVersion.value)
+  }
 
   def show(versions: Version*): String = {
     val vs0 = versions.map(_.value)

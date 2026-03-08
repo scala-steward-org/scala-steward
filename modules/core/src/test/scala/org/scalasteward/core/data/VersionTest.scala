@@ -5,11 +5,20 @@ import cats.kernel.laws.discipline.OrderTests
 import munit.DisciplineSuite
 import org.scalacheck.Prop.*
 import org.scalasteward.core.TestInstances.*
+import org.scalasteward.core.TestSyntax.StringOps
 import org.scalasteward.core.data.Version.Component
+
 import scala.util.Random
 
 class VersionTest extends DisciplineSuite {
   checkAll("Order[Version]", OrderTests[Version].order)
+
+  test("Note that currently, we treat Snapshot vs Milestone differently to Coursier") {
+    val snapshot = "1.0.0-SNAP8"
+    val milestone = "1.0.0-M2"
+    assert(snapshot.v < milestone.v)
+    assert(coursier.core.Version(snapshot) > coursier.core.Version(milestone)) // Surprising to me
+  }
 
   test("issue 1615: broken transitivity") {
     val res = OrderTests[Version].laws.transitivity(Version(""), Version("0"), Version("X"))
