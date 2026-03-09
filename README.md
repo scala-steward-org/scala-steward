@@ -232,7 +232,7 @@ Consider creating PR to add your company to the list and join the community.
 
 ## Participation
 
-The Scala Steward project supports the [Scala Code of Conduct](CoC)
+The Scala Steward project supports the [Scala Code of Conduct][CoC]
 and wants all of its channels to be welcoming environments for everyone.
 
 ## Credit
