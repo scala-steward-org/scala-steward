@@ -171,6 +171,19 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
           ]
       }"""
       )
+    case GET -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(2) =>
+      Ok(
+        json"""{
+            "id": 2,
+            "title": "scala-steward-pr",
+            "state": "OPEN",
+            "links": {
+                "html": {
+                    "href": "https://bitbucket.org/fthomas/base.g8/pullrequests/2"
+                }
+            }
+        }"""
+      )
     case POST -> Root / "repositories" / "fthomas" / "base.g8" / "pullrequests" / IntVar(
           _
         ) / "decline" =>
@@ -326,6 +339,11 @@ class BitbucketApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   test("listPullRequests") {
     val prs = bitbucketApiAlg.listPullRequests(repo, "master", master).runA(state)
     assertIO(prs, List(pullRequest))
+  }
+
+  test("getPullRequest") {
+    val prOut = bitbucketApiAlg.getPullRequest(repo, PullRequestNumber(2)).runA(state)
+    assertIO(prOut, pullRequest)
   }
 
   test("closePullRequest") {
