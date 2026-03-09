@@ -243,7 +243,7 @@ plugin which was used until version 0.6 to find dependency updates.
 Thanks goes also to [**@impurepics**](https://twitter.com/impurepics)
 for [**@scala-steward**][@scala-steward]'s cute profile picture and to
 the maintainers and contributors of the various
-[libraries](https://github.com/scala-steward-org/scala-steward/blob/master/project/Dependencies.scala)
+[libraries](https://github.com/scala-steward-org/scala-steward/blob/main/project/Dependencies.scala)
 this project depends on.
 
 ## License
