@@ -401,7 +401,10 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", installMill),
       Cmd("RUN", installCoursier),
       Cmd("RUN", installScalaCli),
-      Cmd("RUN", s"$csBin bootstrap ch.epfl.scala:scalafix-cli_2.13.18:0.14.6 -o $binDir/scalafix"),
+      Cmd(
+        "RUN",
+        s"$csBin bootstrap --main scalafix.cli.Cli ch.epfl.scala:scalafix-cli_2.13.18:0.14.6 -o $binDir/scalafix"
+      ),
       Cmd("RUN", s"$csBin install --install-dir $binDir scalafmt"),
       // Ensure binaries are in PATH
       Cmd("RUN", "echo $PATH"),
