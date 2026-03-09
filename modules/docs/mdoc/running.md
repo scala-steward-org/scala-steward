@@ -20,7 +20,7 @@ sbt stage
 Or as a [Docker](https://www.docker.com/) container:
 
 ```bash
-sbt docker:publishLocal
+sbt Docker/publishLocal
 
 docker run -v $STEWARD_DIR:/opt/scala-steward -it fthomas/scala-steward:latest \
   --workspace  "/opt/scala-steward/workspace" \
