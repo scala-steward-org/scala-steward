@@ -35,7 +35,7 @@ object Dependencies {
   val millMain = "com.lihaoyi" % "mill-runner-launcher_3" % "1.1.3"
   val monocleCore = "dev.optics" %% "monocle-core" % "3.3.0"
   val munit = "org.scalameta" %% "munit" % "1.2.4"
-  val munitCatsEffect = "org.typelevel" %% "munit-cats-effect" % "2.1.0"
+  val munitCatsEffect = "org.typelevel" %% "munit-cats-effect" % "2.2.0"
   val munitDiff = "org.scalameta" %% "munit-diff" % munit.revision
   val munitScalacheck = "org.scalameta" %% "munit-scalacheck" % "1.2.0"
   val refined = "eu.timepit" %% "refined" % "0.11.3"
