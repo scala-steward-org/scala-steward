@@ -20,12 +20,14 @@ import cats.effect.Concurrent
 import cats.syntax.all.*
 import fs2.Stream
 import io.circe.{Decoder, Encoder}
+import org.apache.commons.lang3.StringUtils.abbreviate
 import org.http4s.*
 import org.http4s.Method.{GET, PATCH, POST, PUT}
 import org.http4s.Status.Successful
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.client.Client
 import org.http4s.headers.{Accept, Link, MediaRangeAndQValue}
+
 import scala.util.control.NoStackTrace
 
 final class HttpJsonClient[F[_]](implicit
@@ -140,5 +142,5 @@ final case class UnexpectedResponse(
         |status: $status
         |headers:
         |${headers.headers.map(h => s"  ${h.show}").mkString("\n")}
-        |body: $body""".stripMargin
+        |body: ${abbreviate(body, 1000)}""".stripMargin
 }
