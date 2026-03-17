@@ -14,7 +14,7 @@ import org.scalasteward.core.util.Nel
 class ScalaCliAlgTest extends CatsEffectSuite {
   test("containsBuild: directive in non-source file") {
     val repo = Repo("user", "repo")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val fileWithUsingLib = "test.md" // this test fails if the extension is .scala or .sc
     val grepCmd = Cmd.gitGrep(repoDir, "//> using lib ")
@@ -26,7 +26,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
 
   test("containsBuild: directive with test.dep, dep, and lib") {
     val repo = Repo("user", "repo")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val fileWithUsingDirective = "project.scala"
 
@@ -45,7 +45,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
 
   test("getDependencies") {
     val repo = Repo("user", "repo")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val sbtBuildDir = repoDir / "tmp-sbt-build-for-scala-steward"
 
@@ -73,7 +73,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
           "-Dsbt.server.forcestart=true",
-          s";$crossStewardDependencies"
+          s";${crossStewardDependencies("")}"
         ),
         Cmd("rm", "-rf", s"$sbtBuildDir/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("rm", "-rf", s"$sbtBuildDir")
@@ -85,7 +85,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
 
   test("runMigration") {
     val repo = Repo("scala-cli-alg", "test-runMigration")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
     val migration = ScalafixMigration(
       GroupId("co.fs2"),
