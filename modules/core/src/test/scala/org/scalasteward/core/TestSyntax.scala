@@ -4,12 +4,23 @@ import org.scalasteward.core.data.*
 import org.scalasteward.core.data.Resolver.IvyRepository
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.edit.update.data.Substring
+import org.scalasteward.core.edit.update.data.Substring.Position
+import org.scalasteward.core.nurture.UpdatesForGivenEdit
 
 object TestSyntax {
   val sbtPluginReleases: IvyRepository = {
     val pattern = "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[defaultPattern]"
     IvyRepository("sbt-plugin-releases", pattern, None, None)
   }
+
+  def stubReplacementFor(u: Update.ForArtifactId): Substring.Replacement = Substring.Replacement(
+    Position("build.sbt", u.artifactForUpdate.hashCode(), u.currentVersion.value),
+    u.nextVersion.value
+  )
+
+  def stubFoo(updates: UpdatesForGivenEdit*): List[Update.ForArtifactId] =
+    updates.flatMap(_.asUpdatesForArtifactId.toList).toList
 
   implicit class GenericOps[A](val self: A) extends AnyVal {
     def withMavenCentral: Scope[A] =
@@ -143,6 +154,12 @@ object TestSyntax {
         artifactForUpdate = self.artifactForUpdate
           .copy(newerGroupId = newerGroupId, newerArtifactId = newerArtifactId)
       )
+
+    def stubEdit = UpdatesForGivenEdit(
+      List(stubReplacementFor(self)),
+      self.artifactsForUpdate,
+      self.nextVersion
+    )
   }
 
   implicit class ArtifactUpdateCandidatesOps(
