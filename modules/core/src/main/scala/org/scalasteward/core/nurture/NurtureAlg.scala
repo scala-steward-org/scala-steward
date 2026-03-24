@@ -47,10 +47,16 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] = {
+
+
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
+      updatesGroupedByReplacements <- updates.traverse(update => editAlg.findUpdateReplacements(fork.repo, data.config, update).map(update -> _)).map {
+        _.toList.groupMap(_._2)(_._1)
+      }
+
       (grouped, notGrouped) = Update.groupByPullRequestGroup(
         data.config.pullRequestsOrDefault.groupingOrDefault,
         updates.toList
@@ -58,6 +64,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
       _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
     } yield ()
+  }
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
