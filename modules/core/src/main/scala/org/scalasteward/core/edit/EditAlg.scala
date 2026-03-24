@@ -67,7 +67,7 @@ final class EditAlg[F[_]](implicit
         } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
     }
 
-  private def findUpdateReplacements(
+  def findUpdateReplacements(
       repo: Repo,
       config: RepoConfig,
       update: Update.Single
