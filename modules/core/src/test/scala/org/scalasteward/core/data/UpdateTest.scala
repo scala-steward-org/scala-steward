@@ -19,13 +19,13 @@ class UpdateTest extends FunSuite {
   }
 
   test("groupByGroupId: 1 update") {
-    val updates = List(("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single)
-    assertEquals(Update.groupByGroupId(updates), updates)
+    val updates = List(("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single.stubEdit)
+    assertEquals(Update.groupByGroupId(updates), updates.flatMap(_.asUpdatesForArtifactId.toList))
   }
 
   test("groupByGroupId: 2 updates") {
-    val update0 = ("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single
-    val update1 = ("org.specs2".g % "specs2-scalacheck".a % "3.9.4" %> "3.9.5").single
+    val update0 = ("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single.stubEdit
+    val update1 = ("org.specs2".g % "specs2-scalacheck".a % "3.9.4" %> "3.9.5").single.stubEdit
     val expected = List(
       ("org.specs2".g % Nel.of("specs2-core".a, "specs2-scalacheck".a) % "3.9.4" %> "3.9.5").group
     )

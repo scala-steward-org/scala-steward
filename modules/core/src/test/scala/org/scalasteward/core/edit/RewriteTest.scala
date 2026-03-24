@@ -391,8 +391,10 @@ class RewriteTest extends FunSuite {
   test("artifact change: group update") {
     val update1 = ("io.chrisdavenport".g % "log4cats-core".a % "1.2.1" %> "1.3.0").single
       .migration(newerGroupId = Some("org.typelevel".g))
+      .stubEdit
     val update2 = ("io.chrisdavenport".g % "log4cats-slf4j".a % "1.2.1" %> "1.3.0").single
       .migration(newerGroupId = Some("org.typelevel".g))
+      .stubEdit
     val update = Update.groupByGroupId(List(update1, update2)).head
     val original = Map(
       "Dependencies.scala" -> """val log4catsVersion = "1.2.1" """,
@@ -986,7 +988,7 @@ class RewriteTest extends FunSuite {
   }
 
   private def runApplyUpdate(
-      update: Update.Single,
+      update: Update,
       files: Map[String, String],
       expected: Map[String, String]
   ): Unit = {

@@ -44,7 +44,17 @@ final class EditAlg[F[_]](implicit
     workspaceAlg: WorkspaceAlg[F],
     F: MonadThrow[F]
 ) {
+
   def applyUpdate(
+      data: RepoData,
+      update: Update,
+      preCommit: F[Unit] = F.unit
+  ): F[List[EditAttempt]] = update.on(
+    update = applySingleUpdate(data, _, preCommit),
+    grouped = preCommit >> _.updates.flatTraverse(applySingleUpdate(data, _))
+  )
+
+  private def applySingleUpdate(
       data: RepoData,
       update: Update.Single,
       preCommit: F[Unit] = F.unit
@@ -67,7 +77,7 @@ final class EditAlg[F[_]](implicit
         } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
     }
 
-  private def findUpdateReplacements(
+  def findUpdateReplacements(
       repo: Repo,
       config: RepoConfig,
       update: Update.Single
