@@ -23,6 +23,7 @@ import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
+import org.scalasteward.core.edit.update.data.Substring
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
@@ -34,6 +35,18 @@ import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
+
+case class ApplicableUpdateSet(edits: List[Substring.Replacement], artifactUpdates: List[Update.ForArtifactId]) {
+  val commonGroupId: Option[GroupId] = {
+    val updatesByGroupId = artifactUpdates.groupBy(_.groupId)
+    Option.when(updatesByGroupId.size == 1)(updatesByGroupId.keys.head)
+  }
+
+  val commonVersionUpdate: Option[Version.Update] = {
+    val updatesByVersionUpdate = artifactUpdates.groupBy(_.versionUpdate)
+    Option.when(updatesByVersionUpdate.size == 1)(updatesByVersionUpdate.keys.head)
+  }
+}
 
 final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     coursierAlg: CoursierAlg[F],
@@ -53,13 +66,15 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      updatesGroupedByReplacements <- updates.traverse(update => editAlg.findUpdateReplacements(fork.repo, data.config, update).map(update -> _)).map {
-        _.toList.groupMap(_._2)(_._1)
+      applicableUpdateSets <- updates.traverse(update => editAlg.findUpdateReplacements(fork.repo, data.config, update).map(update -> _)).map {
+        x => x.toList.groupMap(_._2)(_._1).map {
+          case (r, a) => ApplicableUpdateSet(r, a)
+        }
       }
 
       (grouped, notGrouped) = Update.groupByPullRequestGroup(
         data.config.pullRequestsOrDefault.groupingOrDefault,
-        updates.toList
+        applicableUpdateSets.toList
       )
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
       _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
