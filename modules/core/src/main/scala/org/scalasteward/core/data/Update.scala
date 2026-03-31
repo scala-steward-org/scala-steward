@@ -23,6 +23,7 @@ import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.nurture.ApplicableUpdateSet
 
 case class ArtifactForUpdate(
     crossDependency: CrossDependency,
@@ -243,12 +244,20 @@ object Update {
     groups1.toList.distinct.sortBy(u => u: Update.Single)
   }
 
-  def groupByGroupId(updates: List[ForArtifactId]): List[Single] = {
+  /**
+   * If a set of ApplicableUpdateSet all have the same GroupId, then they could be a Update.ForGroupId()
+   *
+   * If there is only one artifact within a ApplicableUpdateSet for a given group id, just create a
+   * Update.ForArtifactId
+   *
+   * Otherwise, create a Grouped()?
+   */
+  def groupByGroupId(updates: List[ApplicableUpdateSet]): List[Single] = {
     val groups0 =
-      updates.groupByNel(s => (s.groupId, s.versionUpdate))
-    val groups1 = groups0.map { case ((_, versionUpdate), group) =>
+      updates.groupByNel(s => (s.commonGroupId, s.commonVersionUpdate))
+    val groups1 = groups0.map { case ((Some(_), Some(versionUpdate)), group) =>
       if (group.tail.isEmpty) group.head
-      else ForGroupId(group.map(_.artifactForUpdate), versionUpdate.nextVersion)
+      else ForGroupId(group.flatMap(_.artifactUpdates), versionUpdate.nextVersion)
     }
     groups1.toList.distinct.sorted
   }
@@ -260,12 +269,12 @@ object Update {
     */
   def groupByPullRequestGroup(
       groups: List[PullRequestGroup],
-      updates: List[Update.ForArtifactId]
-  ): (List[Grouped], List[Update.ForArtifactId]) =
+      updates: List[ApplicableUpdateSet]
+  ): (List[Grouped], List[ApplicableUpdateSet]) =
     groups.foldLeft((List.empty[Grouped], updates)) { case ((grouped, notGrouped), group) =>
       notGrouped.partition(group.matches) match {
         case (Nil, rest)     => (grouped, rest)
-        case (matched, rest) => (grouped :+ Grouped(group.name, group.title, matched), rest)
+        case (matched, rest) => (grouped :+ Grouped(group.name, group.title, matched.flatMap(_.artifactUpdates)), rest)
       }
     }
 
