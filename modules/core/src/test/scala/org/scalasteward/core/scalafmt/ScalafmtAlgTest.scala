@@ -11,7 +11,7 @@ import org.scalasteward.core.mock.{MockEffOps, MockState}
 class ScalafmtAlgTest extends FunSuite {
   test("getScalafmtVersion on unquoted version") {
     val repo = Repo("fthomas", "scala-steward")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val scalafmtConf = repoDir / scalafmtConfName
     val initialState = MockState.empty
@@ -32,7 +32,7 @@ class ScalafmtAlgTest extends FunSuite {
 
   test("getScalafmtVersion on quoted version") {
     val repo = Repo("fthomas", "scala-steward")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val scalafmtConf = repoDir / scalafmtConfName
     val initialState = MockState.empty
