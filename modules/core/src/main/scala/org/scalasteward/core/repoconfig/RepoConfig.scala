@@ -55,7 +55,7 @@ final case class RepoConfig(
     buildRoots
       .map(_.filterNot(_.relativePath.contains("..")))
       .getOrElse(defaultBuildRoots)
-      .map(cfg => BuildRoot(repo, cfg.relativePath))
+      .map(cfg => BuildRoot(repo, cfg.relativePath, cfg.subProject))
 
   def assigneesOrDefault: List[String] =
     assignees.getOrElse(Nil)
