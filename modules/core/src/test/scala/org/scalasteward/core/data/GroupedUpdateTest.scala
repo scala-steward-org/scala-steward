@@ -14,7 +14,7 @@ class GroupedUpdateTest extends FunSuite {
     ("org.specs2".g % "specs2-scalacheck".a % "3.9.3" %> "3.9.5").single
 
   val updateSingleTypelevelAlgebra: Update.ForArtifactId =
-    ("org.typelevel".g % "algebra".a % "3.9.4" %> "3.9.5").single
+    ("org.typelevel".g % "algebra".a % "2.1.1" %> "2.2.0").single
 
   val updateSingleCirceCore: Update.ForArtifactId =
     ("circe".g % "core".a % "1.4.2" %> "1.5.0").single
