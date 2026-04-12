@@ -23,6 +23,9 @@ import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.nurture.UpdatesForGivenEdit
+
+import scala.collection.immutable
 
 case class ArtifactForUpdate(
     crossDependency: CrossDependency,
@@ -243,12 +246,24 @@ object Update {
     groups1.toList.distinct.sortBy(u => u: Update.Single)
   }
 
-  def groupByGroupId(updates: List[ForArtifactId]): List[Single] = {
+  /**
+   * If a set of ApplicableUpdateSet all have the same GroupId, then they could be an Update.ForGroupId()
+   *
+   * If there is only one artifact within a ApplicableUpdateSet for a given group id, just create a
+   * Update.ForArtifactId
+   *
+   * Otherwise, create a Grouped()?
+   */
+  def groupByGroupId(updates: List[UpdatesForGivenEdit]): List[Update] = {
     val groups0 =
-      updates.groupByNel(s => (s.groupId, s.versionUpdate))
-    val groups1 = groups0.map { case ((_, versionUpdate), group) =>
-      if (group.tail.isEmpty) group.head
-      else ForGroupId(group.map(_.artifactForUpdate), versionUpdate.nextVersion)
+      updates.groupByNel(s => (s.commonGroupId, s.commonVersionUpdate))
+    val groups1: Iterable[Update] = groups0.map {
+      case ((Some(_), Some(versionUpdate)), updatesWithCommonMavenGroupId) =>
+        val affectedArtifacts = updatesWithCommonMavenGroupId.flatMap(_.artifactsForUpdate)
+        if (affectedArtifacts.size == 1) Update.ForArtifactId(affectedArtifacts.head, updatesWithCommonMavenGroupId.head.nextVersion)
+        else ForGroupId(updatesWithCommonMavenGroupId.flatMap(_.artifactsForUpdate), versionUpdate.nextVersion)
+      case (_, group) =>
+        Update.Grouped("some random name", None, group.flatMap(_.asUpdatesForArtifactId).toList)
     }
     groups1.toList.distinct.sorted
   }
@@ -260,17 +275,25 @@ object Update {
     */
   def groupByPullRequestGroup(
       groups: List[PullRequestGroup],
-      updates: List[Update.ForArtifactId]
-  ): (List[Grouped], List[Update.ForArtifactId]) =
+      updates: List[UpdatesForGivenEdit]
+  ): (List[Grouped], List[UpdatesForGivenEdit]) =
     groups.foldLeft((List.empty[Grouped], updates)) { case ((grouped, notGrouped), group) =>
       notGrouped.partition(group.matches) match {
         case (Nil, rest)     => (grouped, rest)
-        case (matched, rest) => (grouped :+ Grouped(group.name, group.title, matched), rest)
+        case (matched, rest) => (grouped :+ Grouped(group.name, group.title, matched.flatMap(_.asUpdatesForArtifactId.toList)), rest)
       }
     }
 
   implicit val SingleOrder: Order[Single] =
     Order.by((u: Single) => (u.crossDependencies, u.nextVersion))
+
+  implicit val GroupedOrder: Order[Grouped] =
+    Order.by((u: Grouped) => (u.name, u.asSingleUpdates))
+
+  implicit val UpdateOrder: Order[Update] = Order.by {
+    case g: Grouped => (1, Some(g), None)
+    case s: Single => (2, None, Some(s))
+  }
 
   // Encoder and Decoder instances
 
