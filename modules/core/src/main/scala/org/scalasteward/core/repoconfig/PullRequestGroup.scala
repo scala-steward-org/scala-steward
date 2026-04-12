@@ -34,7 +34,7 @@ case class PullRequestGroup(
   def matches(update: Update.ForArtifactId): Boolean = filter.exists(_.matches(update))
 
   def matches(updates: UpdatesForGivenEdit): Boolean =
-    filter.exists(f => updates.artifactUpdates.exists(update => f.matches(update)))
+    filter.exists(f => updates.asUpdatesForArtifactId.exists(update => f.matches(update)))
 }
 
 object PullRequestGroup {

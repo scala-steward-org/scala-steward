@@ -38,17 +38,25 @@ import org.typelevel.log4cats.Logger
 
 case class UpdatesForGivenEdit(
     edits: List[Substring.Replacement],
-    artifactUpdates: List[Update.ForArtifactId]
+    artifactsForUpdate: Nel[ArtifactForUpdate],
+    nextVersion: Version
 ) {
   val commonGroupId: Option[GroupId] = {
-    val updatesByGroupId = artifactUpdates.groupBy(_.groupId)
+    val updatesByGroupId = artifactsForUpdate.groupBy(_.groupId)
     Option.when(updatesByGroupId.size == 1)(updatesByGroupId.keys.head)
   }
 
-  val commonVersionUpdate: Option[Version.Update] = {
-    val updatesByVersionUpdate = artifactUpdates.groupBy(_.versionUpdate)
+  val commonCurrentVersion: Option[Version] = {
+    val updatesByVersionUpdate = artifactsForUpdate.groupBy(_.currentVersion)
     Option.when(updatesByVersionUpdate.size == 1)(updatesByVersionUpdate.keys.head)
   }
+
+  val commonVersionUpdate: Option[Version.Update] =
+    commonCurrentVersion.map(Version.Update(_, nextVersion))
+
+  lazy val asUpdatesForArtifactId: Nel[Update.ForArtifactId] = for {
+    artifactForUpdate <- artifactsForUpdate
+  } yield Update.ForArtifactId(artifactForUpdate, nextVersion)
 }
 
 final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
@@ -70,11 +78,13 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       baseBranch <- cloneAndSync(data.repo, fork)
       applicableUpdateSets <- updates
         .traverse(update =>
-          editAlg.findUpdateReplacements(fork.repo, data.config, update).map(update -> _)
+          editAlg
+            .findUpdateReplacements(fork.repo, data.config, update)
+            .map(update -> (_, update.nextVersion))
         )
-        .map { x =>
-          x.toList.groupMap(_._2)(_._1).map { case (r, a) =>
-            UpdatesForGivenEdit(r, a)
+        .map {
+          _.toList.groupMap(_._2)(_._1).flatMap { case ((r, nextVersion), a) =>
+            Nel.fromList(a.map(_.artifactForUpdate)).map(UpdatesForGivenEdit(r, _, nextVersion))
           }
         }
 

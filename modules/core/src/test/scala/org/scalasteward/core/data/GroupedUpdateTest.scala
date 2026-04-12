@@ -4,20 +4,35 @@ import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxOptionId
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax.*
+import org.scalasteward.core.edit.update.data.Substring
+import org.scalasteward.core.edit.update.data.Substring.Position
+import org.scalasteward.core.nurture.UpdatesForGivenEdit
 import org.scalasteward.core.repoconfig.{PullRequestGroup, PullRequestUpdateFilter}
 
 class GroupedUpdateTest extends FunSuite {
-  val updateSingleSpecs2Core: Update.ForArtifactId =
+  def stubReplacementFor(u: Update.ForArtifactId): Substring.Replacement = Substring.Replacement(
+    Position("build.sbt", u.artifactForUpdate.hashCode(), u.currentVersion.value),
+    u.nextVersion.value
+  )
+
+  private def stubEditFor(single: Update.ForArtifactId) = UpdatesForGivenEdit(
+    List(stubReplacementFor(single)),
+    single.artifactsForUpdate,
+    single.nextVersion
+  )
+
+  val updateSingleSpecs2Core = stubEditFor(
     ("org.specs2".g % "specs2-core".a % "3.9.3" %> "3.9.5").single
+  )
 
-  val updateSingleSpecs2Scalacheck: Update.ForArtifactId =
-    ("org.specs2".g % "specs2-scalacheck".a % "3.9.3" %> "3.9.5").single
+  val updateSingleSpecs2Scalacheck =
+    stubEditFor(("org.specs2".g % "specs2-scalacheck".a % "3.9.3" %> "3.9.5").single)
 
-  val updateSingleTypelevelAlgebra: Update.ForArtifactId =
-    ("org.typelevel".g % "algebra".a % "3.9.4" %> "3.9.5").single
+  val updateSingleTypelevelAlgebra =
+    stubEditFor(("org.typelevel".g % "algebra".a % "3.9.4" %> "3.9.5").single)
 
-  val updateSingleCirceCore: Update.ForArtifactId =
-    ("circe".g % "core".a % "1.4.2" %> "1.5.0").single
+  val updateSingleCirceCore =
+    stubEditFor(("circe".g % "core".a % "1.4.2" %> "1.5.0").single)
 
   test(
     "GroupedUpdate.from: Do not group a Update.Single if the groupId does not match the filter"
@@ -76,7 +91,11 @@ class GroupedUpdateTest extends FunSuite {
     assertEquals(
       grouped,
       List(
-        Update.Grouped("typelevel", Some("update typelevel"), List(updateSingleTypelevelAlgebra))
+        Update.Grouped(
+          "typelevel",
+          Some("update typelevel"),
+          updateSingleTypelevelAlgebra.asUpdatesForArtifactId.toList
+        )
       )
     )
     assertEquals(notGrouped, List.empty)
@@ -103,7 +122,9 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2",
           Some("update specs2"),
-          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck)
+          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck).flatMap(
+            _.asUpdatesForArtifactId.toList
+          )
         )
       )
     )
@@ -143,9 +164,15 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2",
           Some("update specs2"),
-          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck)
+          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck).flatMap(
+            _.asUpdatesForArtifactId.toList
+          )
         ),
-        Update.Grouped("typelevel", Some("update typelevel"), List(updateSingleTypelevelAlgebra))
+        Update.Grouped(
+          "typelevel",
+          Some("update typelevel"),
+          List(updateSingleTypelevelAlgebra).flatMap(_.asUpdatesForArtifactId.toList)
+        )
       )
     )
     assertEquals(notGrouped, List(updateSingleCirceCore))
