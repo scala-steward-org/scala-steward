@@ -23,7 +23,7 @@ import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
-import org.scalasteward.core.nurture.ApplicableUpdateSet
+import org.scalasteward.core.nurture.UpdatesForGivenEdit
 
 case class ArtifactForUpdate(
     crossDependency: CrossDependency,
@@ -252,7 +252,7 @@ object Update {
    *
    * Otherwise, create a Grouped()?
    */
-  def groupByGroupId(updates: List[ApplicableUpdateSet]): List[Single] = {
+  def groupByGroupId(updates: List[UpdatesForGivenEdit]): List[Single] = {
     val groups0 =
       updates.groupByNel(s => (s.commonGroupId, s.commonVersionUpdate))
     val groups1 = groups0.map { case ((Some(_), Some(versionUpdate)), group) =>
@@ -269,8 +269,8 @@ object Update {
     */
   def groupByPullRequestGroup(
       groups: List[PullRequestGroup],
-      updates: List[ApplicableUpdateSet]
-  ): (List[Grouped], List[ApplicableUpdateSet]) =
+      updates: List[UpdatesForGivenEdit]
+  ): (List[Grouped], List[UpdatesForGivenEdit]) =
     groups.foldLeft((List.empty[Grouped], updates)) { case ((grouped, notGrouped), group) =>
       notGrouped.partition(group.matches) match {
         case (Nil, rest)     => (grouped, rest)

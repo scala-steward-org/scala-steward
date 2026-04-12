@@ -36,7 +36,10 @@ import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
-case class ApplicableUpdateSet(edits: List[Substring.Replacement], artifactUpdates: List[Update.ForArtifactId]) {
+case class UpdatesForGivenEdit(
+    edits: List[Substring.Replacement],
+    artifactUpdates: List[Update.ForArtifactId]
+) {
   val commonGroupId: Option[GroupId] = {
     val updatesByGroupId = artifactUpdates.groupBy(_.groupId)
     Option.when(updatesByGroupId.size == 1)(updatesByGroupId.keys.head)
@@ -60,17 +63,20 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] = {
-
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
 
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      applicableUpdateSets <- updates.traverse(update => editAlg.findUpdateReplacements(fork.repo, data.config, update).map(update -> _)).map {
-        x => x.toList.groupMap(_._2)(_._1).map {
-          case (r, a) => ApplicableUpdateSet(r, a)
+      applicableUpdateSets <- updates
+        .traverse(update =>
+          editAlg.findUpdateReplacements(fork.repo, data.config, update).map(update -> _)
+        )
+        .map { x =>
+          x.toList.groupMap(_._2)(_._1).map { case (r, a) =>
+            UpdatesForGivenEdit(r, a)
+          }
         }
-      }
 
       (grouped, notGrouped) = Update.groupByPullRequestGroup(
         data.config.pullRequestsOrDefault.groupingOrDefault,
@@ -79,7 +85,6 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
       _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
     } yield ()
-  }
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {

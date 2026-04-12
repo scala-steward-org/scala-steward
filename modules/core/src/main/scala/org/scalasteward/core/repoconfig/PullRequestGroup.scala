@@ -21,7 +21,7 @@ import cats.data.NonEmptyList
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
-import org.scalasteward.core.nurture.ApplicableUpdateSet
+import org.scalasteward.core.nurture.UpdatesForGivenEdit
 
 case class PullRequestGroup(
     name: String,
@@ -33,7 +33,7 @@ case class PullRequestGroup(
     */
   def matches(update: Update.ForArtifactId): Boolean = filter.exists(_.matches(update))
 
-  def matches(updates: ApplicableUpdateSet): Boolean =
+  def matches(updates: UpdatesForGivenEdit): Boolean =
     filter.exists(f => updates.artifactUpdates.exists(update => f.matches(update)))
 }
 
