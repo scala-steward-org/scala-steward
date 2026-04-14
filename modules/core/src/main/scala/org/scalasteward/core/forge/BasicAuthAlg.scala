@@ -49,9 +49,7 @@ class BasicAuthAlg[F[_]](apiUri: Uri, login: String, gitAskPass: File)(implicit
     }
 
   override def authenticateGit(uri: Uri): F[Uri] =
-    userInfo.map(user =>
-      util.uri.withUserInfo.replace(UserInfo("x-bitbucket-api-token-auth", user.password))(uri)
-    )
+    userInfo.map(user => util.uri.withUserInfo.replace(user)(uri))
 
   override def accessibleRepos: F[List[Repo]] = F.pure(List.empty)
 }
