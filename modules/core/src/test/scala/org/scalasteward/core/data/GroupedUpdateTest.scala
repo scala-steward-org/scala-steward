@@ -4,20 +4,22 @@ import cats.data.NonEmptyList
 import cats.implicits.catsSyntaxOptionId
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax.*
+import org.scalasteward.core.nurture.UpdatesForGivenEdit
 import org.scalasteward.core.repoconfig.{PullRequestGroup, PullRequestUpdateFilter}
 
 class GroupedUpdateTest extends FunSuite {
-  val updateSingleSpecs2Core: Update.ForArtifactId =
-    ("org.specs2".g % "specs2-core".a % "3.9.3" %> "3.9.5").single
 
-  val updateSingleSpecs2Scalacheck: Update.ForArtifactId =
-    ("org.specs2".g % "specs2-scalacheck".a % "3.9.3" %> "3.9.5").single
+  val updateSingleSpecs2Core =
+    ("org.specs2".g % "specs2-core".a % "3.9.3" %> "3.9.5").single.stubEdit
 
-  val updateSingleTypelevelAlgebra: Update.ForArtifactId =
-    ("org.typelevel".g % "algebra".a % "3.9.4" %> "3.9.5").single
+  val updateSingleSpecs2Scalacheck =
+    ("org.specs2".g % "specs2-scalacheck".a % "3.9.3" %> "3.9.5").single.stubEdit
 
-  val updateSingleCirceCore: Update.ForArtifactId =
-    ("circe".g % "core".a % "1.4.2" %> "1.5.0").single
+  val updateSingleTypelevelAlgebra =
+    ("org.typelevel".g % "algebra".a % "2.1.1" %> "2.2.0").single.stubEdit
+
+  val updateSingleCirceCore =
+    ("circe".g % "core".a % "1.4.2" %> "1.5.0").single.stubEdit
 
   test(
     "GroupedUpdate.from: Do not group a Update.Single if the groupId does not match the filter"
@@ -76,7 +78,7 @@ class GroupedUpdateTest extends FunSuite {
     assertEquals(
       grouped,
       List(
-        Update.Grouped("typelevel", Some("update typelevel"), List(updateSingleTypelevelAlgebra))
+        Update.Grouped("typelevel", Some("update typelevel"), stubFoo(updateSingleTypelevelAlgebra))
       )
     )
     assertEquals(notGrouped, List.empty)
@@ -103,7 +105,9 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2",
           Some("update specs2"),
-          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck)
+          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck).flatMap(
+            _.asUpdatesForArtifactId.toList
+          )
         )
       )
     )
@@ -143,9 +147,15 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2",
           Some("update specs2"),
-          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck)
+          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck).flatMap(
+            _.asUpdatesForArtifactId.toList
+          )
         ),
-        Update.Grouped("typelevel", Some("update typelevel"), List(updateSingleTypelevelAlgebra))
+        Update.Grouped(
+          "typelevel",
+          Some("update typelevel"),
+          List(updateSingleTypelevelAlgebra).flatMap(_.asUpdatesForArtifactId.toList)
+        )
       )
     )
     assertEquals(notGrouped, List(updateSingleCirceCore))
@@ -174,7 +184,11 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "org",
           Some("update org"),
-          List(updateSingleSpecs2Core, updateSingleSpecs2Scalacheck, updateSingleTypelevelAlgebra)
+          stubFoo(
+            updateSingleSpecs2Core,
+            updateSingleSpecs2Scalacheck,
+            updateSingleTypelevelAlgebra
+          )
         )
       )
     )
@@ -203,7 +217,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "all wildcard",
           Some("update all wildcard"),
-          List(
+          stubFoo(
             updateSingleTypelevelAlgebra,
             updateSingleSpecs2Core,
             updateSingleSpecs2Scalacheck
@@ -233,7 +247,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2 core",
           Some("update specs2 core"),
-          List(updateSingleSpecs2Core)
+          stubFoo(updateSingleSpecs2Core)
         )
       )
     )
@@ -262,7 +276,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2 core",
           Some("update specs2 core"),
-          List(updateSingleSpecs2Core)
+          stubFoo(updateSingleSpecs2Core)
         )
       )
     )
@@ -315,7 +329,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2",
           Some("update specs2"),
-          List(updateSingleSpecs2Scalacheck, updateSingleSpecs2Core)
+          stubFoo(updateSingleSpecs2Scalacheck, updateSingleSpecs2Core)
         )
       )
     )
@@ -345,7 +359,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "specs2",
           Some("update specs2"),
-          List(updateSingleSpecs2Scalacheck, updateSingleSpecs2Core)
+          stubFoo(updateSingleSpecs2Scalacheck, updateSingleSpecs2Core)
         )
       )
     )
@@ -378,9 +392,12 @@ class GroupedUpdateTest extends FunSuite {
     )
   }
 
-  val majorUpdate: Update.ForArtifactId = ("org.major".g % "major".a % "3.1.2" %> "4.0.0").single
-  val minorUpdate: Update.ForArtifactId = ("org.minor".g % "minor".a % "3.1.2" %> "3.2.0").single
-  val patchUpdate: Update.ForArtifactId = ("org.patch".g % "patch".a % "3.1.2" %> "3.1.3").single
+  val majorUpdate: UpdatesForGivenEdit =
+    ("org.major".g % "major".a % "3.1.2" %> "4.0.0").single.stubEdit
+  val minorUpdate: UpdatesForGivenEdit =
+    ("org.minor".g % "minor".a % "3.1.2" %> "3.2.0").single.stubEdit
+  val patchUpdate: UpdatesForGivenEdit =
+    ("org.patch".g % "patch".a % "3.1.2" %> "3.1.3").single.stubEdit
 
   test(
     "GroupedUpdate.from: Group major updates"
@@ -403,7 +420,7 @@ class GroupedUpdateTest extends FunSuite {
     assertEquals(
       grouped,
       List(
-        Update.Grouped("major", Some("update major"), List(majorUpdate))
+        Update.Grouped("major", Some("update major"), majorUpdate.asUpdatesForArtifactId.toList)
       )
     )
 
@@ -431,7 +448,7 @@ class GroupedUpdateTest extends FunSuite {
     assertEquals(
       grouped,
       List(
-        Update.Grouped("minor", Some("update minor"), List(minorUpdate))
+        Update.Grouped("minor", Some("update minor"), minorUpdate.asUpdatesForArtifactId.toList)
       )
     )
 
@@ -459,7 +476,7 @@ class GroupedUpdateTest extends FunSuite {
     assertEquals(
       grouped,
       List(
-        Update.Grouped("patch", Some("update patch"), List(patchUpdate))
+        Update.Grouped("patch", Some("update patch"), patchUpdate.asUpdatesForArtifactId.toList)
       )
     )
 
@@ -492,7 +509,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "patch & minor",
           Some("update patch & minor"),
-          List(minorUpdate, patchUpdate)
+          stubFoo(minorUpdate, patchUpdate)
         )
       )
     )
@@ -503,12 +520,14 @@ class GroupedUpdateTest extends FunSuite {
   test(
     "GroupedUpdate.from: Group major & minor updates with version numbers containing a date and commit hash"
   ) {
-    val majorUpdate: Update.ForArtifactId =
-      ("org.major".g % "major".a % "1.0.0-20220920-180024-dd318047" %> "2.0.0-20220922-180024-dd318047").single
-    val minorUpdate: Update.ForArtifactId =
-      ("org.minor".g % "minor".a % "1.0.0-20220920-180024-dd318047" %> "1.1.0-20220922-180024-dd318047").single
-    val patchUpdate: Update.ForArtifactId =
-      ("org.patch".g % "patch".a % "1.0.0-20220920-180024-dd318047" %> "1.0.1-20220922-180024-dd318047").single
+    val majorUpdate: UpdatesForGivenEdit =
+      ("org.major".g % "major".a % "1.0.0-20220920-180024-dd318047" %> "2.0.0-20220922-180024-dd318047").single.stubEdit
+
+    val minorUpdate: UpdatesForGivenEdit =
+      ("org.minor".g % "minor".a % "1.0.0-20220920-180024-dd318047" %> "1.1.0-20220922-180024-dd318047").single.stubEdit
+
+    val patchUpdate: UpdatesForGivenEdit =
+      ("org.patch".g % "patch".a % "1.0.0-20220920-180024-dd318047" %> "1.0.1-20220922-180024-dd318047").single.stubEdit
 
     val pullRequestArtifactSpecs2WildcardWithInvalidGroup: PullRequestGroup = PullRequestGroup(
       "major & minor",
@@ -533,7 +552,7 @@ class GroupedUpdateTest extends FunSuite {
         Update.Grouped(
           "major & minor",
           Some("update major & minor"),
-          List(majorUpdate, minorUpdate)
+          stubFoo(majorUpdate, minorUpdate)
         )
       )
     )
@@ -544,12 +563,14 @@ class GroupedUpdateTest extends FunSuite {
   test(
     "GroupedUpdate.from: Group patch updates with version numbers containing a date and commit hash"
   ) {
-    val majorUpdate: Update.ForArtifactId =
-      ("org.major".g % "major".a % "1.0.0-20220920-180024-dd318047" %> "2.0.0-20220922-180024-dd318047").single
-    val minorUpdate: Update.ForArtifactId =
-      ("org.minor".g % "minor".a % "1.0.0-20220920-180024-dd318047" %> "1.1.0-20220922-180024-dd318047").single
-    val patchUpdate: Update.ForArtifactId =
-      ("org.patch".g % "patch".a % "1.0.0-20220920-180024-dd318047" %> "1.0.1-20220920-180024-dd318047").single
+    val majorUpdate: UpdatesForGivenEdit =
+      ("org.major".g % "major".a % "1.0.0-20220920-180024-dd318047" %> "2.0.0-20220922-180024-dd318047").single.stubEdit
+
+    val minorUpdate: UpdatesForGivenEdit =
+      ("org.minor".g % "minor".a % "1.0.0-20220920-180024-dd318047" %> "1.1.0-20220922-180024-dd318047").single.stubEdit
+
+    val patchUpdate: UpdatesForGivenEdit =
+      ("org.patch".g % "patch".a % "1.0.0-20220920-180024-dd318047" %> "1.0.1-20220920-180024-dd318047").single.stubEdit
 
     val pullRequestArtifactSpecs2WildcardWithInvalidGroup: PullRequestGroup = PullRequestGroup(
       "patch",
@@ -569,7 +590,7 @@ class GroupedUpdateTest extends FunSuite {
     assertEquals(
       grouped,
       List(
-        Update.Grouped("patch", Some("update patch"), List(patchUpdate))
+        Update.Grouped("patch", Some("update patch"), stubFoo(patchUpdate))
       )
     )
 
