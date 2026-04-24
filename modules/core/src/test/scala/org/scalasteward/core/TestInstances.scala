@@ -113,7 +113,8 @@ object TestInstances {
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
-    } yield PullRequestsConfig(frequency))
+      branchPrefix <- Arbitrary.arbitrary[Option[String]]
+    } yield PullRequestsConfig(frequency, branchPrefix = branchPrefix))
 
   implicit val pullRequestUpdateStrategyArbitrary: Arbitrary[PullRequestUpdateStrategy] =
     Arbitrary(
