@@ -41,6 +41,7 @@ class RepoConfigAlgTest extends FunSuite {
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
+         |pullRequests.branchPrefix = "scala-steward"
          |pullRequests.grouping = [
          |  { name = "patches", "title" = "Patch updates", "filter" = [{"version" = "patch"}] },
          |  { name = "minor_major", "title" = "Minor/major updates", "filter" = [{"version" = "minor"}, {"version" = "major"}] },
@@ -68,6 +69,7 @@ class RepoConfigAlgTest extends FunSuite {
     val expected = RepoConfig(
       pullRequests = PullRequestsConfig(
         frequency = Some(PullRequestFrequency.Timespan(7.days)),
+        branchPrefix = Some("scala-steward"),
         grouping = List(
           PullRequestGroup(
             name = "patches",
@@ -234,6 +236,14 @@ class RepoConfigAlgTest extends FunSuite {
     val expected = RepoConfig(pullRequests =
       PullRequestsConfig(frequency = Some(PullRequestFrequency.Timespan(30.days))).some
     )
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'pullRequests.branchPrefix = scala-steward'") {
+    val content = """pullRequests.branchPrefix = "scala-steward" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(pullRequests = PullRequestsConfig(branchPrefix = Some("scala-steward")).some)
     assertEquals(config, Right(expected))
   }
 
