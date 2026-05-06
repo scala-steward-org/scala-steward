@@ -274,6 +274,14 @@ object Update {
     groups1.toList.distinct.sorted
   }
 
+  def performAllGrouping(
+      updatesByEdit: Seq[UpdatesForGivenEdit],
+      groups: List[PullRequestGroup]
+  ): List[Update] = {
+    val (grouped, notGrouped) = groupByPullRequestGroup(groups, updatesByEdit.toList)
+    groupByGroupId(notGrouped) ++ grouped
+  }
+
   /** Processes the provided updates using the group configuration. Each update will only be present
     * in the first group it falls into.
     *
