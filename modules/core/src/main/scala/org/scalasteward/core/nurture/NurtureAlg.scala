@@ -30,7 +30,7 @@ import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
-import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}
+import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfig, RetractedArtifact}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
@@ -71,28 +71,38 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
-  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
+  def updateEditsFor(
+      repoConfig: RepoConfig,
+      repo: Repo,
+      updates: Nel[Update.ForArtifactId]
+  ): F[Iterable[UpdatesForGivenEdit]] = updates
+    .traverse(update =>
+      editAlg
+        .findUpdateReplacements(repo, repoConfig, update)
+        .map(reps => (reps, update.nextVersion) -> update.artifactForUpdate)
+    )
+    .map {
+      _.groupMap(_._1)(_._2).map { case ((reps, nextVersion), artifacts) =>
+        UpdatesForGivenEdit(reps, artifacts, nextVersion)
+      }
+    }
 
+  def finalUpdatesFor(
+      repoConfig: RepoConfig,
+      repo: Repo,
+      updates: Nel[Update.ForArtifactId]
+  ): F[List[Update]] = for {
+    updatesByEdit <- updateEditsFor(repoConfig, repo, updates)
+  } yield Update.performAllGrouping(
+    updatesByEdit.toSeq,
+    repoConfig.pullRequestsOrDefault.groupingOrDefault
+  )
+
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      applicableUpdateSets <- updates
-        .traverse(update =>
-          editAlg
-            .findUpdateReplacements(fork.repo, data.config, update)
-            .map(update -> (_, update.nextVersion))
-        )
-        .map {
-          _.toList.groupMap(_._2)(_._1).flatMap { case ((r, nextVersion), a) =>
-            Nel.fromList(a.map(_.artifactForUpdate)).map(UpdatesForGivenEdit(r, _, nextVersion))
-          }
-        }
-
-      (grouped, notGrouped) = Update.groupByPullRequestGroup(
-        data.config.pullRequestsOrDefault.groupingOrDefault,
-        applicableUpdateSets.toList
-      )
-      finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
+      finalUpdates <- finalUpdatesFor(data.config, fork.repo, updates)
       _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
     } yield ()
 
