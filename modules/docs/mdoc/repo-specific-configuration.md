@@ -119,8 +119,16 @@ updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 #
 # Scala Steward records the first time it sees any artefact version and calculates
 # the artefact version's age from that time.
+#
+# Optionally, the minimum age can be overridden for specific groupIds (or
+# groupId + artifactId). The first matching override wins; otherwise the
+# top-level `minimumAge` is used as the default.
 updates.cooldown = {
   minimumAge: "7 days"
+  overrides = [
+    { groupId = "org.typelevel", minimumAge = "3 days" },
+    { groupId = "org.acme", artifactId = "foo", minimumAge = "1 day" }
+  ]
 }
 
 # The dependencies which match the given pattern are retracted. Their existing pull-request will be closed.

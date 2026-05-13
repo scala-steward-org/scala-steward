@@ -226,10 +226,22 @@ object UpdatesConfig {
   ): Option[List[String]] =
     combineOptions(x, y)(_.intersect(_))
 
+  // x = global, y = repo (see RepoConfigAlg: maybeGlobalRepoConfig |+| maybeRepoConfig).
+  // minimumAge: repo wins over global (preserves prior behavior).
+  // overrides: concatenated repo-first, deduped — repo entries take precedence by being checked first.
   private[repoconfig] def mergeCooldown(
       x: Option[CooldownConfig],
       y: Option[CooldownConfig]
-  ): Option[CooldownConfig] = (y ++ x).headOption // for now, simply let local override global
+  ): Option[CooldownConfig] = (x, y) match {
+    case (None, _)          => y
+    case (_, None)          => x
+    case (Some(g), Some(r)) =>
+      val mergedOverrides = combineOptions(r.overrides, g.overrides) { (rOv, gOv) =>
+        val rPatterns = rOv.map(_.pattern).toSet
+        rOv ::: gOv.filterNot(o => rPatterns.contains(o.pattern))
+      }
+      Some(CooldownConfig(minimumAge = r.minimumAge, overrides = mergedOverrides))
+  }
 
   intellijThisImportIsUsed(refinedDecoder: Decoder[NonNegInt])
 }

@@ -18,7 +18,8 @@ package org.scalasteward.core.repoconfig
 
 import cats.implicits.*
 import io.circe.generic.semiauto.deriveCodec
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.syntax.*
+import io.circe.{Codec, Decoder, Encoder, Json}
 import org.scalasteward.core.data.ArtifactUpdateCandidates
 import org.scalasteward.core.util.Timestamp
 import org.scalasteward.core.util.dateTime.parseFiniteDuration
@@ -26,19 +27,55 @@ import org.scalasteward.core.util.dateTime.parseFiniteDuration
 import scala.concurrent.duration.FiniteDuration
 
 final case class CooldownConfig(
-    minimumAge: FiniteDuration
+    minimumAge: FiniteDuration,
+    overrides: Option[List[CooldownConfig.Override]] = None
 ) {
+  def overridesOrDefault: List[CooldownConfig.Override] = overrides.getOrElse(Nil)
+
+  private def minimumAgeFor(updateCandidates: ArtifactUpdateCandidates): FiniteDuration =
+    overridesOrDefault
+      .find { o =>
+        UpdatePattern
+          .findMatch(List(o.pattern), updateCandidates, include = true)
+          .byArtifactId
+          .nonEmpty
+      }
+      .map(_.minimumAge)
+      .getOrElse(minimumAge)
+
   def filterForAge(
       updateCandidates: ArtifactUpdateCandidates,
       currentTime: Timestamp
-  ): Option[ArtifactUpdateCandidates] =
-    updateCandidates.filterVersionsWithFirstSeen(_.isOlderThan(minimumAge, currentTime))
+  ): Option[ArtifactUpdateCandidates] = {
+    val effectiveAge = minimumAgeFor(updateCandidates)
+    updateCandidates.filterVersionsWithFirstSeen(_.isOlderThan(effectiveAge, currentTime))
+  }
 }
 
 object CooldownConfig {
-  implicit val codec: Codec[CooldownConfig] = deriveCodec
   implicit val finiteDurationDecoder: Decoder[FiniteDuration] =
     Decoder[String].emap(s => parseFiniteDuration(s).leftMap(_.toString))
   implicit val finiteDurationEncoder: Encoder[FiniteDuration] =
     Encoder[String].contramap(_.toString)
+
+  final case class Override(
+      pattern: UpdatePattern,
+      minimumAge: FiniteDuration
+  )
+
+  object Override {
+    implicit val codec: Codec[Override] = Codec.from(
+      Decoder.instance { c =>
+        for {
+          minimumAge <- c.get[FiniteDuration]("minimumAge")
+          pattern <- c.as[UpdatePattern]
+        } yield Override(pattern, minimumAge)
+      },
+      Encoder.instance { o =>
+        o.pattern.asJson.deepMerge(Json.obj("minimumAge" -> o.minimumAge.asJson))
+      }
+    )
+  }
+
+  implicit val codec: Codec[CooldownConfig] = deriveCodec
 }
