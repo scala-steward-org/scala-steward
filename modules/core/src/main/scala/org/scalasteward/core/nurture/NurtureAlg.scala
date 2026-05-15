@@ -98,13 +98,12 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     repoConfig.pullRequestsOrDefault.groupingOrDefault
   )
 
-  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
-    for {
-      _ <- logger.info(s"Nurture ${data.repo.show}")
-      baseBranch <- cloneAndSync(data.repo, fork)
-      finalUpdates <- finalUpdatesFor(data.config, fork.repo, updates)
-      _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
-    } yield ()
+  def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] = for {
+    _ <- logger.info(s"Nurture ${data.repo.show}")
+    baseBranch <- cloneAndSync(data.repo, fork)
+    finalUpdates <- finalUpdatesFor(data.config, fork.repo, updates)
+    _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
+  } yield ()
 
   private def cloneAndSync(repo: Repo, fork: RepoOut): F[Branch] =
     for {
