@@ -181,7 +181,7 @@ postUpdateHooks = [{
 }]
 
 # You can override some config options for dependencies that matches the given pattern.
-# Currently, "pullRequests" can be overridden.
+# Currently, "pullRequests" and cooldown can be overridden.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # First-matched entry is used.
 # More-specific entry should be placed before less-specific entry.
@@ -191,6 +191,11 @@ dependencyOverrides = [
   {
     dependency = { groupId = "com.example", artifactId = "foo", version = "2." },
     pullRequests = { frequency = "1 day" },
+  },
+  {
+    dependency = { groupId = "com.my-company" },
+    pullRequests = {},
+    cooldown = { minimumAge = "0 days" },
   },
   {
     dependency = { groupId = "com.example", artifactId = "foo" },

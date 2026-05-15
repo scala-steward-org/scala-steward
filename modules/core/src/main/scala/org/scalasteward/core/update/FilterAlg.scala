@@ -73,7 +73,7 @@ object FilterAlg {
       currentTime: Timestamp
   ): Either[RejectionReason, Update.ForArtifactId] =
     repoConfig.updatesOrDefault
-      .keep(update, currentTime)
+      .keep(update, currentTime, repoConfig.dependencyOverridesOrDefault)
       .flatMap(scalaLTSFilter)
       .flatMap(globalFilter(_, repoConfig))
 

@@ -23,6 +23,7 @@ import io.circe.generic.semiauto.deriveCodec
 import io.circe.refined.*
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.update.FilterAlg.*
@@ -56,8 +57,15 @@ final case class UpdatesConfig(
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
 
-  def keep(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    isAllowed(update).flatMap(isPinned).flatMap(isIgnored).flatMap(isTooRecent(_, currentTime))
+  def keep(
+      update: ArtifactUpdateCandidates,
+      currentTime: Timestamp,
+      dependencyOverrides: List[GroupRepoConfig]
+  ): FilterResult =
+    isAllowed(update)
+      .flatMap(isPinned)
+      .flatMap(isIgnored)
+      .flatMap(isTooRecent(_, currentTime, dependencyOverrides))
 
   def preRelease(update: ArtifactUpdateCandidates): FilterResult =
     isAllowedPreReleases(update)
@@ -87,10 +95,44 @@ final case class UpdatesConfig(
     update.filterVersions(m.filteredVersions.contains).toRight(IgnoredByConfig(update))
   }
 
-  private def isTooRecent(update: ArtifactUpdateCandidates, currentTime: Timestamp): FilterResult =
-    cooldown
-      .map(_.filterForAge(update, currentTime).toRight(TooRecentForCooldown(update)))
-      .getOrElse(Right(update))
+  private def isTooRecent(
+      update: ArtifactUpdateCandidates,
+      currentTime: Timestamp,
+      dependencyOverrides: List[GroupRepoConfig]
+  ): FilterResult =
+    update
+      .filterVersionsWithFirstSeen(
+        keepVersionForCooldown(_, update, currentTime, dependencyOverrides)
+      )
+      .toRight(TooRecentForCooldown(update))
+
+  private def keepVersionForCooldown(
+      versionWithFirstSeen: VersionWithFirstSeen,
+      update: ArtifactUpdateCandidates,
+      currentTime: Timestamp,
+      dependencyOverrides: List[GroupRepoConfig]
+  ): Boolean =
+    cooldownFor(versionWithFirstSeen, update, dependencyOverrides)
+      .forall(config => versionWithFirstSeen.isOlderThan(config.minimumAge, currentTime))
+
+  private def cooldownFor(
+      versionWithFirstSeen: VersionWithFirstSeen,
+      update: ArtifactUpdateCandidates,
+      dependencyOverrides: List[GroupRepoConfig]
+  ): Option[CooldownConfig] =
+    dependencyOverrides
+      .collectFirstSome { groupRepoConfig =>
+        val matchResult =
+          UpdatePattern.findMatch(List(groupRepoConfig.dependency), update, include = true)
+        Option
+          .when(
+            matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.contains(
+              versionWithFirstSeen.version
+            )
+          )(groupRepoConfig.cooldown)
+          .flatten
+      }
+      .orElse(cooldown)
 }
 
 object UpdatesConfig {

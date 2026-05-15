@@ -5,7 +5,12 @@ import cats.syntax.all.*
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
-import org.scalasteward.core.data.GroupId
+import org.scalasteward.core.data.{
+  ArtifactForUpdate,
+  ArtifactUpdateCandidates,
+  CrossDependency,
+  GroupId
+}
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockEffOps, MockState}
@@ -391,5 +396,66 @@ class FilterAlgTest extends FunSuite {
       update1.newerVersionsWithFirstSeen.concatNel(update2.newerVersionsWithFirstSeen)
     )
     assertEquals(FilterAlg.localFilter(update3, config, Timestamp(10)), Right(update2.asSoleUpdate))
+  }
+
+  test("dependencyOverrides can override cooldown for internal dependencies") {
+    val config = RepoConfig(
+      updates = UpdatesConfig(cooldown = CooldownConfig(7.days).some).some,
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          cooldown = CooldownConfig(0.seconds).some,
+          dependency = UpdatePattern("com.gu".g, None, None)
+        )
+      ).some
+    )
+
+    val internalUpdate =
+      ("com.gu".g % "widgets".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(9))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(internalUpdate, config, Timestamp(10)),
+      Right(internalUpdate.asSoleUpdate)
+    )
+
+    val externalUpdate =
+      ("org.typelevel".g % "cats-core".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(9))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(externalUpdate, config, Timestamp(10)),
+      Left(TooRecentForCooldown(externalUpdate))
+    )
+  }
+
+  test("dependencyOverrides cooldown applies only to matching candidate versions") {
+    val config = RepoConfig(
+      updates = UpdatesConfig(cooldown = CooldownConfig(7.days).some).some,
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          cooldown = CooldownConfig(0.seconds).some,
+          dependency =
+            UpdatePattern("com.gu".g, Some("widgets"), Some(VersionPattern(Some("1.0.1"))))
+        )
+      ).some
+    )
+
+    val update = ArtifactUpdateCandidates(
+      ArtifactForUpdate(CrossDependency("com.gu".g % "widgets".a % "1.0.0")),
+      Nel.of(
+        VersionWithFirstSeen("1.0.1".v, Some(Timestamp(9))),
+        VersionWithFirstSeen("1.0.2".v, Some(Timestamp(9)))
+      )
+    )
+
+    val expected =
+      ("com.gu".g % "widgets".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(9))
+      )).single
+
+    assertEquals(FilterAlg.localFilter(update, config, Timestamp(10)), Right(expected.asSoleUpdate))
   }
 }

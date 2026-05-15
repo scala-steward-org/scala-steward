@@ -49,7 +49,11 @@ class RepoConfigAlgTest extends FunSuite {
          |  { name = "all", "filter" = [{"group" = "*"}] }
          |]
          |dependencyOverrides = [
-         |  { pullRequests.frequency = "@daily",   dependency = { groupId = "eu.timepit" } },
+         |  {
+         |    pullRequests.frequency = "@daily",
+         |    cooldown.minimumAge = "1 day",
+         |    dependency = { groupId = "eu.timepit" }
+         |  },
          |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
          |  { pullRequests.frequency = "@weekly",  dependency = { groupId = "eu.timepit", artifactId = "refined.1", version = { prefix="1." } } },
          |]
@@ -140,12 +144,14 @@ class RepoConfigAlgTest extends FunSuite {
       dependencyOverrides = List(
         GroupRepoConfig(
           dependency = UpdatePattern(GroupId("eu.timepit"), None, None),
+          cooldown = Some(CooldownConfig(1.day)),
           pullRequests = PullRequestsConfig(
             frequency = Some(PullRequestFrequency.Timespan(1.day))
           )
         ),
         GroupRepoConfig(
           dependency = UpdatePattern(GroupId("eu.timepit"), Some("refined.1"), None),
+          cooldown = None,
           pullRequests = PullRequestsConfig(
             frequency = Some(PullRequestFrequency.Timespan(30.days))
           )
@@ -156,6 +162,7 @@ class RepoConfigAlgTest extends FunSuite {
             Some("refined.1"),
             Some(VersionPattern(prefix = Some("1.")))
           ),
+          cooldown = None,
           pullRequests = PullRequestsConfig(
             frequency = Some(PullRequestFrequency.Timespan(7.days))
           )
