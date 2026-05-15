@@ -1,6 +1,7 @@
 package org.scalasteward.core.data
 
 import munit.FunSuite
+import org.scalasteward.core.TestSyntax
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.util.Nel
 
@@ -16,6 +17,17 @@ class UpdateTest extends FunSuite {
     val update = ("com.softwaremill.sttp".g %
       Nel.of("circe".a, "core".a, "monix".a) % "1.3.2" %> "1.3.3").group
     assertEquals(update.mainArtifactId, "circe")
+  }
+
+  test("performAllGrouping: 1 update") {
+    val coreGroup = "com.fasterxml.jackson.core".g
+    val datatypeGroup = "com.fasterxml.jackson.datatype".g
+    val update1 = (coreGroup % "jackson-core".a % "2.20.1" %> "2.20.2").single.stubEdit
+    val update2 = (coreGroup % "jackson-databind".a % "2.20.1" %> "2.20.2").single.stubEdit
+    val update3 = (datatypeGroup % "jackson-datatype-jdk8".a % "2.20.1" %> "2.20.2").single.stubEdit
+    val update4 = (datatypeGroup % "jackson-datatype-jsr310".a % "2.20.1" %> "2.20.2").single.stubEdit
+
+    assertEquals(Update.performAllGrouping(List(update), List.empty), artifactUpdatesOf(update))
   }
 
   test("groupByGroupId: 1 update") {
