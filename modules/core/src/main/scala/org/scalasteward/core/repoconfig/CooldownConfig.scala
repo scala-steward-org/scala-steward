@@ -19,21 +19,13 @@ package org.scalasteward.core.repoconfig
 import cats.implicits.*
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
-import org.scalasteward.core.data.ArtifactUpdateCandidates
-import org.scalasteward.core.util.Timestamp
 import org.scalasteward.core.util.dateTime.parseFiniteDuration
 
 import scala.concurrent.duration.FiniteDuration
 
 final case class CooldownConfig(
     minimumAge: FiniteDuration
-) {
-  def filterForAge(
-      updateCandidates: ArtifactUpdateCandidates,
-      currentTime: Timestamp
-  ): Option[ArtifactUpdateCandidates] =
-    updateCandidates.filterVersionsWithFirstSeen(_.isOlderThan(minimumAge, currentTime))
-}
+)
 
 object CooldownConfig {
   implicit val codec: Codec[CooldownConfig] = deriveCodec
