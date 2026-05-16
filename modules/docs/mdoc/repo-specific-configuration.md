@@ -200,7 +200,7 @@ dependencyOverrides = [
   {
     dependency = { groupId = "com.my-company" },
     pullRequests = {},
-    cooldown = { minimumAge = "0 days" },
+    cooldown = { minimumAge = "2 days" },
   },
   {
     dependency = { groupId = "com.example", artifactId = "foo" },
