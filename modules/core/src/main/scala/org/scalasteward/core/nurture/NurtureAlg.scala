@@ -23,17 +23,41 @@ import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
+import org.scalasteward.core.edit.update.data.Substring
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
 import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
-import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}
+import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RepoConfig, RetractedArtifact}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
+
+case class UpdatesForGivenEdit(
+    edits: List[Substring.Replacement],
+    artifactsForUpdate: Nel[ArtifactForUpdate],
+    nextVersion: Version
+) {
+  val commonGroupId: Option[GroupId] = {
+    val updatesByGroupId = artifactsForUpdate.groupBy(_.groupId)
+    Option.when(updatesByGroupId.size == 1)(updatesByGroupId.keys.head)
+  }
+
+  val commonCurrentVersion: Option[Version] = {
+    val updatesByVersionUpdate = artifactsForUpdate.groupBy(_.currentVersion)
+    Option.when(updatesByVersionUpdate.size == 1)(updatesByVersionUpdate.keys.head)
+  }
+
+  val commonVersionUpdate: Option[Version.Update] =
+    commonCurrentVersion.map(Version.Update(_, nextVersion))
+
+  lazy val asUpdatesForArtifactId: Nel[Update.ForArtifactId] = for {
+    artifactForUpdate <- artifactsForUpdate
+  } yield Update.ForArtifactId(artifactForUpdate, nextVersion)
+}
 
 final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     coursierAlg: CoursierAlg[F],
@@ -47,15 +71,38 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     urlChecker: UrlChecker[F],
     F: Concurrent[F]
 ) {
+  def updateEditsFor(
+      repoConfig: RepoConfig,
+      repo: Repo,
+      updates: Nel[Update.ForArtifactId]
+  ): F[Iterable[UpdatesForGivenEdit]] = updates
+    .traverse(update =>
+      editAlg
+        .findUpdateReplacements(repo, repoConfig, update)
+        .map(reps => (reps, update.nextVersion) -> update.artifactForUpdate)
+    )
+    .map {
+      _.groupMap(_._1)(_._2).map { case ((reps, nextVersion), artifacts) =>
+        UpdatesForGivenEdit(reps, artifacts, nextVersion)
+      }
+    }
+
+  def finalUpdatesFor(
+      repoConfig: RepoConfig,
+      repo: Repo,
+      updates: Nel[Update.ForArtifactId]
+  ): F[List[Update]] = for {
+    updatesByEdit <- updateEditsFor(repoConfig, repo, updates)
+  } yield Update.performAllGrouping(
+    updatesByEdit.toSeq,
+    repoConfig.pullRequestsOrDefault.groupingOrDefault
+  )
+
   def nurture(data: RepoData, fork: RepoOut, updates: Nel[Update.ForArtifactId]): F[Unit] =
     for {
       _ <- logger.info(s"Nurture ${data.repo.show}")
       baseBranch <- cloneAndSync(data.repo, fork)
-      (grouped, notGrouped) = Update.groupByPullRequestGroup(
-        data.config.pullRequestsOrDefault.groupingOrDefault,
-        updates.toList
-      )
-      finalUpdates = Update.groupByGroupId(notGrouped) ++ grouped
+      finalUpdates <- finalUpdatesFor(data.config, fork.repo, updates)
       _ <- updateDependencies(data, fork.repo, baseBranch, finalUpdates)
     } yield ()
 
@@ -158,11 +205,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
-      data.update
-        .on(
-          update = editAlg.applyUpdate(data.repoData, _, createBranch),
-          grouped = createBranch >> _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
-        )
+      editAlg
+        .applyUpdate(data.repoData, data.update, createBranch)
         .flatMap { edits =>
           val editCommits = edits.flatMap(_.commits)
           if (editCommits.isEmpty) logger.warn("No commits created").as(Ignored)
@@ -288,10 +332,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         s"Reset ${data.updateBranch.name} to ${data.baseBranch.name} and apply again"
       )
       _ <- gitAlg.resetHard(data.repo, data.baseBranch)
-      edits <- data.update.on(
-        update = editAlg.applyUpdate(data.repoData, _),
-        grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
-      )
+      edits <- editAlg.applyUpdate(data.repoData, data.update)
       editCommits = edits.flatMap(_.commits)
       result <- pushCommits(data, editCommits)
       requestData <- preparePullRequest(data, edits)
