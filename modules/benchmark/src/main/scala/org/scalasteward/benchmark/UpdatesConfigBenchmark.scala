@@ -36,11 +36,13 @@ class UpdatesConfigBenchmark {
       .map(v => VersionWithFirstSeen(Version(v), None))
     val update = ArtifactUpdateCandidates(ArtifactForUpdate(dependency), newerVersions)
     val currentTime = Timestamp(millis = 0)
+    val dependencyOverrides = Nil
 
-    UpdatesConfig().keep(update, currentTime)
-    UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None)))).keep(update, currentTime)
+    UpdatesConfig().keep(update, currentTime, dependencyOverrides)
+    UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None))))
+      .keep(update, currentTime, dependencyOverrides)
     UpdatesConfig(allow =
       Some(List(UpdatePattern(groupId, None, Some(VersionPattern(prefix = Some("6.0"))))))
-    ).keep(update, currentTime)
+    ).keep(update, currentTime, dependencyOverrides)
   }
 }

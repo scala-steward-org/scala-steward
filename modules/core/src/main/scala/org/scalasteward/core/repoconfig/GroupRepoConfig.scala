@@ -23,6 +23,7 @@ import org.scalasteward.core.util.string.indentLines
 
 final case class GroupRepoConfig(
     pullRequests: PullRequestsConfig = PullRequestsConfig(),
+    cooldown: Option[CooldownConfig] = None,
     dependency: UpdatePattern
 )
 

@@ -107,13 +107,17 @@ object TestInstances {
   implicit val groupRepoConfigArbitrary: Arbitrary[GroupRepoConfig] =
     Arbitrary(for {
       pullRequestsConfig <- Arbitrary.arbitrary[PullRequestsConfig]
+      cooldown <- Arbitrary.arbitrary[Option[CooldownConfig]]
       pattern <- Arbitrary.arbitrary[UpdatePattern]
-    } yield GroupRepoConfig(pullRequestsConfig, pattern))
+    } yield GroupRepoConfig(pullRequestsConfig, cooldown, pattern))
 
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
     } yield PullRequestsConfig(frequency))
+
+  implicit val cooldownConfigArbitrary: Arbitrary[CooldownConfig] =
+    Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig.apply))
 
   implicit val pullRequestUpdateStrategyArbitrary: Arbitrary[PullRequestUpdateStrategy] =
     Arbitrary(
@@ -146,15 +150,19 @@ object TestInstances {
       for {
         pin <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
         allow <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
+        allowPreReleases <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
         ignore <- smallListOf(4, Arbitrary.arbitrary[UpdatePattern])
         limit <- Arbitrary.arbitrary[Option[NonNegInt]]
         fileExtensions <- Arbitrary.arbitrary[Option[List[String]]]
+        cooldown <- Arbitrary.arbitrary[Option[CooldownConfig]]
       } yield UpdatesConfig(
         pin = Some(pin),
         allow = Some(allow),
+        allowPreReleases = Some(allowPreReleases),
         ignore = Some(ignore),
         limit = limit,
-        fileExtensions = fileExtensions
+        fileExtensions = fileExtensions,
+        cooldown = cooldown
       )
     )
 
