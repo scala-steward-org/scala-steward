@@ -17,8 +17,16 @@
 package org.scalasteward.core.buildtool.sbt
 
 object command {
-  val stewardDependencies = "stewardDependencies"
-  val crossStewardDependencies = s"+ $stewardDependencies"
+  // NOTE: if `subProj` contains blank chars in the middle, then an incorrect command will be produced.
+  // TODO: consider `subProj` validation.
+  def stewardDependencies(subProj: String): String =
+    (if (subProj.isBlank) "" else s"${subProj.strip}/") + "stewardDependencies"
+
+  // NOTE: if `subProj` contains blank chars in the middle, then an incorrect command will be produced.
+  // TODO: consider `subProj` validation.
+  def crossStewardDependencies(subProj: String): String =
+    s"+ ${stewardDependencies(subProj)}"
+
   val reloadPlugins = "reload plugins"
   val scalafixAll = "scalafixAll"
   val scalafixEnable = "scalafixEnable"
