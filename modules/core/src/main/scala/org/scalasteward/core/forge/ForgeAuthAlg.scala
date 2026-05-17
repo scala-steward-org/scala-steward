@@ -21,6 +21,7 @@ import org.http4s.{Request, Uri}
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.data.Repo
 import org.scalasteward.core.forge.ForgeType.*
+import org.scalasteward.core.forge.bitbucket.BitbucketAuthAlg
 import org.scalasteward.core.forge.bitbucketserver.BitbucketServerAuthAlg
 import org.scalasteward.core.forge.github.GitHubAuthAlg
 import org.scalasteward.core.forge.gitlab.GitLabAuthAlg
@@ -46,7 +47,7 @@ object ForgeAuthAlg {
       case AzureRepos =>
         new BasicAuthAlg(config.forgeCfg.apiHost, config.forgeCfg.login, config.gitCfg.gitAskPass)
       case Bitbucket =>
-        new BasicAuthAlg(config.forgeCfg.apiHost, config.forgeCfg.login, config.gitCfg.gitAskPass)
+        new BitbucketAuthAlg(config.forgeCfg.apiHost, config.forgeCfg.login, config.gitCfg.gitAskPass)
       case BitbucketServer =>
         new BitbucketServerAuthAlg(
           config.forgeCfg.apiHost,
