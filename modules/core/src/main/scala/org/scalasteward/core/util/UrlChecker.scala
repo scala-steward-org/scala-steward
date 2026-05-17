@@ -58,10 +58,19 @@ object UrlChecker {
           }
 
         private def status(url: Uri): F[Status] =
-          statusCache.cachingF(url.renderString)(None) {
-            val req = Request[F](method = Method.HEAD, uri = url)
-            modify(req).flatMap(urlCheckerClient.client.status)
-          }
+          isWhitelisted(config.whiteListOrganizations, url)
+            .pure[F]
+            .ifM(
+              Status.Ok.pure[F],
+              statusCache.cachingF(url.renderString)(None) {
+                val req = Request[F](method = Method.HEAD, uri = url)
+                modify(req)
+                  .flatTap(req =>
+                    logger.info(s"Checking if $url exists: ${req.asCurl(_ => false)}")
+                  )
+                  .flatMap(urlCheckerClient.client.status)
+              }
+            )
       }
     }
 }
