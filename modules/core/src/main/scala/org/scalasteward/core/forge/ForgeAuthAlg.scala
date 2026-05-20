@@ -47,7 +47,11 @@ object ForgeAuthAlg {
       case AzureRepos =>
         new BasicAuthAlg(config.forgeCfg.apiHost, config.forgeCfg.login, config.gitCfg.gitAskPass)
       case Bitbucket =>
-        new BitbucketAuthAlg(config.forgeCfg.apiHost, config.forgeCfg.login, config.gitCfg.gitAskPass)
+        new BitbucketAuthAlg(
+          config.forgeCfg.apiHost,
+          config.forgeCfg.login,
+          config.gitCfg.gitAskPass
+        )
       case BitbucketServer =>
         new BitbucketServerAuthAlg(
           config.forgeCfg.apiHost,
