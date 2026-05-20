@@ -252,7 +252,7 @@ lazy val docs = myCrossProject("docs")
   .settings(
     libraryDependencies ++= Seq(Dependencies.munitDiff),
     scalacOptions += "-Ytasty-reader",
-    tpolecatExcludeOptions := Set(ScalacOptions.fatalWarnings),
+    tpolecatExcludeOptions := Set(ScalacOptions.fatalWarnings, ScalacOptions.warnNonUnitStatement),
     mdocIn := baseDirectory.value / ".." / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
     mdocVariables := Map(
