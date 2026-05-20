@@ -25,7 +25,7 @@ class BitbucketAuthAlgTest extends CatsEffectSuite {
 
     val stateOp = authAlg.authenticateGit(cloneUri).runSA(state)
 
-    stateOp.map { case (finalState, uri) =>
+    stateOp.map { case (_, uri) =>
       assertEquals(
         uri.renderString,
         "https://x-bitbucket-api-token-auth:user-api-token@bitbucket.example.com/scm/PROJ/repo.git"
