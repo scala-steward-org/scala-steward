@@ -5,7 +5,7 @@ import org.scalasteward.core.data.Resolver.IvyRepository
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.edit.update.data.Substring
-import org.scalasteward.core.edit.update.data.Substring.Position
+import org.scalasteward.core.edit.update.data.Substring.{Position, Replacement}
 import org.scalasteward.core.nurture.UpdatesForGivenEdit
 
 object TestSyntax {
@@ -14,9 +14,14 @@ object TestSyntax {
     IvyRepository("sbt-plugin-releases", pattern, None, None)
   }
 
-  def stubReplacementFor(u: Update.ForArtifactId): Substring.Replacement = Substring.Replacement(
-    Position("build.sbt", u.artifactForUpdate.hashCode(), u.currentVersion.value),
-    u.nextVersion.value
+  def stubReplacement(positionIndex: Int, versionUpdate: Version.Update): Substring.Replacement = Substring.Replacement(
+    Position("build.sbt", positionIndex, versionUpdate.currentVersion.value),
+    versionUpdate.nextVersion.value
+  )
+
+  def stubReplacementFor(u: Update.ForArtifactId): Substring.Replacement = stubReplacement(
+    positionIndex = u.artifactForUpdate.hashCode(),
+    versionUpdate = u.versionUpdate
   )
 
   def artifactUpdatesOf(updates: UpdatesForGivenEdit*): List[Update.ForArtifactId] =
@@ -46,6 +51,10 @@ object TestSyntax {
 
   implicit class GroupIdAndArtifactIdOps(private val self: (GroupId, ArtifactId)) extends AnyVal {
     def %(version: String): Dependency = Dependency(self._1, self._2, version.v)
+
+    def %(versionUpdate: Version.Update): Update.ForArtifactId = Update.ForArtifactId(
+      ArtifactForUpdate(CrossDependency(Dependency(self._1, self._2, versionUpdate.currentVersion))), versionUpdate.nextVersion
+    )
   }
 
   implicit class GroupIdAndArtifactIdsOps(
@@ -155,11 +164,13 @@ object TestSyntax {
           .copy(newerGroupId = newerGroupId, newerArtifactId = newerArtifactId)
       )
 
-    def stubEdit = UpdatesForGivenEdit(
-      List(stubReplacementFor(self)),
+    def withEdit(replacement: Replacement) = UpdatesForGivenEdit(
+      List(replacement),
       self.artifactsForUpdate,
       self.nextVersion
     )
+
+    def stubEdit = withEdit(stubReplacementFor(self))
   }
 
   implicit class ArtifactUpdateCandidatesOps(

@@ -51,7 +51,7 @@ final class EditAlg[F[_]](implicit
       preCommit: F[Unit] = F.unit
   ): F[List[EditAttempt]] = update.on(
     update = applySingleUpdate(data, _, preCommit),
-    grouped = preCommit >> _.updates.flatTraverse(applySingleUpdate(data, _))
+    grouped = preCommit >> _.updates.toList.flatTraverse(applySingleUpdate(data, _))
   )
 
   private def applySingleUpdate(

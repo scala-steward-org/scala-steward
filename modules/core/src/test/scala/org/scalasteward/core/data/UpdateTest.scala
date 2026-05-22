@@ -3,6 +3,7 @@ package org.scalasteward.core.data
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax
 import org.scalasteward.core.TestSyntax.*
+import org.scalasteward.core.edit.update.data.Substring.Replacement
 import org.scalasteward.core.util.Nel
 
 class UpdateTest extends FunSuite {
@@ -22,12 +23,21 @@ class UpdateTest extends FunSuite {
   test("performAllGrouping: 1 update") {
     val coreGroup = "com.fasterxml.jackson.core".g
     val datatypeGroup = "com.fasterxml.jackson.datatype".g
-    val update1 = (coreGroup % "jackson-core".a % "2.20.1" %> "2.20.2").single.stubEdit
-    val update2 = (coreGroup % "jackson-databind".a % "2.20.1" %> "2.20.2").single.stubEdit
-    val update3 = (datatypeGroup % "jackson-datatype-jdk8".a % "2.20.1" %> "2.20.2").single.stubEdit
-    val update4 = (datatypeGroup % "jackson-datatype-jsr310".a % "2.20.1" %> "2.20.2").single.stubEdit
+    val vUpdate = Version.Update("2.20.1".v, "2.20.2".v)
+    val singleEdit: Replacement = stubReplacement(positionIndex = 10, vUpdate)
+    val update1 = (coreGroup % "jackson-core".a % vUpdate).withEdit(singleEdit)
+    val update2 = (coreGroup % "jackson-databind".a % vUpdate).withEdit(singleEdit)
+    val update3 = (datatypeGroup % "jackson-datatype-jdk8".a % vUpdate).withEdit(singleEdit)
+    val update4 = (datatypeGroup % "jackson-datatype-jsr310".a % vUpdate).withEdit(singleEdit)
 
-    assertEquals(Update.performAllGrouping(List(update), List.empty), artifactUpdatesOf(update))
+    val boo = Map(
+
+    )
+
+    val updatesAndEdits = List(update1, update2, update3, update4)
+    val resultingUpdates = Update.performAllGrouping(updatesAndEdits, List.empty)
+    assertEquals(resultingUpdates.size, 1)
+    assertEquals(resultingUpdates.head.asSingleUpdates.size, 4)
   }
 
   test("groupByGroupId: 1 update") {

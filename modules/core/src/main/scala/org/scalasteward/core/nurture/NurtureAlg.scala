@@ -24,6 +24,7 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.edit.update.data.Substring
+import org.scalasteward.core.edit.update.data.Substring.Replacement
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
@@ -36,10 +37,9 @@ import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
-case class UpdatesForGivenEdit(
-    edits: List[Substring.Replacement],
-    artifactsForUpdate: Nel[ArtifactForUpdate],
-    nextVersion: Version
+case class InseparableUpdateSet(
+  artifactsForUpdate: Nel[ArtifactForUpdate],
+  nextVersion: Version
 ) {
   val commonGroupId: Option[GroupId] = {
     val updatesByGroupId = artifactsForUpdate.groupBy(_.groupId)
@@ -59,6 +59,11 @@ case class UpdatesForGivenEdit(
   } yield Update.ForArtifactId(artifactForUpdate, nextVersion)
 }
 
+case class UpdatesForGivenEdit(
+  edits: List[Substring.Replacement],
+  inseparableUpdateSet: InseparableUpdateSet
+)
+
 final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
@@ -75,15 +80,15 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       repoConfig: RepoConfig,
       repo: Repo,
       updates: Nel[Update.ForArtifactId]
-  ): F[Iterable[UpdatesForGivenEdit]] = updates
+  ): F[Map[Set[Replacement], InseparableUpdateSet]] = updates
     .traverse(update =>
       editAlg
         .findUpdateReplacements(repo, repoConfig, update)
         .map(reps => (reps, update.nextVersion) -> update.artifactForUpdate)
     )
     .map {
-      _.groupMap(_._1)(_._2).map { case ((reps, nextVersion), artifacts) =>
-        UpdatesForGivenEdit(reps, artifacts, nextVersion)
+      _.groupMap(_._1)(_._2).toMap.map { case ((reps, nextVersion), artifacts) =>
+        reps.toSet -> InseparableUpdateSet(artifacts, nextVersion)
       }
     }
 
@@ -94,7 +99,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   ): F[List[Update]] = for {
     updatesByEdit <- updateEditsFor(repoConfig, repo, updates)
   } yield Update.performAllGrouping(
-    updatesByEdit.toSeq,
+    updatesByEdit,
     repoConfig.pullRequestsOrDefault.groupingOrDefault
   )
 
@@ -227,9 +232,9 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
 
   private def dependenciesUpdatedWithNextAndCurrentVersion(
       update: Update
-  ): List[(Version, Dependency)] =
+  ): Nel[(Version, Dependency)] =
     update.on(
-      u => u.dependencies.map(_.copy(version = u.nextVersion)).tupleLeft(u.currentVersion).toList,
+      u => u.dependencies.map(_.copy(version = u.nextVersion)).tupleLeft(u.currentVersion),
       _.updates.flatMap(dependenciesUpdatedWithNextAndCurrentVersion(_))
     )
 
@@ -248,11 +253,11 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
             .flatMap(_.filterUrls(urlChecker.exists))
             .tupleLeft(dependency)
         }
-        .map(_.toMap)
+        .map(_.toList.toMap)
       artifactIdToUrl = dependencyToMetadata.toList.mapFilter { case (dependency, metadata) =>
         metadata.repoUrl.tupleLeft(dependency.artifactId.name)
       }.toMap
-      artifactIdToUpdateInfoUrls <- dependenciesWithNextVersion.flatTraverse {
+      artifactIdToUpdateInfoUrls <- dependenciesWithNextVersion.toList.flatTraverse {
         case (currentVersion, dependency) =>
           dependencyToMetadata.get(dependency).toList.traverse { metadata =>
             updateInfoUrlFinder
@@ -266,7 +271,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       }.toMap
       filesWithOldVersion <-
         data.update
-          .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
+          .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value).toList)
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
       allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
