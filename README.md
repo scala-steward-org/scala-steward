@@ -22,6 +22,11 @@ Once that PR is merged, [**@scala-steward**][@scala-steward] will check periodic
 
 Many thanks to [VirtusLab][VirtusLab] for hosting and managing this public Scala Steward instance!
 
+## Alternatives to Scala Steward
+
+* GitHub: Since [May 2026](https://github.blog/changelog/2026-05-26-dependabot-version-updates-now-support-the-sbt-ecosystem/),
+  Dependabot version updates now [support `sbt`](https://github.com/dependabot/dependabot-core/issues/352/).
+
 ## Show us the pull requests!
 
 If you are curious how [**@scala-steward**'s][@scala-steward] pull requests
