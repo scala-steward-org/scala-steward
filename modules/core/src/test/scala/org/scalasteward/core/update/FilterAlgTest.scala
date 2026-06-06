@@ -323,7 +323,7 @@ class FilterAlgTest extends FunSuite {
 
   test("scalaLTSFilter: Scala 3.8.x") {
     val update37_38 =
-      ("org.scala-lang".g % ("scala-library", "scala-library_3").a % "3.8.3" %> Nel.of(
+      ("org.scala-lang".g % ("scala-library", "scala-library_3").a % "3.8.4" %> Nel.of(
         "3.8.1"
       )).single
     assertEquals(scalaLTSFilter(update37_38), Right(update37_38))
@@ -343,7 +343,7 @@ class FilterAlgTest extends FunSuite {
     assert(isScala3Lang(update33_24))
 
     val update37_38 =
-      ("org.scala-lang".g % ("scala-library", "scala-library_3").a % "3.8.3" %> Nel.of(
+      ("org.scala-lang".g % ("scala-library", "scala-library_3").a % "3.8.4" %> Nel.of(
         "3.8.1"
       )).single
     assert(isScala3Lang(update37_38))
