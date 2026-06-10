@@ -106,4 +106,60 @@ class BuildToolDispatcherTest extends FunSuite {
     )
     assertEquals(deps, expectedDeps)
   }
+
+  test("getDependencies: repo name ends with .g8 includes giter8 build root") {
+    val repo = Repo("example", "kafka-streams.g8")
+    val repoConfig = RepoConfig.empty
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val initial = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "lazy val root = ...",
+        repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / scalafmtConfName -> "version=2.0.0",
+        repoDir / "src" / "main" / "g8" / "build.sbt" -> "lazy val root = ..."
+      )
+      .unsafeRunSync()
+    val (state, deps) =
+      buildToolDispatcher.getDependencies(repo, repoConfig).runSA(initial).unsafeRunSync()
+
+    // Should have dependencies from both the main build and the giter8 template
+    assert(deps.length >= 1)
+  }
+
+  test("getDependencies: src/main/g8 directory exists includes giter8 build root") {
+    val repo = Repo("example", "my-project")
+    val repoConfig = RepoConfig.empty
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val initial = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "lazy val root = ...",
+        repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / scalafmtConfName -> "version=2.0.0",
+        repoDir / "src" / "main" / "g8" / "build.sbt" -> "lazy val root = ..."
+      )
+      .unsafeRunSync()
+    val (state, deps) =
+      buildToolDispatcher.getDependencies(repo, repoConfig).runSA(initial).unsafeRunSync()
+
+    // Should have dependencies from both the main build and the giter8 template
+    assert(deps.length >= 1)
+  }
+
+  test("getDependencies: no giter8 template returns only base build roots") {
+    val repo = Repo("example", "regular-project")
+    val repoConfig = RepoConfig.empty
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val initial = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "lazy val root = ...",
+        repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / scalafmtConfName -> "version=2.0.0"
+      )
+      .unsafeRunSync()
+    val (state, deps) =
+      buildToolDispatcher.getDependencies(repo, repoConfig).runSA(initial).unsafeRunSync()
+
+    // Should have only one set of dependencies from the main build
+    assertEquals(deps.length, 1)
+  }
 }
