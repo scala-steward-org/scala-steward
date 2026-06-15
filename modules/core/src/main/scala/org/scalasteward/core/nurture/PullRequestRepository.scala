@@ -135,7 +135,9 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       case Some(pullRequests) =>
         pullRequests.values
           .flatMap { entry =>
-            entry.update.asSingleUpdates.map(_.groupAndMainArtifactId -> entry.entryCreatedAt)
+            entry.update.asSingleUpdates
+              .map(_.groupAndMainArtifactId -> entry.entryCreatedAt)
+              .toList
           }
           .groupMapReduce(_._1)(_._2)(_ max _)
     }

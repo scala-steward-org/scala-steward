@@ -35,8 +35,8 @@ class loggerTest extends CatsEffectSuite {
     val c = ("a".g % "c".a % "1.0.0" %> "2.0.0").single
 
     val list = List(
-      Update.Grouped("all", None, List(a, b, c)),
-      Update.Grouped("some", None, List(a, b)),
+      Update.Grouped("all", None, Nel.of(a, b, c)),
+      Update.Grouped("some", None, Nel.of(a, b)),
       a,
       b,
       c
