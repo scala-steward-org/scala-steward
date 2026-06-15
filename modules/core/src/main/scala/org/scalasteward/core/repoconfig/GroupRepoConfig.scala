@@ -51,6 +51,7 @@ object GroupRepoConfig {
         .map(forUpdate(_))
         .map(_.linesIterator.toList)
         .map(indentLines(_))
+        .toList
         .mkString("dependencyOverrides = [\n", ",\n", "\n]")
     )
   }

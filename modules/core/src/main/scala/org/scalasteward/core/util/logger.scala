@@ -70,7 +70,7 @@ object logger {
   def showUpdates(allUpdates: List[Update]): String = {
     val updates = allUpdates.map {
       case g: Update.Grouped =>
-        g.updates.map(_.show).mkString(s"${g.name} (group) {\n    ", "\n    ", "\n  }")
+        g.updates.map(_.show).toList.mkString(s"${g.name} (group) {\n    ", "\n    ", "\n  }")
       case u: Update.Single => u.show
     }
 

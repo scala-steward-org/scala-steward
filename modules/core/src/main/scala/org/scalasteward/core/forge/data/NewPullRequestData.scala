@@ -148,15 +148,11 @@ object NewPullRequestData {
     update match {
       case single: Update.Single   => single
       case grouped: Update.Grouped =>
-        grouped.copy(updates = grouped.updates.filter { update =>
+        grouped.copy(updates = Nel.fromListUnsafe(grouped.updates.filter { update =>
           edits
-            .collect { case EditAttempt.UpdateEdit(update, _) =>
-              update.groupAndMainArtifactId
-            }
-            .exists { case (groupId, artifactId) =>
-              update.groupId == groupId && update.mainArtifactId == artifactId
-            }
-        })
+            .collect { case EditAttempt.UpdateEdit(u, _) => u.groupAndMainArtifactId }
+            .exists { case (groupId, artifactId) => update.groupId == groupId && update.mainArtifactId == artifactId }
+        }))
     }
 
   def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =
@@ -318,7 +314,7 @@ object NewPullRequestData {
     )
 
   def updateTypeLabels(anUpdate: Update): List[String] = {
-    def forUpdate(update: Update.Single) = {
+    def forUpdate(update: Update.Single): String = {
       val dependencies = update.dependencies
       if (dependencies.forall(_.configurations.contains("test")))
         "test-library-update"
@@ -330,7 +326,7 @@ object NewPullRequestData {
         "library-update"
     }
 
-    anUpdate.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct)
+    anUpdate.on(u => List(forUpdate(u)), _.updates.map(forUpdate).distinct.toList)
   }
 
   def labelsFor(
@@ -359,11 +355,11 @@ object NewPullRequestData {
       List(earlySemVerLabel, semVerSpecLabel, versionSchemeLabel).flatten
     }
     val semverLabels =
-      update.on(u => semverForUpdate(u), _.updates.flatMap(semverForUpdate(_)).distinct)
+      update.on(u => semverForUpdate(u), _.updates.toList.flatMap(semverForUpdate(_)).distinct)
 
     val artifactMigrationsLabel = Option.when {
       update.asSingleUpdates
-        .flatMap(_.artifactsForUpdate.toList)
+        .flatMap(_.artifactsForUpdate)
         .exists(u => u.newerGroupId.nonEmpty || u.newerArtifactId.nonEmpty)
     }("artifact-migrations")
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }

@@ -37,6 +37,10 @@ import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
+/**
+ * Updates that can not be separated from each other - usually because of a version
+ * number for several artifacts being defined in a single place in the build definition.
+ */
 case class InseparableUpdateSet(
   artifactsForUpdate: Nel[ArtifactForUpdate],
   nextVersion: Version
