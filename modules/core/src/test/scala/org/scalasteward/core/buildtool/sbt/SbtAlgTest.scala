@@ -33,6 +33,7 @@ class SbtAlgTest extends FunSuite {
         Cmd.execSandboxed(
           repoDir,
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
@@ -65,6 +66,7 @@ class SbtAlgTest extends FunSuite {
         Cmd.execSandboxed(
           repoDir,
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
@@ -104,6 +106,7 @@ class SbtAlgTest extends FunSuite {
         Cmd.execSandboxed(
           repoDir,
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
@@ -144,6 +147,7 @@ class SbtAlgTest extends FunSuite {
         Cmd.execSandboxed(
           repoDir,
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
