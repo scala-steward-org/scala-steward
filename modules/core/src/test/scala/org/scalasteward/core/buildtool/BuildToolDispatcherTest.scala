@@ -65,6 +65,7 @@ class BuildToolDispatcherTest extends FunSuite {
         Cmd.execSandboxed(
           repoDir,
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",

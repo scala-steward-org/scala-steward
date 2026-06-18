@@ -153,6 +153,7 @@ final class SbtAlg[F[_]](defaultResolvers: List[Resolver], ignoreOptsFiles: Bool
       val command =
         Nel.of(
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",

@@ -69,6 +69,7 @@ class ScalaCliAlgTest extends CatsEffectSuite {
         Cmd.execSandboxed(
           sbtBuildDir,
           "sbt",
+          "--server",
           "-Dsbt.color=false",
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
