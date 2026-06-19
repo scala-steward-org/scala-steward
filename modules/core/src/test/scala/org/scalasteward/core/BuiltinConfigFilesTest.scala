@@ -29,7 +29,7 @@ class BuiltinConfigFilesTest extends FunSuite {
 
   test("migration v2 config is valid") {
     val migrationsContent =
-      File("../src/main/resources/artifact-migrations.v2.conf").contentAsString
+      File("src/main/resources/artifact-migrations.v2.conf").contentAsString
     val initialState =
       mockState.addUris(ArtifactMigrationsLoader.defaultArtifactMigrationsUrl -> migrationsContent)
     verifyConfigFile("See docs/artifact-migrations.md") {
@@ -43,7 +43,7 @@ class BuiltinConfigFilesTest extends FunSuite {
 
   test("scalafix migrations config is valid") {
     val migrationsContent =
-      File("../src/main/resources/scalafix-migrations.conf").contentAsString
+      File("src/main/resources/scalafix-migrations.conf").contentAsString
     val initialState =
       mockState.addUris(ScalafixMigrationsLoader.defaultScalafixMigrationsUrl -> migrationsContent)
     verifyConfigFile("docs/scalafix-migrations.md") {
@@ -59,7 +59,7 @@ class BuiltinConfigFilesTest extends FunSuite {
 
   test("default config is valid") {
     val defaultConfigContent =
-      File("../src/main/resources/default.scala-steward.conf").contentAsString
+      File("src/main/resources/default.scala-steward.conf").contentAsString
     val initialState =
       mockState.addUris(RepoConfigLoader.defaultRepoConfigUrl -> defaultConfigContent)
     verifyConfigFile("docs/repo-specific-configuration.md") {

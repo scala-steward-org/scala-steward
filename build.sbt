@@ -1,7 +1,6 @@
 import com.typesafe.sbt.packager.docker.*
 import org.typelevel.sbt.gha.JavaSpec.Distribution.Temurin
 import org.typelevel.scalacoptions.ScalacOptions
-import sbtcrossproject.{CrossProject, CrossType, Platform}
 
 /// variables
 
@@ -12,13 +11,6 @@ val gitHubOwner = "scala-steward-org"
 val gitHubUrl = s"https://github.com/$gitHubOwner/$projectName"
 val mainBranch = "main"
 val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
-
-val moduleCrossPlatformMatrix: Map[String, List[Platform]] = Map(
-  "benchmark" -> List(JVMPlatform),
-  "core" -> List(JVMPlatform),
-  "docs" -> List(JVMPlatform),
-  "dummy" -> List(JVMPlatform)
-)
 
 val Scala213 = "2.13.18"
 val Scala3 = "3.3.8"
@@ -100,11 +92,11 @@ ThisBuild / tpolecatDefaultOptionsMode := {
 
 lazy val root = project
   .in(file("."))
-  .aggregate(benchmark.jvm, core.jvm, docs.jvm, dummy.jvm)
+  .aggregate(benchmark, core, docs, dummy)
   .settings(commonSettings)
   .settings(noPublishSettings)
 
-lazy val benchmark = myCrossProject("benchmark")
+lazy val benchmark = myProject("benchmark")
   .dependsOn(core)
   .enablePlugins(JmhPlugin)
   .settings(noPublishSettings)
@@ -115,7 +107,7 @@ lazy val benchmark = myCrossProject("benchmark")
     unusedCompileDependencies := Set.empty
   )
 
-lazy val core = myCrossProject("core")
+lazy val core = myProject("core")
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging, DockerPlugin)
   .settings(dockerSettings)
   .settings(
@@ -245,7 +237,7 @@ lazy val core = myCrossProject("core")
     }.taskValue
   )
 
-lazy val docs = myCrossProject("docs")
+lazy val docs = myProject("docs")
   .dependsOn(core)
   .enablePlugins(MdocPlugin)
   .settings(noPublishSettings)
@@ -253,7 +245,7 @@ lazy val docs = myCrossProject("docs")
     libraryDependencies ++= Seq(Dependencies.munitDiff),
     scalacOptions += "-Ytasty-reader",
     tpolecatExcludeOptions := Set(ScalacOptions.fatalWarnings, ScalacOptions.warnNonUnitStatement),
-    mdocIn := baseDirectory.value / ".." / "mdoc",
+    mdocIn := baseDirectory.value / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
     mdocVariables := Map(
       "GITHUB_URL" -> gitHubUrl,
@@ -282,7 +274,7 @@ lazy val docs = myCrossProject("docs")
 
 // Dummy project to receive updates from @scala-steward for this project's
 // libraryDependencies.
-lazy val dummy = myCrossProject("dummy")
+lazy val dummy = myProject("dummy")
   .disablePlugins(ExplicitDepsPlugin)
   .settings(noPublishSettings)
   .settings(
@@ -294,11 +286,8 @@ lazy val dummy = myCrossProject("dummy")
 
 /// settings
 
-def myCrossProject(name: String): CrossProject =
-  CrossProject(name, file(name))(moduleCrossPlatformMatrix(name): _*)
-    .crossType(CrossType.Pure)
-    .withoutSuffixFor(JVMPlatform)
-    .in(file(s"modules/$name"))
+def myProject(name: String): Project =
+  Project(name, file(s"modules/$name"))
     .settings(
       moduleName := s"$projectName-$name",
       moduleRootPkg := s"$rootPkg.${name.replace('-', '.')}"
@@ -473,7 +462,7 @@ runSteward := Def.taskDyn {
     Seq("--whitelist", s"$home/.mill"),
     Seq("--whitelist", s"$home/.sbt")
   ).flatten.mkString(" ", " ", "")
-  (core.jvm / Compile / run).toTask(args)
+  (core / Compile / run).toTask(args)
 }.value
 
 lazy val runValidateRepoConfig = taskKey[Unit]("")
@@ -482,7 +471,7 @@ runValidateRepoConfig := Def.taskDyn {
   val args = Seq(
     Seq("validate-repo-config", s"$projectDir/.scala-steward.conf")
   ).flatten.mkString(" ", " ", "")
-  (core.jvm / Compile / run).toTask(args)
+  (core / Compile / run).toTask(args)
 }.value
 
 /// commands
