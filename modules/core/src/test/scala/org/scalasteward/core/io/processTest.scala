@@ -3,8 +3,9 @@ package org.scalasteward.core.io
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
+import org.scalasteward.core.TestInstances.ioDateTimeAlg
 import org.scalasteward.core.io.process.*
-import org.scalasteward.core.util.{DateTimeAlg, Nel}
+import org.scalasteward.core.util.Nel
 import scala.concurrent.duration.*
 
 class processTest extends FunSuite {
@@ -66,7 +67,7 @@ class processTest extends FunSuite {
     val timeout = 500.milliseconds
     val sleep = timeout * 2
     val p = slurp2(Nel.of("sleep", sleep.toSeconds.toInt.toString), timeout).attempt
-    val (Left(t), fd) = DateTimeAlg.create[IO].timed(p).unsafeRunSync(): @unchecked
+    val (Left(t), fd) = ioDateTimeAlg.timed(p).unsafeRunSync(): @unchecked
 
     assert(clue(t).isInstanceOf[ProcessTimedOutException])
     assert(clue(fd) > timeout)

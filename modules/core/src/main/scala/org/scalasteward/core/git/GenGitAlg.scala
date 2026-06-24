@@ -22,6 +22,7 @@ import cats.{FlatMap, Monad}
 import org.http4s.Uri
 import org.scalasteward.core.application.Config
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
+import org.scalasteward.core.util.Timestamp
 
 trait GenGitAlg[F[_], Repo] {
   def add(repo: Repo, file: String): F[Unit]
@@ -56,6 +57,8 @@ trait GenGitAlg[F[_], Repo] {
   def discardChanges(repo: Repo): F[Unit]
 
   def findFilesContaining(repo: Repo, string: String): F[List[String]]
+
+  def getCommitDate(repo: Repo, sha1: Sha1): F[Timestamp]
 
   /** Returns `true` if merging `branch` into `base` results in merge conflicts. */
   def hasConflicts(repo: Repo, branch: Branch, base: Branch): F[Boolean]
@@ -143,6 +146,9 @@ trait GenGitAlg[F[_], Repo] {
 
       override def findFilesContaining(repo: A, string: String): F[List[String]] =
         f(repo).flatMap(self.findFilesContaining(_, string))
+
+      override def getCommitDate(repo: A, sha1: Sha1): F[Timestamp] =
+        f(repo).flatMap(self.getCommitDate(_, sha1))
 
       override def hasConflicts(repo: A, branch: Branch, base: Branch): F[Boolean] =
         f(repo).flatMap(self.hasConflicts(_, branch, base))
