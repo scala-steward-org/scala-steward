@@ -7,6 +7,7 @@ import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.edit.update.data.Substring
 import org.scalasteward.core.edit.update.data.Substring.{Position, Replacement}
 import org.scalasteward.core.nurture.UpdatesForGivenEdit
+import org.scalasteward.core.nurture.InseparableUpdateSet
 
 object TestSyntax {
   val sbtPluginReleases: IvyRepository = {
@@ -26,7 +27,7 @@ object TestSyntax {
   )
 
   def artifactUpdatesOf(updates: UpdatesForGivenEdit*): Nel[Update.ForArtifactId] =
-    updates.flatMap(_.asUpdatesForArtifactId.toList)
+    Nel.fromListUnsafe(updates.flatMap(_.inseparableUpdateSet.asUpdatesForArtifactId.toList).toList)
 
   implicit class GenericOps[A](val self: A) extends AnyVal {
     def withMavenCentral: Scope[A] =
@@ -170,8 +171,7 @@ object TestSyntax {
 
     def withEdit(replacement: Replacement) = UpdatesForGivenEdit(
       List(replacement),
-      self.artifactsForUpdate,
-      self.nextVersion
+      InseparableUpdateSet(self.artifactsForUpdate, self.nextVersion)
     )
 
     def stubEdit = withEdit(stubReplacementFor(self))
