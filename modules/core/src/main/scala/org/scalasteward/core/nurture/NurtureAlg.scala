@@ -91,8 +91,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
         .map(reps => (reps, update.nextVersion) -> update.artifactForUpdate)
     )
     .map {
-      _.groupMap(_._1)(_._2).toMap.map { case ((reps, nextVersion), artifacts) =>
-        reps.toSet -> InseparableUpdateSet(artifacts, nextVersion)
+      _.groupMap(_._1)(_._2).toMap.map { case ((replacements, nextVersion), artifacts) =>
+        replacements.toSet -> InseparableUpdateSet(artifacts, nextVersion)
       }
     }
 
