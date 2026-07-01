@@ -37,7 +37,13 @@ import org.scalasteward.core.edit.EditAlg
 import org.scalasteward.core.edit.hooks.HookExecutor
 import org.scalasteward.core.edit.scalafix.*
 import org.scalasteward.core.edit.update.ScannerAlg
-import org.scalasteward.core.forge.{ForgeApiAlg, ForgeAuthAlg, ForgeRepoAlg, ForgeSelection}
+import org.scalasteward.core.forge.{
+  DryRunForgeApiAlg,
+  ForgeApiAlg,
+  ForgeAuthAlg,
+  ForgeRepoAlg,
+  ForgeSelection
+}
 import org.scalasteward.core.git.{GenGitAlg, GitAlg}
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.nurture.{
@@ -46,7 +52,11 @@ import org.scalasteward.core.nurture.{
   PullRequestService,
   UpdateInfoUrlFinder
 }
-import org.scalasteward.core.persistence.{CachingKeyValueStore, JsonKeyValueStore}
+import org.scalasteward.core.persistence.{
+  CachingKeyValueStore,
+  DryRunKeyValueStore,
+  JsonKeyValueStore
+}
 import org.scalasteward.core.repocache.*
 import org.scalasteward.core.repoconfig.{RepoConfigAlg, RepoConfigLoader}
 import org.scalasteward.core.scalafmt.ScalafmtAlg
@@ -169,13 +179,18 @@ object Context {
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
         new RepoCacheRepository[F](repoCacheStore)
-      implicit val forgeApiAlg: ForgeApiAlg[F] = ForgeSelection
-        .forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeAuthAlg.authenticateApi)
+      implicit val forgeApiAlg: ForgeApiAlg[F] = {
+        val baseForgeApiAlg = ForgeSelection
+          .forgeApiAlg[F](config.forgeCfg, config.forgeSpecificCfg, forgeAuthAlg.authenticateApi)
+        if (config.dryRun) new DryRunForgeApiAlg[F](baseForgeApiAlg) else baseForgeApiAlg
+      }
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val forgeCfg: ForgeCfg = config.forgeCfg
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
-        new PullRequestRepository[F](pullRequestsStore)
+        new PullRequestRepository[F](
+          if (config.dryRun) new DryRunKeyValueStore(pullRequestsStore) else pullRequestsStore
+        )
       implicit val pullRequestService: PullRequestService[F] =
         new PullRequestService[F](pullRequestRepository, forgeApiAlg)
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
@@ -197,7 +212,7 @@ object Context {
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val scannerAlg: ScannerAlg[F] = new ScannerAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg)
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg, config.dryRun)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val reposFilesLoader: ReposFilesLoader[F] = new ReposFilesLoader[F]
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)

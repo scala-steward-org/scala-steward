@@ -94,6 +94,24 @@ class CliTest extends FunSuite {
     assertEquals(obtained.forgeCfg.login, "e")
   }
 
+  test("parseArgs: dry-run defaults to false") {
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(
+      minimumRequiredParams.flatten
+    ): @unchecked
+
+    assert(!obtained.dryRun)
+    assert(!obtained.forgeCfg.doNotFork)
+  }
+
+  test("parseArgs: dry-run implies do-not-fork") {
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(
+      (minimumRequiredParams :+ List("--dry-run")).flatten
+    ): @unchecked
+
+    assert(obtained.dryRun)
+    assert(obtained.forgeCfg.doNotFork)
+  }
+
   test("parseArgs: enable sandbox") {
     val Success(Usage.Regular(obtained)) = Cli.parseArgs(
       List(
