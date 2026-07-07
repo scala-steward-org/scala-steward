@@ -1,23 +1,19 @@
 package org.scalasteward.core.update
 
+import cats.data.NonEmptyList
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all.*
 import munit.FunSuite
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
-import org.scalasteward.core.data.{
-  ArtifactForUpdate,
-  ArtifactUpdateCandidates,
-  CrossDependency,
-  GroupId
-}
+import org.scalasteward.core.data.Update.ForArtifactId
+import org.scalasteward.core.data.{ArtifactForUpdate, ArtifactId, ArtifactUpdateCandidates, CrossDependency, Dependency, GroupId, Version}
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.*
 import org.scalasteward.core.update.FilterAlg.*
 import org.scalasteward.core.util.{Nel, Timestamp}
-
 import scala.concurrent.duration.DurationInt
 
 class FilterAlgTest extends FunSuite {
@@ -174,6 +170,69 @@ class FilterAlgTest extends FunSuite {
       .unsafeRunSync()
 
     assertEquals(filtered3, None)
+  }
+
+
+  test("ignore update via config updates.pin for scala version") {
+    // 📦 org.scala-lang:scala-library from 2.13.15 to 3.8.3 ⚠
+    val update4 = ("org.scala-lang".g % "scala-library".a % "2.13.15" %> Nel.of("3.8.3")).single
+    // 📦 org.scala-lang:scala-library from 2.13.15 to 2.13.18 ⚠
+    val update5 = ("org.scala-lang".g % "scala-library".a % "2.13.15" %> Nel.of("2.13.18")).single
+
+    val config = RepoConfig(
+      updates = UpdatesConfig(
+        pin = List(
+          UpdatePattern(
+            update4.artifactForUpdate.groupId,
+            Some("scala-library"),
+            Some(VersionPattern(Some("2.13.")))
+          )
+        ).some
+      ).some
+    )
+
+    val filtered4 = filterAlg
+      .localFilterSingle(config, update4)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    val filtered5 = filterAlg
+      .localFilterSingle(config, update5)
+      .runA(MockState.empty)
+      .unsafeRunSync()
+
+    assertEquals(filtered4, None)
+    assertEquals(filtered5, Some(
+      value = ForArtifactId(
+        artifactForUpdate = ArtifactForUpdate(
+          crossDependency = CrossDependency(
+            dependencies = NonEmptyList(
+              head = Dependency(
+                groupId = GroupId(
+                  value = "org.scala-lang"
+                ),
+                artifactId = ArtifactId(
+                  name = "scala-library",
+                  maybeCrossName = None
+                ),
+                version = Version(
+                  value = "2.13.15"
+                ),
+                sbtVersion = None,
+                scalaVersion = None,
+                configurations = None
+              ),
+              tail = Nil
+            )
+          ),
+          newerGroupId = None,
+          newerArtifactId = None
+        ),
+        nextVersion = Version(
+          value = "2.13.18"
+        )
+      )
+    ))
   }
 
   test("ignore update via config updates.allow") {
