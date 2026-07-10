@@ -25,9 +25,24 @@ object TestSyntax {
     positionIndex = u.artifactForUpdate.hashCode(),
     versionUpdate = u.versionUpdate
   )
+//
+//  def replace(diff: String): Set[Replacement] = {
+//    val strings = diff.split('→')
+//    val before = (strings.head +: strings.tail.map(_.tail)).mkString
+//    val after = strings.dropRight(1).map(_.dropRight(1)) :+ strings.last
+//
+//    diff.zipWithIndex.filter(_._1 == '→').map(_._2).zipWithIndex.map {
+//      case (arrowIndexInStr, arrowIndex) =>
+//        Replacement(
+//          Position("build.sbt", arrowIndexInStr - arrowIndex - 1, "" + diff(arrowIndexInStr - 1)),
+//          "" + diff(arrowIndexInStr + 1)
+//        )
+//    }
+//
+//  }
 
   def artifactUpdatesOf(updates: UpdatesForGivenEdit*): Nel[Update.ForArtifactId] =
-    Nel.fromListUnsafe(updates.flatMap(_.inseparableUpdateSet.asUpdatesForArtifactId.toList).toList)
+    Nel.fromListUnsafe(updates.toList).flatMap(_.asUpdatesForArtifactId)
 
   implicit class GenericOps[A](val self: A) extends AnyVal {
     def withMavenCentral: Scope[A] =
@@ -81,6 +96,8 @@ object TestSyntax {
       (self, nextVersion)
     def %>(newerVersions: Nel[String]): (Dependency, Nel[String]) = (self, newerVersions)
     def cross: CrossDependency = CrossDependency(self)
+
+    def asArtifactForUpdate: ArtifactForUpdate = ArtifactForUpdate(cross)
   }
 
   implicit class DependenciesOps(private val self: Nel[Dependency]) extends AnyVal {

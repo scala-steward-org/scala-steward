@@ -66,7 +66,9 @@ case class InseparableUpdateSet(
 case class UpdatesForGivenEdit(
   edits: List[Substring.Replacement],
   inseparableUpdateSet: InseparableUpdateSet
-)
+) {
+  lazy val asUpdatesForArtifactId: Nel[Update.ForArtifactId] = inseparableUpdateSet.asUpdatesForArtifactId
+}
 
 final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     coursierAlg: CoursierAlg[F],
