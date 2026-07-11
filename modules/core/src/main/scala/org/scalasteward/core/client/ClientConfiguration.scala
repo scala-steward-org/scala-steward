@@ -44,18 +44,7 @@ object ClientConfiguration {
   private def defaultHttpClient[F[_]: Async](bmw: BuilderMiddleware): F[HttpClient] =
     Async[F].executor.flatMap { exec =>
       Async[F].delay {
-        val builder = HttpClient.newBuilder()
-
-        if (Runtime.version().feature() == 11) {
-          val params = javax.net.ssl.SSLContext.getDefault().getDefaultSSLParameters()
-          params.setProtocols(params.getProtocols().filter(_ != "TLSv1.3"))
-          builder.sslParameters(params)
-          ()
-        }
-
-        builder.executor(exec)
-
-        bmw(builder).build()
+        bmw(HttpClient.newBuilder().executor(exec)).build()
       }
     }
 

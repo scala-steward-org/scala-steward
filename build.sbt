@@ -42,7 +42,7 @@ ThisBuild / githubWorkflowPublish := Seq(
     name = Some("Publish Docker image")
   )
 )
-ThisBuild / githubWorkflowJavaVersions := Seq("21", "17", "11").map(JavaSpec(Temurin, _))
+ThisBuild / githubWorkflowJavaVersions := Seq("25", "21", "17").map(JavaSpec(Temurin, _))
 ThisBuild / githubWorkflowBuild :=
   Seq(
     WorkflowStep.Use(
@@ -302,7 +302,9 @@ lazy val commonSettings = Def.settings(
 
 lazy val compileSettings = Def.settings(
   scalaVersion := Scala213,
-  scalacOptions ++= {
+  scalacOptions ++= Seq(
+    "-java-output-version:17"
+  ) ++ {
     scalaBinaryVersion.value match {
       case "2.13" =>
         Seq("-Xsource:3-cross")
