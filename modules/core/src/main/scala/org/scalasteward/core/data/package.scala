@@ -34,6 +34,7 @@ package object data {
       "scala3-compiler",
       "scala3-library",
       "scala3-library_sjs1",
+      "scala3-library_sjs1_3",
       "scala2-library-cc-tasty-experimental",
       "scala2-library-tasty-experimental",
       "scala3-language-server",
