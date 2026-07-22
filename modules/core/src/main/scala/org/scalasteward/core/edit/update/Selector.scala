@@ -21,7 +21,7 @@ import cats.syntax.all.*
 import java.util.regex.Pattern
 import org.scalasteward.core.buildtool.mill.MillAlg
 import org.scalasteward.core.buildtool.sbt.{buildPropertiesName, isSbtUpdate}
-import org.scalasteward.core.data.{Dependency, Update}
+import org.scalasteward.core.data.{CrossDependency, Dependency, Update}
 import org.scalasteward.core.edit.update.data.*
 import org.scalasteward.core.edit.update.data.VersionPosition.*
 import org.scalasteward.core.scalafmt.{isScalafmtCoreUpdate, scalafmtConfName}
@@ -220,4 +220,39 @@ object Selector {
           }
       }
     }
+
+  /** Returns true if the target version of `update` is already present in the positions that
+    * [[select]] would edit for this update. This happens when several dependencies share a version
+    * variable: updating the first dependency rewrites the shared `val`, so later updates for the
+    * remaining dependencies find nothing left to change.
+    */
+  def isAlreadyApplied(
+      update: Update.Single,
+      nextVersionPositions: List[VersionPosition],
+      modulePositions: List[ModulePosition]
+  ): Boolean = {
+    val swapped = withSwappedVersions(update)
+    select(swapped, nextVersionPositions, modulePositions).nonEmpty
+  }
+
+  private def withSwappedVersions(update: Update.Single): Update.Single = {
+    val current = update.nextVersion
+    val next = update.currentVersion
+    update match {
+      case u: Update.ForArtifactId =>
+        val deps = u.crossDependency.dependencies.map(_.copy(version = current))
+        u.copy(
+          artifactForUpdate = u.artifactForUpdate.copy(crossDependency = CrossDependency(deps)),
+          nextVersion = next
+        )
+      case u: Update.ForGroupId =>
+        val artifacts = u.artifactsForUpdate.map { artifact =>
+          val deps = artifact.crossDependency.dependencies.map(_.copy(version = current))
+          artifact.copy(crossDependency = CrossDependency(deps))
+        }
+        u.copy(artifactsForUpdate = artifacts, nextVersion = next)
+    }
+  }
+
+
 }
