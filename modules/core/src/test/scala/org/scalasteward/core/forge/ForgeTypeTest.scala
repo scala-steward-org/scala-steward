@@ -5,6 +5,7 @@ import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.forge.ForgeType.{GitHub, GitLab}
 import org.scalasteward.core.git
+import org.scalasteward.core.util.Nel
 
 class ForgeTypeTest extends FunSuite {
   private val repo = Repo("foo", "bar")
@@ -27,7 +28,7 @@ class ForgeTypeTest extends FunSuite {
     val update = Update.Grouped(
       name = "my-group",
       title = None,
-      updates = List(("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single)
+      updates = Nel.of(("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single)
     )
 
     val updateBranch = git.branchFor(update, None)
@@ -44,7 +45,7 @@ class ForgeTypeTest extends FunSuite {
     val update = Update.Grouped(
       name = "my-group-${hash}",
       title = None,
-      updates = List(("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single)
+      updates = Nel.of(("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single)
     )
 
     val updateBranch = git.branchFor(update, None)
