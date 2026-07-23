@@ -5,7 +5,7 @@ import cats.Monad
 import cats.effect.IO
 import cats.syntax.all.*
 import munit.CatsEffectSuite
-import org.scalasteward.core.TestInstances.ioLogger
+import org.scalasteward.core.TestInstances.{ioDateTimeAlg, ioLogger}
 import org.scalasteward.core.git.FileGitAlgTest.{
   conflictsNo,
   conflictsYes,
@@ -18,6 +18,7 @@ import org.scalasteward.core.io.ProcessAlgTest.ioProcessAlg
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.mock.MockConfig.{config, mockRoot}
 import org.scalasteward.core.util.Nel
+import scala.concurrent.duration.DurationInt
 
 class FileGitAlgTest extends CatsEffectSuite {
   private val rootDir = mockRoot / "git-tests"
@@ -155,6 +156,19 @@ class FileGitAlgTest extends CatsEffectSuite {
       _ <- ioAuxGitAlg.createConflict(repo)
       files <- ioGitAlg.findFilesContaining(repo, "line1")
       _ = assertEquals(files, List("file1", "file2"))
+    } yield ()
+  }
+
+  test("getCommitDate") {
+    val repo = rootDir / "getCommitDate"
+    for {
+      _ <- ioAuxGitAlg.createRepo(repo)
+      sha1 <- ioGitAlg.latestSha1(repo, master)
+      commitDate <- ioGitAlg.getCommitDate(repo, sha1)
+      now <- ioDateTimeAlg.currentTimestamp
+      diff = commitDate.until(now)
+      maxDrift = 2.hours
+      _ = assert(diff > -maxDrift && diff < maxDrift, clue((commitDate, now)))
     } yield ()
   }
 
