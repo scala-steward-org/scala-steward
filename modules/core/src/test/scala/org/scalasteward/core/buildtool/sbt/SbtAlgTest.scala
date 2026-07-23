@@ -16,7 +16,7 @@ class SbtAlgTest extends FunSuite {
 
   test("getDependencies") {
     val repo = Repo("sbt-alg", "test-1")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val initial = MockState.empty
       .addFiles(repoDir / "project" / "build.properties" -> "sbt.version=1.3.11")
@@ -38,7 +38,7 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
           "-Dsbt.server.forcestart=true",
-          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          s";${crossStewardDependencies("")};$reloadPlugins;${stewardDependencies("")}"
         ),
         Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_1_3_11.scala"),
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_1_3_11.scala")
@@ -49,7 +49,7 @@ class SbtAlgTest extends FunSuite {
 
   test("sbt 2") {
     val repo = Repo("sbt-alg", "test-2")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val initial = MockState.empty
       .addFiles(repoDir / "project" / "build.properties" -> "sbt.version=2.0.0-RC3")
@@ -71,7 +71,7 @@ class SbtAlgTest extends FunSuite {
           "-Dsbt.log.noformat=true",
           "-Dsbt.supershell=false",
           "-Dsbt.server.forcestart=true",
-          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+          s";${crossStewardDependencies("")};$reloadPlugins;${stewardDependencies("")}"
         ),
         Cmd("rm", "-rf", s"$repoDir/project/project/scala-steward-StewardPlugin_2_0_0.scala"),
         Cmd("rm", "-rf", s"$repoDir/project/scala-steward-StewardPlugin_2_0_0.scala")
@@ -82,7 +82,7 @@ class SbtAlgTest extends FunSuite {
 
   test("runMigrations") {
     val repo = Repo("fthomas", "scala-steward")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val migration = ScalafixMigration(
       GroupId("co.fs2"),
@@ -121,7 +121,7 @@ class SbtAlgTest extends FunSuite {
 
   test("runMigrations: migration with scalacOptions") {
     val repo = Repo("fthomas", "scala-steward")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val migration = ScalafixMigration(
       GroupId("org.typelevel"),

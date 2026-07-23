@@ -13,7 +13,7 @@ import org.scalasteward.core.mock.{MockEffOps, MockState}
 class MillAlgTest extends FunSuite {
   test("getDependencies, version < 0.11") {
     val repo = Repo("lihaoyi", "fastparse")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
     val predef = s"$buildRootDir/scala-steward.sc"
     val millCmd = Cmd.execSandboxed(buildRootDir, "mill", "-i", "-p", predef, "show", extractDeps)
@@ -37,7 +37,7 @@ class MillAlgTest extends FunSuite {
 
   test("getDependencies, 0.11 <= version < 0.12") {
     val repo = Repo("lihaoyi", "fastparse")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
     val millCmd = Cmd.execSandboxed(
       buildRootDir,
@@ -72,7 +72,7 @@ class MillAlgTest extends FunSuite {
 
   test("getDependencies, 0.12 <= version") {
     val repo = Repo("mill-alg", "test-3")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
     val millCmd = Cmd.execSandboxed(
       buildRootDir,
@@ -108,7 +108,7 @@ class MillAlgTest extends FunSuite {
 
   test("getDependencies, 1 <= version") {
     val repo = Repo("mill-alg", "test-3")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
     val millCmd = Cmd.execSandboxed(
       buildRootDir,

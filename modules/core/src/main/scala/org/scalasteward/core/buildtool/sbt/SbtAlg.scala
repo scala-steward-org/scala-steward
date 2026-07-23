@@ -68,8 +68,8 @@ final class SbtAlg[F[_]](defaultResolvers: List[Resolver], ignoreOptsFiles: Bool
       maybeSbtVersion <- getSbtVersion(buildRootDir)
       metaBuilds <- metaBuildsCount(buildRootDir)
       lines <- addStewardPluginTemporarily(buildRootDir, maybeSbtVersion, metaBuilds).surround {
-        val commands = Nel.of(crossStewardDependencies) ++
-          List.fill(metaBuilds)(List(reloadPlugins, stewardDependencies)).flatten
+        val commands = Nel.of(crossStewardDependencies(buildRoot.subProject)) ++
+          List.fill(metaBuilds)(List(reloadPlugins, stewardDependencies(""))).flatten
         sbt(commands, buildRootDir)
       }
       dependencies = parser.parseDependencies(lines)
