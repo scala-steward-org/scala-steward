@@ -24,15 +24,24 @@ package object git {
 
   val gitBlameIgnoreRevsName = ".git-blame-ignore-revs"
 
-  val updateBranchPrefix = "update"
+  val defaultUpdateBranchPrefix = "update"
+  val updateBranchPrefix = defaultUpdateBranchPrefix
 
-  def branchFor(update: Update, baseBranch: Option[Branch] = None): Branch = {
+  def branchFor(
+      update: Update,
+      baseBranch: Option[Branch] = None,
+      updateBranchPrefix: String = defaultUpdateBranchPrefix
+  ): Branch = {
+    val prefix = updateBranchPrefix.stripSuffix("/") match {
+      case ""     => ""
+      case prefix => s"$prefix/"
+    }
     val base = baseBranch.fold("")(branch => s"${branch.name}/")
     update.on(
-      update = u => Branch(s"$updateBranchPrefix/$base${u.name}-${u.nextVersion}"),
+      update = u => Branch(s"$prefix$base${u.name}-${u.nextVersion}"),
       grouped = g => {
         val hashString = Math.abs(g.updates.map(_.nextVersion).sortBy(_.value).hashCode()).toString
-        val branch = s"$updateBranchPrefix/$base${g.name}"
+        val branch = s"$prefix$base${g.name}"
         Branch(branch.replace("${hash}", hashString))
       }
     )
