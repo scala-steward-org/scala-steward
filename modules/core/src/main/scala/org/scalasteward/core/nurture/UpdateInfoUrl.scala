@@ -22,13 +22,23 @@ import org.http4s.Uri
 /** A URL of a resource that provides additional information for an update. */
 sealed trait UpdateInfoUrl {
   def url: Uri
+
+  def withUrl(url: Uri): UpdateInfoUrl
 }
 
 object UpdateInfoUrl {
-  final case class CustomChangelog(url: Uri) extends UpdateInfoUrl
-  final case class CustomReleaseNotes(url: Uri) extends UpdateInfoUrl
-  final case class GitHubReleaseNotes(url: Uri) extends UpdateInfoUrl
-  final case class VersionDiff(url: Uri) extends UpdateInfoUrl
+  final case class CustomChangelog(url: Uri) extends UpdateInfoUrl {
+    override def withUrl(url: Uri): UpdateInfoUrl = CustomChangelog(url)
+  }
+  final case class CustomReleaseNotes(url: Uri) extends UpdateInfoUrl {
+    override def withUrl(url: Uri): UpdateInfoUrl = CustomReleaseNotes(url)
+  }
+  final case class GitHubReleaseNotes(url: Uri) extends UpdateInfoUrl {
+    override def withUrl(url: Uri): UpdateInfoUrl = GitHubReleaseNotes(url)
+  }
+  final case class VersionDiff(url: Uri) extends UpdateInfoUrl {
+    override def withUrl(url: Uri): UpdateInfoUrl = VersionDiff(url)
+  }
 
   implicit val updateInfoUrlOrder: Order[UpdateInfoUrl] =
     Order.by {
