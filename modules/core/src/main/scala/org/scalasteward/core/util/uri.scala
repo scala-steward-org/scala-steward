@@ -20,7 +20,7 @@ import cats.syntax.all.*
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import monocle.Optional
 import org.http4s.Uri
-import org.http4s.Uri.{Authority, Scheme, UserInfo}
+import org.http4s.Uri.{Authority, Host, Scheme, UserInfo}
 
 object uri {
   implicit val uriDecoder: Decoder[Uri] =
@@ -44,9 +44,31 @@ object uri {
   val withUserInfo: Optional[Uri, UserInfo] =
     authorityWithUserInfo.compose(withAuthority)
 
-  def fromStringWithScheme(s: String): Option[Uri] =
-    Uri.fromString(s).toOption.filter(_.scheme.isDefined)
+  /** Parses the given `String` into a `Uri` and overrides its `Uri.Scheme` according to
+    * `updateSchemeMaybe`. Otherwise, the `Uri.Scheme` remains unchanged after parsing.
+    */
+  def fromStringWithScheme(
+      s: String
+  )(updateSchemeMaybe: (Scheme, Host) => Option[Scheme]): Option[Uri] =
+    Uri
+      .fromString(s)
+      .toOption
+      .filter(_.scheme.isDefined)
+      .mapOrKeep { case uri @ UriWithSchemeAndHost(scheme, host) =>
+        val newSchemeMaybe = updateSchemeMaybe(scheme, host)
+
+        newSchemeMaybe.fold(uri)(_ => uri.copy(scheme = newSchemeMaybe))
+      }
 
   val httpSchemes: Set[Scheme] =
     Set(Scheme.https, Scheme.http)
+
+  private object UriWithSchemeAndHost {
+    def unapply(uri: Uri): Option[(Scheme, Host)] = uri match {
+      case Uri(Some(scheme), Some(authority), _, _, _) =>
+        (scheme -> authority.host).some
+      case _ =>
+        None
+    }
+  }
 }
