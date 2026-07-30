@@ -16,7 +16,7 @@
 
 package org.scalasteward.core.nurture
 
-import cats.Monad
+import cats.{Functor, Monad, Parallel}
 import cats.syntax.all.*
 import org.http4s.Uri
 import org.scalasteward.core.application.Config.ForgeCfg
@@ -31,22 +31,37 @@ import org.scalasteward.core.util.UrlChecker
 final class UpdateInfoUrlFinder[F[_]](implicit
     config: ForgeCfg,
     urlChecker: UrlChecker[F],
+    parallel: Parallel[F],
     F: Monad[F]
 ) {
   def findUpdateInfoUrls(
       dependency: DependencyMetadata,
       versionUpdate: Version.Update
   ): F[List[UpdateInfoUrl]] = {
-    val updateInfoUrls: List[UpdateInfoUrl] =
-      dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
-        dependency.forgeRepo.toSeq.flatMap(forgeRepo =>
-          possibleUpdateInfoUrls(forgeRepo, versionUpdate)
-        )
+    val updateInfoUrls: F[List[UpdateInfoUrl]] =
+      dependency.forgeRepo.toList
+        .flatTraverse(forgeRepo => possibleUpdateInfoUrls(urlChecker)(forgeRepo, versionUpdate))
+        .map(dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++ _)
 
-    updateInfoUrls
-      .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
-      .distinctBy(_.url)
-      .filterA(updateInfoUrl => urlChecker.exists(updateInfoUrl.url))
+    for {
+      urls <- updateInfoUrls
+        .map(
+          _.sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
+            .distinctBy(_.url)
+        )
+      checkedUrls <-
+        urls.parFlatTraverse(updateInfoUrl =>
+          urlChecker
+            .validate(updateInfoUrl.url)
+            .map(
+              _.fold(
+                exists = List(updateInfoUrl),
+                notExists = List.empty,
+                redirectTo = u => List(updateInfoUrl.withUrl(u))
+              )
+            )
+        )
+    } yield checkedUrls
   }
 }
 
@@ -81,17 +96,31 @@ object UpdateInfoUrlFinder {
     repoForge.diffUrlFor(tagName(update.currentVersion), tagName(update.nextVersion))
   )
 
-  private[nurture] def possibleUpdateInfoUrls(
+  private[nurture] def possibleUpdateInfoUrls[F[_]: Functor](urlChecker: UrlChecker[F])(
       forgeRepo: ForgeRepo,
       update: Version.Update
-  ): List[UpdateInfoUrl] = {
+  ): F[List[UpdateInfoUrl]] = {
     def customUrls(wrap: Uri => UpdateInfoUrl, fileNames: List[String]): List[UpdateInfoUrl] =
       fileNames.map(f => wrap(forgeRepo.fileUrlFor(f)))
 
-    gitHubReleaseNotesFor(forgeRepo, update.nextVersion) ++
-      customUrls(CustomReleaseNotes.apply, possibleReleaseNotesFilenames) ++
-      customUrls(CustomChangelog.apply, possibleChangelogFilenames) ++
-      possibleVersionDiffs(forgeRepo, update)
+    for {
+      forgeRepoMaybe <- urlChecker
+        .validate(forgeRepo.repoUrl)
+        .map(
+          _.fold(
+            exists = forgeRepo.some,
+            notExists = none,
+            redirectTo = u => forgeRepo.copy(repoUrl = u).some
+          )
+        )
+      urls =
+        forgeRepoMaybe.toList.flatMap(forgeRepoChecked =>
+          gitHubReleaseNotesFor(forgeRepoChecked, update.nextVersion) ++
+            customUrls(CustomReleaseNotes.apply, possibleReleaseNotesFilenames) ++
+            customUrls(CustomChangelog.apply, possibleChangelogFilenames) ++
+            possibleVersionDiffs(forgeRepoChecked, update)
+        )
+    } yield urls
   }
 
   private def gitHubReleaseNotesFor(
