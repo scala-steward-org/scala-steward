@@ -49,8 +49,8 @@ final case class DependencyMetadata(
     urls.find(_.scheme.exists(uri.httpSchemes)).orElse(urls.headOption)
   }
 
-  def forgeRepo(implicit config: ForgeCfg): Option[ForgeRepo] =
-    repoUrl.flatMap(ForgeRepo.fromRepoUrl)
+  def forgeRepo(config: ForgeCfg): Option[ForgeRepo] =
+    repoUrl.flatMap(ForgeRepo.fromRepoUrl(_)(config))
 }
 
 object DependencyMetadata {
