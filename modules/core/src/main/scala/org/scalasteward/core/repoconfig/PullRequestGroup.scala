@@ -21,6 +21,8 @@ import cats.data.NonEmptyList
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 import org.scalasteward.core.data.Update
+import org.scalasteward.core.data.Update.Grouped
+import org.scalasteward.core.nurture.{InseparableUpdateSet, UpdatesForGivenEdit}
 
 case class PullRequestGroup(
     name: String,
@@ -32,6 +34,10 @@ case class PullRequestGroup(
     */
   def matches(update: Update.ForArtifactId): Boolean = filter.exists(_.matches(update))
 
+  def matches(updates: InseparableUpdateSet): Boolean =
+    filter.exists(f => updates.asUpdatesForArtifactId.exists(update => f.matches(update)))
+
+  def asGroupedUpdateOf(updates: NonEmptyList[Update.ForArtifactId]) = Grouped(name, title, updates)
 }
 
 object PullRequestGroup {
