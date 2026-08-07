@@ -8,7 +8,9 @@ import scala.io.Source
 
 object MockConfig {
   val mockRoot: File = File.temp / "scala-steward"
-  val reposFile: Uri = Uri.unsafeFromString((mockRoot / "repos.md").pathAsString)
+  // Build a proper file: URI (e.g. file:///C:/.../repos.md) so this works on Windows too,
+  // where a raw path like C:\...\repos.md is not a valid URI.
+  val reposFile: Uri = Uri.unsafeFromString((mockRoot / "repos.md").path.toUri.toString)
   mockRoot.delete(swallowIOExceptions = true) // Ensure folder is cleared of previous test files
 
   mockRoot.createDirectory()

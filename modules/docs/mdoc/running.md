@@ -104,6 +104,21 @@ JAVA_OPTS="-Dhttp.proxyHost=webcache.example.com -Dhttp.proxyPort=8080 -Dhttps.p
 
 See Oracle proxies documentation for more info.
 
+### Dry run
+
+The `--dry-run` option runs the full pipeline&mdash;cloning repositories, applying
+updates, and computing diffs&mdash;but skips every write to the forge and to the
+local pull request cache. Concretely, with `--dry-run` Scala Steward will not:
+
+* push branches or delete remote branches,
+* create, update, or close pull requests,
+* comment on pull requests, or
+* create forks (`--dry-run` implies `--do-not-fork`).
+
+Actions that would have been taken are logged with a `[dry-run]` prefix. This is
+useful for verifying configuration or previewing what Scala Steward would do
+without making any changes.
+
 ### Running locally from sbt
 
 #### Sample run for GitLab
