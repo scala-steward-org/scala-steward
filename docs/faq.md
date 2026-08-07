@@ -114,3 +114,26 @@ folder is persisted between different runs.
 
 That's where Steward holds intermediate state about dependency versions and created PRs which ultimately
 helps it make decisions about which PRs to close and which ones to keep open.
+
+## Why does a PR for a shared version variable only list one dependency?
+
+When several dependencies share the same version `val` (for example in
+`project/Dependencies.scala`), updating that variable can bump every dependency
+that references it. Scala Steward's PR title and description currently describe
+the update using the artifact that triggered the rewrite, which may be only the
+first matching dependency.
+
+Dependencies that share the same Maven `groupId` and version range are already
+combined into a single `Update.ForGroupId` PR that lists every artifact in the
+group. The incomplete listing shows up mainly when the shared variable is used
+across different group IDs (for example `com.fasterxml.jackson.core` and
+`com.fasterxml.jackson.datatype`).
+
+Workarounds until broader grouping improvements land:
+
+* Configure [`pullRequests.grouping`](repo-specific-configuration.md#pullrequestsgrouping)
+  so related artifacts are raised together and listed in one PR description.
+* Prefer a single Maven group ID for libraries that always share a version, when
+  that matches how the artifacts are published.
+
+See also issue [#3780](https://github.com/scala-steward-org/scala-steward/issues/3780).

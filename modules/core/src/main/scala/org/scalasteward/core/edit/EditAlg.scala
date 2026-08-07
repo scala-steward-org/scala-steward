@@ -50,7 +50,13 @@ final class EditAlg[F[_]](implicit
       preCommit: F[Unit] = F.unit
   ): F[List[EditAttempt]] =
     findUpdateReplacements(data.repo, data.config, update).flatMap {
-      case Nil => logger.warn(s"Unable to bump version for update ${update.show}").as(Nil)
+      case Nil =>
+        isAlreadyApplied(data.repo, data.config, update).flatMap {
+          case true =>
+            logger.info(s"Version already bumped for update ${update.show}").as(Nil)
+          case false =>
+            logger.warn(s"Unable to bump version for update ${update.show}").as(Nil)
+        }
       case updateReplacements =>
         for {
           _ <- preCommit
@@ -76,6 +82,13 @@ final class EditAlg[F[_]](implicit
       versionPositions <- scannerAlg.findVersionPositions(repo, config, update.currentVersion)
       modulePositions <- scannerAlg.findModulePositions(repo, config, update.dependencies)
     } yield Selector.select(update, versionPositions, modulePositions)
+
+
+  private def isAlreadyApplied(repo: Repo, config: RepoConfig, update: Update.Single): F[Boolean] =
+    for {
+      nextVersionPositions <- scannerAlg.findVersionPositions(repo, config, update.nextVersion)
+      modulePositions <- scannerAlg.findModulePositions(repo, config, update.dependencies)
+    } yield Selector.isAlreadyApplied(update, nextVersionPositions, modulePositions)
 
   private def runScalafixMigrations(
       repo: Repo,
