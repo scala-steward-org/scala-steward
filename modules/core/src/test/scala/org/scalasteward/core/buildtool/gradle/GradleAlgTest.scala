@@ -10,7 +10,7 @@ import org.scalasteward.core.mock.{MockEffOps, MockState}
 class GradleAlgTest extends CatsEffectSuite {
   test("getDependencies") {
     val repo = Repo("gradle-alg", "test-getDependencies")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
 
     val initial = MockState.empty.addFiles(
