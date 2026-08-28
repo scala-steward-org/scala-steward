@@ -519,7 +519,7 @@ class RewriteTest extends FunSuite {
 
   // https://github.com/scala-steward-org/scala-steward/issues/1314
   test("unrelated ModuleID with same version number, 2") {
-    val update = ("org.scalameta".g % "sbt-scalafmt".a % "2.0.1" %> "2.0.7").single
+    val update = ("org.scalameta".g % "sbt-scalafmt".a % "2.0.7" %> "2.0.7").single
     val original = Map("plugins.sbt" -> """val scalafmt = "2.0.1"
                                           |addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
                                           |""".stripMargin)
