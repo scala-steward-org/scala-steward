@@ -154,7 +154,7 @@ object HookExecutor {
     if ((groupId, artifactId) == (GroupId("dev.zio"), ArtifactId("zio-sbt-ci")))
       Nel.of("sbt", "ciGenerateGithubWorkflow")
     else
-      Nel.of("sbt", "githubWorkflowGenerate")
+      Nel.of("sbt", "githubWorkflowUpdate")
 
   private def sbtGithubWorkflowGenerateHook(
       groupId: GroupId,
@@ -166,7 +166,7 @@ object HookExecutor {
       artifactId = Some(artifactId),
       command = sbtGithubWorkflowGenerateCommand(groupId, artifactId),
       useSandbox = true,
-      commitMessage = _ => CommitMsg("Regenerate GitHub Actions workflow"),
+      commitMessage = _ => CommitMsg("Update generated GitHub Actions workflow"),
       enabledByCache = enabledByCache,
       enabledByConfig = _ => true,
       addToGitBlameIgnoreRevs = false

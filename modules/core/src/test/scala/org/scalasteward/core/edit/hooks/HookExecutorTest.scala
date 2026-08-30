@@ -108,9 +108,9 @@ class HookExecutorTest extends CatsEffectSuite {
     val expected = MockState.empty.copy(
       trace = Vector(
         Log(
-          "Executing post-update hook for com.codecommit:sbt-github-actions with command 'sbt githubWorkflowGenerate'"
+          "Executing post-update hook for com.codecommit:sbt-github-actions with command 'sbt githubWorkflowUpdate'"
         ),
-        Cmd.execSandboxed(repoDir, "sbt", "githubWorkflowGenerate"),
+        Cmd.execSandboxed(repoDir, "sbt", "githubWorkflowUpdate"),
         Cmd.gitStatus(repoDir)
       )
     )
