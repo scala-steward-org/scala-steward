@@ -128,10 +128,18 @@ object TestInstances {
       )
     )
 
+  implicit val workflowTaskArbitrary: Arbitrary[WorkflowTask] =
+    Arbitrary(Gen.oneOf(WorkflowTask.Generate, WorkflowTask.Update))
+
   implicit val scalafmtConfigArbitrary: Arbitrary[ScalafmtConfig] =
     Arbitrary(for {
       runAfterUpgrading <- Arbitrary.arbitrary[Option[Boolean]]
     } yield ScalafmtConfig(runAfterUpgrading))
+
+  implicit val sbtGithubActionsConfigArbitrary: Arbitrary[SbtGithubActionsConfig] =
+    Arbitrary(for {
+      workflowTask <- Arbitrary.arbitrary[Option[WorkflowTask]]
+    } yield SbtGithubActionsConfig(workflowTask))
 
   implicit val updatePatternArbitrary: Arbitrary[UpdatePattern] =
     Arbitrary(for {

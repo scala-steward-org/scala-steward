@@ -12,7 +12,13 @@ import org.scalasteward.core.io.{process, FileAlgTest}
 import org.scalasteward.core.mock.MockContext.context.{hookExecutor, workspaceAlg}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.mock.{MockEffOps, MockState}
-import org.scalasteward.core.repoconfig.{PostUpdateHookConfig, RepoConfig, ScalafmtConfig}
+import org.scalasteward.core.repoconfig.{
+  PostUpdateHookConfig,
+  RepoConfig,
+  SbtGithubActionsConfig,
+  ScalafmtConfig,
+  WorkflowTask
+}
 import org.scalasteward.core.scalafmt.ScalafmtAlg.opts
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtBinary, scalafmtGroupId}
 import org.scalasteward.core.util.Nel
@@ -102,6 +108,28 @@ class HookExecutorTest extends CatsEffectSuite {
   }
 
   test("sbt-github-actions") {
+    val update = ("com.codecommit".g % "sbt-github-actions".a % "0.9.4" %> "0.9.5").single
+    val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
+
+    val expected = MockState.empty.copy(
+      trace = Vector(
+        Log(
+          "Executing post-update hook for com.codecommit:sbt-github-actions with command 'sbt githubWorkflowGenerate'"
+        ),
+        Cmd.execSandboxed(repoDir, "sbt", "githubWorkflowGenerate"),
+        Cmd.gitStatus(repoDir)
+      )
+    )
+
+    state.map(assertEquals(_, expected))
+  }
+
+  test("sbt-github-actions update") {
+    val repoConfig =
+      RepoConfig.empty.copy(sbtGithubActions =
+        SbtGithubActionsConfig(workflowTask = Some(WorkflowTask.Update)).some
+      )
+    val data = RepoData(repo, dummyRepoCache, repoConfig)
     val update = ("com.codecommit".g % "sbt-github-actions".a % "0.9.4" %> "0.9.5").single
     val state = hookExecutor.execPostUpdateHooks(data, update).runS(MockState.empty)
 
