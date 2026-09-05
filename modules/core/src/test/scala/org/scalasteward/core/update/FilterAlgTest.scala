@@ -327,7 +327,7 @@ class FilterAlgTest extends FunSuite {
 
   test("scalaLTSFilter: Next->LTS") {
     val update =
-      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.8.4" %> Nel.of(
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
         "3.9.0"
       )).single
     assertEquals(scalaLTSFilter(update), Right(update))
