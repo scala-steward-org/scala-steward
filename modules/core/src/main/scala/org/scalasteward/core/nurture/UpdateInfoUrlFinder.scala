@@ -19,7 +19,6 @@ package org.scalasteward.core.nurture
 import cats.Monad
 import cats.syntax.all.*
 import org.http4s.Uri
-import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.DependencyMetadata
 import org.scalasteward.core.data.Version
 import org.scalasteward.core.forge.ForgeRepo
@@ -27,9 +26,10 @@ import org.scalasteward.core.forge.ForgeType.*
 import org.scalasteward.core.nurture.UpdateInfoUrl.*
 import org.scalasteward.core.nurture.UpdateInfoUrlFinder.possibleUpdateInfoUrls
 import org.scalasteward.core.util.UrlChecker
+import org.scalasteward.core.application.Config
+import org.scalasteward.core.util.isWhitelisted
 
-final class UpdateInfoUrlFinder[F[_]](implicit
-    config: ForgeCfg,
+final class UpdateInfoUrlFinder[F[_]](config: Config)(implicit
     urlChecker: UrlChecker[F],
     F: Monad[F]
 ) {
@@ -38,10 +38,14 @@ final class UpdateInfoUrlFinder[F[_]](implicit
       versionUpdate: Version.Update
   ): F[List[UpdateInfoUrl]] = {
     val updateInfoUrls: List[UpdateInfoUrl] =
-      dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
-        dependency.forgeRepo.toSeq.flatMap(forgeRepo =>
-          possibleUpdateInfoUrls(forgeRepo, versionUpdate)
-        )
+      if (dependency.releaseNotesUrl.exists(isWhitelisted(config.whiteListOrganizations, _)))
+        dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply)
+      else
+        dependency.releaseNotesUrl.toList.map(CustomReleaseNotes.apply) ++
+          dependency
+            .forgeRepo(config.forgeCfg)
+            .toSeq
+            .flatMap(forgeRepo => possibleUpdateInfoUrls(forgeRepo, versionUpdate))
 
     updateInfoUrls
       .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)

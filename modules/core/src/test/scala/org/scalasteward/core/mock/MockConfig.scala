@@ -15,6 +15,8 @@ object MockConfig {
   val key = mockRoot / "rsa-4096-private.pem"
   key.overwrite(Source.fromResource("rsa-4096-private.pem").mkString)
 
+  val scalaStewardOrg = "scala-steward-org"
+
   private val args: List[String] = List(
     s"--workspace=$mockRoot/workspace",
     s"--repos-file=$reposFile",
@@ -30,7 +32,8 @@ object MockConfig {
     "--add-labels",
     "--github-app-id=1234",
     s"--github-app-key-file=$key",
-    "--refresh-backoff-period=1hour"
+    "--refresh-backoff-period=1hour",
+    s"--whitelist-organization=$scalaStewardOrg"
   )
   val Success(Cli.Usage.Regular(config)) = Cli.parseArgs(args): @unchecked
 }
