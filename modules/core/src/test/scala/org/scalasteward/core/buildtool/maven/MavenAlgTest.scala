@@ -11,7 +11,7 @@ import org.scalasteward.core.mock.{MockEffOps, MockState}
 class MavenAlgTest extends FunSuite {
   test("getDependencies") {
     val repo = Repo("namespace", "repo-name")
-    val buildRoot = BuildRoot(repo, ".")
+    val buildRoot = BuildRoot(repo, ".", "")
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
 
     val state = mavenAlg.getDependencies(buildRoot).runS(MockState.empty).unsafeRunSync()

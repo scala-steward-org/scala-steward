@@ -18,4 +18,4 @@ package org.scalasteward.core.buildtool
 
 import org.scalasteward.core.data.Repo
 
-final case class BuildRoot(repo: Repo, relativePath: String)
+final case class BuildRoot(repo: Repo, relativePath: String, subProject: String)
