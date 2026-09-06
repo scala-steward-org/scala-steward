@@ -21,6 +21,7 @@ import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import java.util.regex.PatternSyntaxException
+import org.scalasteward.core.git.defaultUpdateBranchPrefix
 import scala.util.matching.Regex
 
 final case class PullRequestsConfig(
@@ -28,7 +29,8 @@ final case class PullRequestsConfig(
     private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
     private val customLabels: Option[List[String]] = None,
-    draft: Option[Boolean] = None
+    draft: Option[Boolean] = None,
+    branchPrefix: Option[String] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
@@ -38,6 +40,9 @@ final case class PullRequestsConfig(
 
   def customLabelsOrDefault: List[String] =
     customLabels.getOrElse(Nil)
+
+  def branchPrefixOrDefault: String =
+    branchPrefix.getOrElse(defaultUpdateBranchPrefix)
 }
 
 object PullRequestsConfig {
@@ -66,7 +71,8 @@ object PullRequestsConfig {
           draft = {
             implicit val booleanOrMonoid: Monoid[Boolean] = Monoid.instance(false, _ || _)
             x.draft |+| y.draft
-          }
+          },
+          branchPrefix = x.branchPrefix.orElse(y.branchPrefix)
         )
     )
 }

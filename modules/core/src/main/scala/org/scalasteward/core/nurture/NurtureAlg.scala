@@ -74,10 +74,11 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     for {
       _ <- logger.info(util.logger.showUpdates(updates))
       baseSha1 <- gitAlg.latestSha1(data.repo, baseBranch)
+      updateBranchPrefix = data.config.pullRequestsOrDefault.branchPrefixOrDefault
       _ <- fs2.Stream
         .emits(updates)
         .evalMap { update =>
-          val updateBranch = git.branchFor(update, data.repo.branch)
+          val updateBranch = git.branchFor(update, data.repo.branch, updateBranchPrefix)
           val updateData = UpdateData(data, fork, update, baseBranch, baseSha1, updateBranch)
           processUpdate(updateData)
         }
