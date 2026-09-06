@@ -129,6 +129,7 @@ object RepoConfigAlg {
       grouped = g =>
         g.updates
           .map("  " + forUpdate(_))
+          .toList
           .mkString("updates.ignore = [\n", ",\n", "\n]")
     )
   }

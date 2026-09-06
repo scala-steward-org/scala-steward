@@ -371,7 +371,7 @@ class RepoConfigAlgTest extends FunSuite {
   test("configToIgnoreFurtherUpdates with grouped update") {
     val update1 = ("a".g % "b".a % "1" %> "2").single
     val update2 = ("c".g % "d".a % "1" %> "2").single
-    val update = Update.Grouped("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, Nel.of(update1, update2))
     val config = RepoConfigAlg
       .parseRepoConfig(RepoConfigAlg.configToIgnoreFurtherUpdates(update))
       .getOrElse(RepoConfig())

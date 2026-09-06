@@ -17,12 +17,16 @@
 package org.scalasteward.core.data
 
 import cats.Order
+import cats.data.NonEmptyList
 import cats.implicits.*
 import io.circe.{Decoder, Encoder}
+import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import org.scalasteward.core.edit.update.data.Substring.Replacement
+import org.scalasteward.core.nurture.InseparableUpdateSet
 import org.scalasteward.core.repoconfig.PullRequestGroup
 import org.scalasteward.core.util
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
+import cats.syntax.*
 
 case class ArtifactForUpdate(
     crossDependency: CrossDependency,
@@ -82,7 +86,7 @@ sealed trait Update {
 
   def show: String
 
-  val asSingleUpdates: List[Update.Single]
+  val asSingleUpdates: Nel[Update.Single]
 }
 
 object Update {
@@ -95,15 +99,15 @@ object Update {
   final case class Grouped(
       name: String,
       title: Option[String],
-      updates: List[Update.ForArtifactId]
+      updates: Nel[Update.ForArtifactId]
   ) extends Update {
 
     override def show: String = name
-    override val asSingleUpdates: List[Update.Single] = updates
+    override val asSingleUpdates: Nel[Update.Single] = updates
   }
 
   sealed trait Single extends Product with Serializable with Update {
-    override val asSingleUpdates: List[Update.Single] = List(this)
+    override val asSingleUpdates: Nel[Update.Single] = Nel.one(this)
     def artifactsForUpdate: Nel[ArtifactForUpdate]
     def forArtifactIds: Nel[ForArtifactId]
     def crossDependencies: Nel[CrossDependency]
@@ -243,14 +247,41 @@ object Update {
     groups1.toList.distinct.sortBy(u => u: Update.Single)
   }
 
-  def groupByGroupId(updates: List[ForArtifactId]): List[Single] = {
-    val groups0 =
-      updates.groupByNel(s => (s.groupId, s.versionUpdate))
-    val groups1 = groups0.map { case ((_, versionUpdate), group) =>
-      if (group.tail.isEmpty) group.head
-      else ForGroupId(group.map(_.artifactForUpdate), versionUpdate.nextVersion)
+  /** If a set of ApplicableUpdateSet all have the same GroupId, then they could be an
+    * Update.ForGroupId()
+    *
+    * If there is only one artifact within a ApplicableUpdateSet for a given group id, just create a
+    * Update.ForArtifactId
+    *
+    * Otherwise, create a Grouped()?
+    */
+  def groupByGroupId(updates: Map[Set[Replacement], InseparableUpdateSet]): List[Update] = {
+    val groups0 = updates.values.toList.groupByNel(s => (s.commonGroupId, s.commonVersionUpdate))
+    val groups1: Iterable[Update] = groups0.map {
+      case ((Some(_), Some(versionUpdate)), updatesWithCommonMavenGroupId) =>
+        val affectedArtifacts = updatesWithCommonMavenGroupId.flatMap(_.artifactsForUpdate)
+        if (affectedArtifacts.size == 1)
+          Update.ForArtifactId(
+            affectedArtifacts.head,
+            updatesWithCommonMavenGroupId.head.nextVersion
+          )
+        else
+          ForGroupId(
+            updatesWithCommonMavenGroupId.flatMap(_.artifactsForUpdate),
+            versionUpdate.nextVersion
+          )
+      case (_, group) =>
+        Update.Grouped("some random name", None, group.flatMap(_.asUpdatesForArtifactId))
     }
     groups1.toList.distinct.sorted
+  }
+
+  def performAllGrouping(
+      updatesByEdit: Map[Set[Replacement], InseparableUpdateSet],
+      groups: List[PullRequestGroup]
+  ): List[Update] = {
+    val (grouped, notGrouped) = groupByPullRequestGroup(groups, updatesByEdit)
+    groupByGroupId(notGrouped) ++ grouped
   }
 
   /** Processes the provided updates using the group configuration. Each update will only be present
@@ -260,17 +291,28 @@ object Update {
     */
   def groupByPullRequestGroup(
       groups: List[PullRequestGroup],
-      updates: List[Update.ForArtifactId]
-  ): (List[Grouped], List[Update.ForArtifactId]) =
-    groups.foldLeft((List.empty[Grouped], updates)) { case ((grouped, notGrouped), group) =>
-      notGrouped.partition(group.matches) match {
-        case (Nil, rest)     => (grouped, rest)
-        case (matched, rest) => (grouped :+ Grouped(group.name, group.title, matched), rest)
+      updatesByEdit: Map[Set[Replacement], InseparableUpdateSet]
+  ): (List[Grouped], Map[Set[Replacement], InseparableUpdateSet]) =
+    groups.foldLeft((List.empty[Grouped], updatesByEdit)) { case ((grouped, notGrouped), group) =>
+      notGrouped.partition(x => group.matches(x._2)).leftMap { matched =>
+        grouped ++ NonEmptyList
+          .fromList(matched.toList)
+          .map(updateSets =>
+            group.asGroupedUpdateOf(updateSets.flatMap(_._2.asUpdatesForArtifactId))
+          )
       }
     }
 
   implicit val SingleOrder: Order[Single] =
     Order.by((u: Single) => (u.crossDependencies, u.nextVersion))
+
+  implicit val GroupedOrder: Order[Grouped] =
+    Order.by((u: Grouped) => (u.name, u.asSingleUpdates))
+
+  implicit val UpdateOrder: Order[Update] = Order.by {
+    case g: Grouped => Left(g)
+    case s: Single  => Right(s)
+  }
 
   // Encoder and Decoder instances
 
@@ -337,7 +379,7 @@ object Update {
     Decoder.forProduct1("Grouped")(identity[Grouped]) {
       Decoder.forProduct3("name", "title", "updates") {
         (name: String, title: Option[String], updates: List[ForArtifactId]) =>
-          Grouped(name, title, updates)
+          Grouped(name, title, Nel.fromListUnsafe(updates))
       }
     }
 
