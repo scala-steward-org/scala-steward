@@ -32,6 +32,7 @@ import org.scalasteward.core.git.{gitBlameIgnoreRevsName, Commit, CommitMsg, Git
 import org.scalasteward.core.io.process.SlurpOptions
 import org.scalasteward.core.io.{FileAlg, ProcessAlg, WorkspaceAlg}
 import org.scalasteward.core.repocache.RepoCache
+import org.scalasteward.core.repoconfig.WorkflowTask
 import org.scalasteward.core.scalafmt.{scalafmtArtifactId, scalafmtGroupId, ScalafmtAlg}
 import org.scalasteward.core.util.Nel
 import org.scalasteward.core.util.logger.*
@@ -147,28 +148,30 @@ object HookExecutor {
   private val conditionalSbtGitHubWorkflowGenerateModules =
     (sbtGroupId, sbtArtifactId) :: (sbtScalafixGroupId, sbtScalafixArtifactId) :: scalaLangModules
 
-  private def sbtGithubWorkflowGenerateCommand(
+  private def sbtGithubWorkflowCommand(
       groupId: GroupId,
-      artifactId: ArtifactId
+      artifactId: ArtifactId,
+      workflowTask: WorkflowTask
   ): Nel[String] =
     if ((groupId, artifactId) == (GroupId("dev.zio"), ArtifactId("zio-sbt-ci")))
       Nel.of("sbt", "ciGenerateGithubWorkflow")
     else
-      Nel.of("sbt", "githubWorkflowGenerate")
+      Nel.of("sbt", workflowTask.taskName)
 
-  private def sbtGithubWorkflowGenerateHook(
+  private def sbtGithubWorkflowHook(
       groupId: GroupId,
       artifactId: ArtifactId,
+      workflowTask: WorkflowTask,
       enabledByCache: RepoCache => Boolean
   ): PostUpdateHook =
     PostUpdateHook(
       groupId = Some(groupId),
       artifactId = Some(artifactId),
-      command = sbtGithubWorkflowGenerateCommand(groupId, artifactId),
+      command = sbtGithubWorkflowCommand(groupId, artifactId, workflowTask),
       useSandbox = true,
-      commitMessage = _ => CommitMsg("Regenerate GitHub Actions workflow"),
+      commitMessage = _ => CommitMsg("Update generated GitHub Actions workflow"),
       enabledByCache = enabledByCache,
-      enabledByConfig = _ => true,
+      enabledByConfig = _.sbtGithubActionsOrDefault.workflowTaskOrDefault == workflowTask,
       addToGitBlameIgnoreRevs = false
     )
 
@@ -204,11 +207,17 @@ object HookExecutor {
 
   private val postUpdateHooks: List[PostUpdateHook] =
     scalafmtHook ::
-      sbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
-        sbtGithubWorkflowGenerateHook(gid, aid, _ => true)
+      sbtGitHubWorkflowGenerateModules.flatMap { case (gid, aid) =>
+        Seq(
+          sbtGithubWorkflowHook(gid, aid, WorkflowTask.Generate, _ => true),
+          sbtGithubWorkflowHook(gid, aid, WorkflowTask.Update, _ => true)
+        )
       } ++
-      conditionalSbtGitHubWorkflowGenerateModules.map { case (gid, aid) =>
-        sbtGithubWorkflowGenerateHook(gid, aid, githubWorkflowGenerateExists)
+      conditionalSbtGitHubWorkflowGenerateModules.flatMap { case (gid, aid) =>
+        Seq(
+          sbtGithubWorkflowHook(gid, aid, WorkflowTask.Generate, githubWorkflowGenerateExists),
+          sbtGithubWorkflowHook(gid, aid, WorkflowTask.Update, githubWorkflowGenerateExists)
+        )
       } ++
       sbtTypelevelModules.map { case (gid, aid) => sbtTypelevelHook(gid, aid) }
 }
