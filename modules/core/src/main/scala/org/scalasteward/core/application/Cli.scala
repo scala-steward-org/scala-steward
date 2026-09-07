@@ -153,6 +153,11 @@ object Cli {
     options[EnvVar]("env-var", help).orEmpty
   }
 
+  private val whiteListOrganizations: Opts[List[String]] = {
+    val help = s"List of organizations to bypass UrlChecker"
+    options[String]("whitelist-organization", help).orEmpty
+  }
+
   private val processTimeout: Opts[FiniteDuration] = {
     val default = 10.minutes
     val help =
@@ -351,7 +356,8 @@ object Cli {
     urlCheckerTestUrls,
     defaultMavenRepos,
     refreshBackoffPeriod,
-    exitCodePolicy
+    exitCodePolicy,
+    whiteListOrganizations
   ).mapN(Config.apply).map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =
