@@ -289,6 +289,7 @@ object NewPullRequestData {
       filesWithOldVersion: List[String] = List.empty,
       addLabels: Boolean = false,
       draft: Boolean = false,
+      customLabels: List[String] = List.empty,
       labels: List[String] = List.empty,
       maximumPullRequestLength: Int = 65536
   ): NewPullRequestData =
@@ -306,12 +307,13 @@ object NewPullRequestData {
         artifactIdToUpdateInfoUrls,
         filesWithOldVersion,
         data.repoData.cache.maybeRepoConfigParsingError,
-        labels,
+        customLabels ++ labels,
         maximumPullRequestLength
       ),
       head = branchName,
       base = data.baseBranch,
-      labels = if (addLabels) labels else List.empty,
+      // a repository named these itself, so the flag governs only the derived ones
+      labels = customLabels ++ (if (addLabels) labels else List.empty),
       assignees = data.repoConfig.assigneesOrDefault,
       reviewers = data.repoConfig.reviewersOrDefault,
       draft = draft

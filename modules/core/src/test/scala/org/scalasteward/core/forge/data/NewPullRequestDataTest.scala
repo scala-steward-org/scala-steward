@@ -1337,8 +1337,9 @@ class NewPullRequestDataTest extends FunSuite {
       data,
       "scala-steward:update/logback-classic-1.2.3",
       addLabels = false,
-      labels = customLabels ++ labelsFor(data.update)
+      customLabels = customLabels,
+      labels = labelsFor(data.update)
     )
-    assertEquals(prData(List("dependencies")).labels, List.empty)
+    assertEquals(prData(List("dependencies")).labels, List("dependencies"))
   }
 }
