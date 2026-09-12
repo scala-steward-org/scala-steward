@@ -680,7 +680,7 @@ class RewriteTest extends FunSuite {
   // https://github.com/scala-steward-org/scala-steward/issues/1489
   test("ignore word: scala") {
     val update = ("com.github.plokhotnyuk.jsoniter-scala".g %
-      Nel.of("jsoniter-scala-core".a, "jsoniter-scala-macros".a) % "2.4.0" %> "2.4.1").group
+      Nel.of("jsoniter-scala-core".a, "jsoniter-scala-macros".a) % "2.5.0" %> "2.4.1").group
     val original = Map("build.sbt" -> """ val jsoniter = "2.4.0"
                                         | addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.0")
                                         |""".stripMargin)
