@@ -20,6 +20,9 @@ val input = s"""
 #   <timespan>
 #     PRs are created only again after the given timespan since the last PR
 #     has passed. Example values are "36 hours", "1 day", or "14 days".
+#     Scala Steward delays each dependency by an extra stable offset, so
+#     that PRs for different dependencies become due at different times.
+#     pullRequests.frequencySpread below sets the largest offset.
 
 #   <CRON expression>
 #     PRs are created roughly according to the given CRON expression.
@@ -33,11 +36,33 @@ val input = s"""
 #     Note that the date parts of the CRON expression are matched exactly
 #     while the time parts are only used to abide to the frequency of
 #     the given expression.
+#     pullRequests.allowedHours below limits the hours of the day when
+#     PRs may be created.
 #
 # Default: ${PullRequestsConfig.defaultFrequency.asJson.noSpaces}
 #
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
+
+# pullRequests.frequencySpread allows to control the offset that spreads a
+# <timespan> frequency across dependencies. The value is the largest offset
+# a dependency can get. "0 days" turns the offset off, so every PR becomes
+# due exactly on the timespan. The setting has no effect on "@asap" or on
+# a CRON expression.
+#
+# Default: a quarter of the timespan
+#
+#pullRequests.frequencySpread = "0 days"
+
+# pullRequests.allowedHours allows to limit the hours of the day (in UTC)
+# when Scala Steward may create PRs, whatever the frequency says. The value
+# lists hours or ranges of hours, separated by commas. The end of a range
+# is excluded, and a range may cross midnight: "18-7" means from 18:00
+# until 06:59. A single hour "7" means from 07:00 until 07:59.
+#
+# Default: any hour
+#
+#pullRequests.allowedHours = "18-7"
 
 # pullRequests.grouping allows you to specify how Scala Steward should group
 # your updates in order to reduce the number of pull-requests.

@@ -21,7 +21,12 @@ import cats.implicits.*
 import org.scalasteward.core.data.*
 import org.scalasteward.core.nurture.PullRequestRepository
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.{PullRequestFrequency, RepoConfig, UpdatePattern}
+import org.scalasteward.core.repoconfig.{
+  PullRequestFrequency,
+  PullRequestsConfig,
+  RepoConfig,
+  UpdatePattern
+}
 import org.scalasteward.core.update.PruningAlg.*
 import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState.*
@@ -165,29 +170,31 @@ final class PruningAlg[F[_]](implicit
       artifactLastPrCreatedAt: Option[Timestamp],
       repoConfig: RepoConfig
   ): F[Boolean] = {
-    val (frequencyz: Option[PullRequestFrequency], lastPrCreatedAt: Option[Timestamp]) =
+    val (pullRequests: PullRequestsConfig, lastPrCreatedAt: Option[Timestamp]) =
       repoConfig.dependencyOverridesOrDefault
         .collectFirstSome { groupRepoConfig =>
           val matchResult = UpdatePattern
             .findMatch(List(groupRepoConfig.dependency), dependencyOutdated.update, include = true)
           Option.when(matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty)(
-            (groupRepoConfig.pullRequests.frequency, artifactLastPrCreatedAt)
+            (groupRepoConfig.pullRequests, artifactLastPrCreatedAt)
           )
         }
-        .getOrElse((repoConfig.pullRequestsOrDefault.frequency, repoLastPrCreatedAt))
-    val frequency = frequencyz.getOrElse(PullRequestFrequency.Asap)
+        .getOrElse((repoConfig.pullRequestsOrDefault, repoLastPrCreatedAt))
+    val frequency = pullRequests.frequency.getOrElse(PullRequestFrequency.Asap)
 
     val dep = dependencyOutdated.crossDependency.head
-    val ignoring = s"Ignoring outdated dependency ${dep.groupId}:${dep.artifactId.name}"
-    if (!frequency.onSchedule(now))
-      logger.info(s"$ignoring according to $frequency").as(false)
-    else {
-      lastPrCreatedAt.flatMap(frequency.waitingTime(_, now)) match {
-        case None              => true.pure[F]
-        case Some(waitingTime) =>
-          val message = s"$ignoring for ${dateTime.showDuration(waitingTime)}"
-          logger.info(message).as(false)
-      }
+    val key = s"${dep.groupId}:${dep.artifactId.name}"
+    def ignore(why: String) =
+      logger.info(s"Ignoring outdated dependency $key $why").as(false)
+    pullRequests.allowedHours match {
+      case _ if !frequency.onSchedule(now) =>
+        ignore(s"according to $frequency")
+      case Some(allowed) if !allowed.matches(now) =>
+        ignore(s"according to allowed hours ${allowed.render}")
+      case _ =>
+        lastPrCreatedAt
+          .flatMap(frequency.waitingTime(_, now, key, pullRequests.frequencySpread))
+          .fold(true.pure[F])(waitingTime => ignore(s"for ${dateTime.showDuration(waitingTime)}"))
     }
   }
 }

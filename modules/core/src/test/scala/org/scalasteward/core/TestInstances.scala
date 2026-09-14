@@ -114,7 +114,11 @@ object TestInstances {
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
-    } yield PullRequestsConfig(frequency))
+      frequencySpread <- Arbitrary.arbitrary[Option[FiniteDuration]]
+      allowedHours <- Gen.option(
+        Gen.choose(0, 23).map(h => AllowedHours.fromString(h.toString).toOption.get)
+      )
+    } yield PullRequestsConfig(frequency, frequencySpread, allowedHours))
 
   implicit val cooldownConfigArbitrary: Arbitrary[CooldownConfig] =
     Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig.apply))

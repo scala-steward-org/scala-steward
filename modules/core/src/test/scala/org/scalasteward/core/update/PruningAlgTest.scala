@@ -420,8 +420,9 @@ class PruningAlgTest extends FunSuite {
         Cmd("read", versionsFile.toString),
         Log("Found 1 update:\n  software.awssdk:s3 : 2.100.0 -> 2.300.0"),
         Log(
-          s"${repo.show} is outdated:\n  new version: software.awssdk:s3 : 2.100.0 -> 2.300.0"
-        )
+          s"Ignoring outdated dependency software.awssdk:s3 according to allowed hours $blockedHour"
+        ),
+        Log(s"${repo.show} is up-to-date")
       )
     )
     assertEquals(state, expected)
@@ -640,7 +641,7 @@ class PruningAlgTest extends FunSuite {
         Cmd("read", pullRequestsFile.toString),
         Cmd("read", versionsFile.toString),
         Log("Found 1 update:\n  software.awssdk:s3 : 2.100.0 -> 2.300.0"),
-        Log("Ignoring outdated dependency software.awssdk:s3 for 29d 23h 59m"),
+        Log("Ignoring outdated dependency software.awssdk:s3 for 30d 21h 59m"),
         Log(s"${repo.show} is up-to-date")
       )
     )

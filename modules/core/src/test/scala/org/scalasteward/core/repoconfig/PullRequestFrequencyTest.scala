@@ -20,29 +20,51 @@ class PullRequestFrequencyTest extends FunSuite {
 
   test("waitingTime: @asap") {
     val Right(freq) = PullRequestFrequency.fromString("@asap"): @unchecked
-    assertEquals(freq.waitingTime(epoch, Timestamp(18.hours.toMillis)), None)
+    assertEquals(freq.waitingTime(epoch, Timestamp(18.hours.toMillis), cats, None), None)
   }
 
   test("waitingTime: @daily") {
     val Right(freq) = PullRequestFrequency.fromString("@daily"): @unchecked
-    assertEquals(freq.waitingTime(epoch, Timestamp(18.hours.toMillis)), Some(6.hours))
+    assertEquals(
+      freq.waitingTime(epoch, Timestamp(18.hours.toMillis), cats, None),
+      Some(6.hours + 12631317.millis)
+    )
   }
 
   test("waitingTime: timespan") {
     val Right(freq) = PullRequestFrequency.fromString("14 days"): @unchecked
-    assertEquals(freq.waitingTime(epoch, Timestamp(18.hours.toMillis)), Some(6.hours + 13.days))
+    assertEquals(
+      freq.waitingTime(epoch, Timestamp(18.hours.toMillis), cats, None),
+      Some(6.hours + 13.days + 142231317.millis)
+    )
+  }
+
+  test("waitingTime: timespan, maximum spread") {
+    val Right(freq) = PullRequestFrequency.fromString("14 days"): @unchecked
+    val now = Timestamp(18.hours.toMillis)
+    assertEquals(freq.waitingTime(epoch, now, cats, Some(0.days)), Some(6.hours + 13.days))
+    assertEquals(
+      freq.waitingTime(epoch, now, cats, Some(1.day)),
+      Some(6.hours + 13.days + 55831317.millis)
+    )
   }
 
   test("waitingTime: timespan, two dependencies") {
     val Right(freq) = PullRequestFrequency.fromString("14 days"): @unchecked
     val now = Timestamp(18.hours.toMillis)
-    assertEquals(freq.waitingTime(epoch, now), Some(6.hours + 13.days))
-    assertEquals(freq.waitingTime(epoch, now), Some(6.hours + 13.days))
+    val base = 6.hours + 13.days
+    val Some(a) = freq.waitingTime(epoch, now, cats, None): @unchecked
+    val Some(b) = freq.waitingTime(epoch, now, munit, None): @unchecked
+    assertNotEquals(a, b)
+    assert(a >= base && a < base + 14.days / 4, a.toString)
+    assert(b >= base && b < base + 14.days / 4, b.toString)
   }
 
   test("waitingTime: cron expr") {
     val Right(freq) = PullRequestFrequency.fromString("0 1 ? * *"): @unchecked
-    assertEquals(freq.waitingTime(epoch, Timestamp(20.minutes.toMillis)), Some(40.minutes))
+    val now = Timestamp(20.minutes.toMillis)
+    assertEquals(freq.waitingTime(epoch, now, cats, None), Some(40.minutes))
+    assertEquals(freq.waitingTime(epoch, now, cats, Some(1.day)), Some(40.minutes))
   }
 
   test("CronExpr encode and then decode") {
