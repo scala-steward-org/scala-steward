@@ -22,9 +22,11 @@ import io.circe.generic.semiauto.*
 import org.scalasteward.core.data.{ArtifactId, DependencyInfo, GroupId, Scope}
 import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.util.Timestamp
 
 final case class RepoCache(
     sha1: Sha1,
+    commitDate: Timestamp,
     dependencyInfos: List[Scope[List[DependencyInfo]]],
     maybeRepoConfig: Option[RepoConfig],
     maybeRepoConfigParsingError: Option[String]

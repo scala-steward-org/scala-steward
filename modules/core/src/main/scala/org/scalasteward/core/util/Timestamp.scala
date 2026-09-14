@@ -34,6 +34,9 @@ final case class Timestamp(millis: Long) {
 }
 
 object Timestamp {
+  def fromEpochSecond(seconds: Long): Timestamp =
+    Timestamp(seconds * 1000L)
+
   def fromLocalDateTime(ldt: LocalDateTime): Timestamp =
     Timestamp(ldt.toInstant(ZoneOffset.UTC).toEpochMilli)
 

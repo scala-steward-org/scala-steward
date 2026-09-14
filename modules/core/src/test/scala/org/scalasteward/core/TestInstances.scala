@@ -10,6 +10,7 @@ import org.scalasteward.core.git.Sha1
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.*
 import org.scalasteward.core.repoconfig.PullRequestFrequency.{Asap, Timespan}
+import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import scala.concurrent.duration.FiniteDuration
@@ -19,10 +20,13 @@ object TestInstances {
     Sha1.unsafeFrom("da39a3ee5e6b4b0d3255bfef95601890afd80709")
 
   val dummyRepoCache: RepoCache =
-    RepoCache(dummySha1, List.empty, Option.empty, Option.empty)
+    RepoCache(dummySha1, Timestamp(0L), List.empty, Option.empty, Option.empty)
 
   val dummyRepoCacheWithParsingError: RepoCache =
     dummyRepoCache.copy(maybeRepoConfigParsingError = Some("Failed to parse .scala-steward.conf"))
+
+  val ioDateTimeAlg: DateTimeAlg[IO] =
+    DateTimeAlg.create[IO]
 
   implicit val ioLogger: Logger[IO] =
     Slf4jLogger.getLogger[IO]
