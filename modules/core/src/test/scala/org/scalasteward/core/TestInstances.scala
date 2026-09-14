@@ -114,7 +114,8 @@ object TestInstances {
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
     Arbitrary(for {
       frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
-    } yield PullRequestsConfig(frequency))
+      branchPrefix <- Arbitrary.arbitrary[Option[String]]
+    } yield PullRequestsConfig(frequency, branchPrefix = branchPrefix))
 
   implicit val cooldownConfigArbitrary: Arbitrary[CooldownConfig] =
     Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig.apply))
