@@ -1323,4 +1323,23 @@ class NewPullRequestDataTest extends FunSuite {
 
     assertEquals(body, expected)
   }
+
+  test("from: labels a repository asked for by name") {
+    val data = UpdateData(
+      repoData = RepoData(repo = Repo("foo", "bar"), cache = dummyRepoCache, config = RepoConfig()),
+      fork = Repo("scala-steward", "bar"),
+      update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
+      baseBranch = Branch("main"),
+      baseSha1 = dummySha1,
+      updateBranch = Branch("update/logback-classic-1.2.3")
+    )
+    def prData(customLabels: List[String]) = from(
+      data,
+      "scala-steward:update/logback-classic-1.2.3",
+      addLabels = false,
+      customLabels = customLabels,
+      labels = labelsFor(data.update)
+    )
+    assertEquals(prData(List("dependencies")).labels, List("dependencies"))
+  }
 }

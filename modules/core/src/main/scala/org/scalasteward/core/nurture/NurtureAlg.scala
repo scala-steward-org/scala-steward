@@ -239,7 +239,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
       draft = pullRequestsConfig.draft.contains(true),
-      labels = pullRequestsConfig.customLabelsOrDefault ++ labels,
+      customLabels = pullRequestsConfig.customLabelsOrDefault,
+      labels = labels,
       maximumPullRequestLength = config.tpe.maximumPullRequestLength
     )
 
