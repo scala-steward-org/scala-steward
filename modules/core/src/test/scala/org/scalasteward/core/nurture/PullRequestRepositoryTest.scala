@@ -15,6 +15,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.{RetractedArtifact, UpdatePattern, VersionPattern}
+import org.scalasteward.core.util.Nel
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -32,7 +33,7 @@ class PullRequestRepositoryTest extends FunSuite {
   private val sha1 = Sha1.unsafeFrom("a2ced5793c2832ada8c14ba5c77e51c4bc9656a8")
   private val number = PullRequestNumber(3291)
   private def groupedUpdate(updates: Update.ForArtifactId*) =
-    Update.Grouped("group", None, updates.toList)
+    Update.Grouped("group", None, Nel.fromListUnsafe(updates.toList))
   private def openPRFor(update: Update): PullRequestData[Id] =
     PullRequestData[Id](url, sha1, update, Open, number, Branch("update"))
 

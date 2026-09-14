@@ -192,7 +192,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("bodyFor() grouped update") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
-    val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
+    val update = Update.Grouped("my-group", Some("The PR title"), Nel.of(update1, update2))
     val edits = List(
       UpdateEdit(
         update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
@@ -453,7 +453,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("bodyFor() grouped update when edits does not contain an update (scala-steward:off case)") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
-    val update = Update.Grouped("my-group", Some("The PR title"), List(update1, update2))
+    val update = Update.Grouped("my-group", Some("The PR title"), Nel.of(update1, update2))
     val edits = List(
       UpdateEdit(
         update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,
@@ -799,7 +799,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("label for grouped updates add labels for all update types & version changes") {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
-    val update = Update.Grouped("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, Nel.of(update1, update2))
 
     val labels = labelsFor(update, Nil, Nil)
 
@@ -825,7 +825,7 @@ class NewPullRequestDataTest extends FunSuite {
     val files = List("Readme.md", "travis.yml")
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
-    val update = Update.Grouped("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, Nel.of(update1, update2))
 
     val note = oldVersionNote(files, update)
 
@@ -848,7 +848,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("adjustFutureUpdates for grouped updates shows settings for each update") {
     val update1 = ("a".g % "b".a % "1" -> "2").single
     val update2 = ("c".g % "d".a % "1.1.0" % "test" %> "1.2.0").single
-    val update = Update.Grouped("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, Nel.of(update1, update2))
 
     val note = adjustFutureUpdates(update)
 
@@ -989,7 +989,7 @@ class NewPullRequestDataTest extends FunSuite {
   test("from() should construct NewPullRequestData for grouped update") {
     val update1 = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single
     val update2 = ("com.example".g % "foo".a % "1.0.0" %> "2.0.0").single
-    val update = Update.Grouped("my-group", None, List(update1, update2))
+    val update = Update.Grouped("my-group", None, Nel.of(update1, update2))
     val edits = List(
       UpdateEdit(
         update = ("ch.qos.logback".g % "logback-classic".a % "1.2.0" %> "1.2.3").single,

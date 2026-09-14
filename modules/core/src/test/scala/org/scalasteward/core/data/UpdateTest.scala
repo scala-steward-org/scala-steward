@@ -1,7 +1,10 @@
 package org.scalasteward.core.data
 
 import munit.FunSuite
+import org.scalasteward.core.TestSyntax
 import org.scalasteward.core.TestSyntax.*
+import org.scalasteward.core.edit.update.data.Substring.Replacement
+import org.scalasteward.core.nurture.InseparableUpdateSet
 import org.scalasteward.core.util.Nel
 
 class UpdateTest extends FunSuite {
@@ -18,18 +21,57 @@ class UpdateTest extends FunSuite {
     assertEquals(update.mainArtifactId, "circe")
   }
 
+  test("performAllGrouping: 1 update") {
+    val coreGroup = "com.fasterxml.jackson.core".g
+    val datatypeGroup = "com.fasterxml.jackson.datatype".g
+    val vUpdate = Version.Update("2.20.1".v, "2.20.2".v)
+    val singleEdit: Replacement = stubReplacement(positionIndex = 10, vUpdate)
+    val update1 = (coreGroup % "jackson-core".a % vUpdate).artifactForUpdate
+    val update2 = (coreGroup % "jackson-databind".a % vUpdate).artifactForUpdate
+    val update3 = (datatypeGroup % "jackson-datatype-jdk8".a % vUpdate).artifactForUpdate
+    val update4 = (datatypeGroup % "jackson-datatype-jsr310".a % vUpdate).artifactForUpdate
+
+    val updatesByEdit = Map(
+      Set(singleEdit) -> InseparableUpdateSet(
+        Nel.of(update1, update2, update3, update4),
+        "2.20.2".v
+      )
+    )
+
+    val resultingUpdates = Update.performAllGrouping(updatesByEdit, List.empty)
+    assertEquals(resultingUpdates.size, 1)
+    assertEquals(resultingUpdates.head.asSingleUpdates.size, 4)
+  }
+
   test("groupByGroupId: 1 update") {
-    val updates = List(("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single)
-    assertEquals(Update.groupByGroupId(updates), updates)
+    val update = ("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single
+    val updatesByEdit = Map(
+      Set(stubReplacement(positionIndex = 10, update.versionUpdate)) -> InseparableUpdateSet(
+        Nel.one(update.artifactForUpdate),
+        update.nextVersion
+      )
+    )
+    assertEquals(Update.groupByGroupId(updatesByEdit), List(update))
   }
 
   test("groupByGroupId: 2 updates") {
-    val update0 = ("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single
-    val update1 = ("org.specs2".g % "specs2-scalacheck".a % "3.9.4" %> "3.9.5").single
+    val update0 = ("org.specs2".g % "specs2-core".a % "3.9.4" %> "3.9.5").single.stubEdit
+    val update1 = ("org.specs2".g % "specs2-scalacheck".a % "3.9.4" %> "3.9.5").single.stubEdit
     val expected = List(
       ("org.specs2".g % Nel.of("specs2-core".a, "specs2-scalacheck".a) % "3.9.4" %> "3.9.5").group
     )
-    assertEquals(Update.groupByGroupId(List(update0, update1)), expected)
+    val versionUpdate = Version.Update("3.9.4".v, "3.9.5".v)
+    val updatesByEdit = Map(
+      Set(stubReplacement(positionIndex = 10, versionUpdate)) -> InseparableUpdateSet(
+        Nel.one(update.artifactForUpdate),
+        versionUpdate.nextVersion
+      ),
+      Set(stubReplacement(positionIndex = 20, versionUpdate)) -> InseparableUpdateSet(
+        Nel.one(update.artifactForUpdate),
+        versionUpdate.nextVersion
+      )
+    )
+    assertEquals(Update.groupByGroupId(updatesByEdit), expected)
   }
 
   test("groupByArtifactIdName: 2 updates") {
