@@ -244,6 +244,22 @@ class RepoConfigAlgTest extends FunSuite {
     assertEquals(config, Right(expected))
   }
 
+  test("config with 'pullRequests.frequencySpread = 0 days'") {
+    val content = """pullRequests.frequencySpread = "0 days" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(pullRequests = PullRequestsConfig().some)
+    assertEquals(config, Right(expected))
+  }
+
+  test("config with 'pullRequests.allowedHours = 18-23,0-7'") {
+    val content = """pullRequests.allowedHours = "18-23,0-7" """
+    val config = RepoConfigAlg.parseRepoConfig(content)
+    val expected =
+      RepoConfig(pullRequests = PullRequestsConfig().some)
+    assertEquals(config, Right(expected))
+  }
+
   test("config with 'scalafmt.runAfterUpgrading = true'") {
     val content = "scalafmt.runAfterUpgrading = true"
     val config = RepoConfigAlg.parseRepoConfig(content)

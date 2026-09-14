@@ -8,6 +8,8 @@ import scala.concurrent.duration.*
 
 class PullRequestFrequencyTest extends FunSuite {
   val epoch: Timestamp = Timestamp(0L)
+  val cats = "org.typelevel:cats-core"
+  val munit = "org.scalameta:munit"
 
   test("onSchedule") {
     val Right(thursday) = PullRequestFrequency.fromString("0 * ? * THU"): @unchecked
@@ -29,6 +31,13 @@ class PullRequestFrequencyTest extends FunSuite {
   test("waitingTime: timespan") {
     val Right(freq) = PullRequestFrequency.fromString("14 days"): @unchecked
     assertEquals(freq.waitingTime(epoch, Timestamp(18.hours.toMillis)), Some(6.hours + 13.days))
+  }
+
+  test("waitingTime: timespan, two dependencies") {
+    val Right(freq) = PullRequestFrequency.fromString("14 days"): @unchecked
+    val now = Timestamp(18.hours.toMillis)
+    assertEquals(freq.waitingTime(epoch, now), Some(6.hours + 13.days))
+    assertEquals(freq.waitingTime(epoch, now), Some(6.hours + 13.days))
   }
 
   test("waitingTime: cron expr") {
