@@ -88,6 +88,9 @@ object FilterAlg {
       ) {
         // already on Scala Next
         Right(update)
+      } else if (update.artifactForUpdate.currentVersion.value.startsWith("2.13")) {
+        // no updates from 2.13 to 3.x
+        Left(NoSuitableNextVersion(update))
       } else {
         // on Scala LTS (3.3.x or 3.9.x), stay on LTS versions
         update.filterVersions(isScalaLtsVersion).toRight(IgnoreScalaNext(update))
