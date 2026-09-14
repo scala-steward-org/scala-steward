@@ -327,7 +327,7 @@ class FilterAlgTest extends FunSuite {
 
   test("scalaLTSFilter: Next->LTS") {
     val update =
-      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.8.4" %> Nel.of(
         "3.9.0"
       )).single
     assertEquals(scalaLTSFilter(update), Right(update))
@@ -342,10 +342,10 @@ class FilterAlgTest extends FunSuite {
     assertEquals(scalaLTSFilter(update37_38), Right(update37_38))
 
     val update213_38 =
-      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "3.9.0" %> Nel.of(
+      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
         "3.8.1"
       )).single
-    assertEquals(scalaLTSFilter(update213_38), Left(IgnoreScalaNext(update213_38)))
+    assertEquals(scalaLTSFilter(update213_38), Left(NoSuitableNextVersion(update213_38)))
 
     val update213_39 =
       ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
@@ -368,7 +368,7 @@ class FilterAlgTest extends FunSuite {
     assert(isScala3Lang(update37_38))
 
     val update213_38 =
-      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "3.9.0" %> Nel.of(
+      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
         "3.8.1"
       )).single
     assert(isScala3Lang(update213_38))
