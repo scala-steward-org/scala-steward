@@ -21,10 +21,17 @@ import cats.{Eq, Monoid}
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import java.util.regex.PatternSyntaxException
+import org.scalasteward.core.repoconfig.CooldownConfig.{
+  finiteDurationDecoder,
+  finiteDurationEncoder
+}
+import scala.concurrent.duration.FiniteDuration
 import scala.util.matching.Regex
 
 final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
+    frequencySpread: Option[FiniteDuration] = None,
+    allowedHours: Option[AllowedHours] = None,
     private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
     private val customLabels: Option[List[String]] = None,
@@ -60,6 +67,8 @@ object PullRequestsConfig {
       (x, y) =>
         PullRequestsConfig(
           frequency = x.frequency.orElse(y.frequency),
+          frequencySpread = x.frequencySpread.orElse(y.frequencySpread),
+          allowedHours = x.allowedHours.orElse(y.allowedHours),
           grouping = x.grouping |+| y.grouping,
           includeMatchedLabels = x.includeMatchedLabels.orElse(y.includeMatchedLabels),
           customLabels = x.customLabels |+| y.customLabels,

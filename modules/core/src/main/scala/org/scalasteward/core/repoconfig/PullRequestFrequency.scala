@@ -35,10 +35,16 @@ sealed trait PullRequestFrequency {
       case _              => true
     }
 
-  def waitingTime(lastCreated: Timestamp, now: Timestamp): Option[FiniteDuration] = {
+  def waitingTime(
+      lastCreated: Timestamp,
+      now: Timestamp,
+      key: String,
+      maxSpread: Option[FiniteDuration]
+  ): Option[FiniteDuration] = {
     val nextPossible = this match {
-      case Asap           => None
-      case Timespan(fd)   => Some(lastCreated + fd)
+      case Asap         => None
+      case Timespan(fd) =>
+        Some(lastCreated + fd + PullRequestFrequency.spread(maxSpread.getOrElse(fd / 4), key))
       case CronExpr(expr) => expr.next(lastCreated.toLocalDateTime).map(Timestamp.fromLocalDateTime)
     }
     nextPossible.map(now.until).filter(_.length > 0)
@@ -52,6 +58,19 @@ object PullRequestFrequency {
   }
   final case class CronExpr(expr: cron4s.CronExpr) extends PullRequestFrequency {
     val render: String = expr.toString
+  }
+
+  /** An offset in `[0, max)`, from the name of the dependency the update is for.
+    *
+    * A timespan counts from the last pull request for that dependency, so the updates opened in one
+    * run come due on the same day as each other, and stay in step for as long as the repository
+    * keeps the setting. The offset is stable, so a dependency keeps its place in the cycle, and it
+    * only ever delays, so a repository still gets at most one pull request per dependency per
+    * timespan.
+    */
+  private[repoconfig] def spread(max: FiniteDuration, key: String): FiniteDuration = {
+    val span = max.toMillis
+    if (span <= 0) Duration.Zero else Math.floorMod(key.hashCode.toLong, span).millis
   }
 
   def fromString(s: String): Either[String, PullRequestFrequency] =
