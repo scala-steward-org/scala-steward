@@ -41,7 +41,8 @@ class BuildToolDispatcherTest extends FunSuite {
     }
 
     val expectedState = initial.copy(trace =
-      Cmd("test", "-f", s"$repoDir/gradle/libs.versions.toml") +:
+      Cmd("test", "-d", s"$repoDir/src/main/g8") +:
+        Cmd("test", "-f", s"$repoDir/gradle/libs.versions.toml") +:
         Cmd("test", "-f", s"$repoDir/pom.xml") +:
         Cmd("test", "-f", s"$repoDir/build.mill") +:
         Cmd("test", "-f", s"$repoDir/build.mill.scala") +:
@@ -106,5 +107,69 @@ class BuildToolDispatcherTest extends FunSuite {
       Scope(List.empty[Dependency], Nil)
     )
     assertEquals(deps, expectedDeps)
+  }
+
+  test("getDependencies: renders Giter8 templates before extracting dependencies") {
+    val repo = Repo("example", "kafka-streams.g8")
+    val repoConfig = RepoConfig.empty.copy(buildRoots = Some(Nil))
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val renderCommand = Cmd.execSandboxed(
+      repoDir,
+      "sbt",
+      "--server",
+      "-Dsbt.color=false",
+      "-Dsbt.log.noformat=true",
+      "-Dsbt.supershell=false",
+      "-Dsbt.server.forcestart=true",
+      ";g8"
+    )
+    val renderedFiles = List(
+      repoDir / "target" / "g8" / "build.sbt" -> "lazy val root = ...",
+      repoDir / "target" / "g8" / "project" / "build.properties" -> "sbt.version=1.2.6"
+    )
+    val initial = MockState.empty
+      .copy(commandFileWrites = Map(renderCommand -> renderedFiles))
+      .addFiles(
+        repoDir / "src" / "main" / "g8" / "build.sbt" -> "lazy val root = ..."
+      )
+      .unsafeRunSync()
+    val (state, deps) =
+      buildToolDispatcher.getDependencies(repo, repoConfig).runSA(initial).unsafeRunSync()
+
+    assert(deps.nonEmpty)
+    val renderIndex = state.trace.indexOf(Log("Render Giter8 template in src/main/g8"))
+    val extractionIndex = state.trace.indexOf(Log("Get dependencies in target/g8 from sbt"))
+    assert(renderIndex >= 0)
+    assert(extractionIndex > renderIndex)
+    assert(
+      state.trace.contains(
+        Cmd.execSandboxed(
+          repoDir / "target" / "g8",
+          "sbt",
+          "--server",
+          "-Dsbt.color=false",
+          "-Dsbt.log.noformat=true",
+          "-Dsbt.supershell=false",
+          "-Dsbt.server.forcestart=true",
+          s";$crossStewardDependencies;$reloadPlugins;$stewardDependencies"
+        )
+      )
+    )
+  }
+
+  test("getDependencies: no giter8 template returns only base build roots") {
+    val repo = Repo("example", "regular-project")
+    val repoConfig = RepoConfig.empty
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val initial = MockState.empty
+      .addFiles(
+        repoDir / "build.sbt" -> "lazy val root = ...",
+        repoDir / "project" / "build.properties" -> "sbt.version=1.2.6",
+        repoDir / scalafmtConfName -> "version=2.0.0"
+      )
+      .unsafeRunSync()
+    val deps = buildToolDispatcher.getDependencies(repo, repoConfig).runA(initial).unsafeRunSync()
+
+    assertEquals(deps.length, 1)
   }
 }

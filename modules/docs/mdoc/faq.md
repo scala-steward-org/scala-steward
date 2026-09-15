@@ -65,11 +65,11 @@ and a suffix with a different branch on each occurrence (`owner/repo:branch`). F
 
 This configuration will update the default branch, as well as the branches `0.1.x` and `0.2.x` in the repo `owner/repo`.
 
-## Can Scala Steward update dependencies in giter8 templates ?
+## Can Scala Steward update dependencies in Giter8 templates?
 
-Scala Steward can update versions in giter8 templates if the dependencies of the template 
-are also added as dependencies of the template build.
-An example is [library.g8](https://github.com/ChristopherDavenport/library.g8) ([example PR](https://github.com/ChristopherDavenport/library.g8/pull/100/files))
+Yes. For templates using the conventional `src/main/g8` layout, Scala Steward renders
+the template and extracts dependencies from the generated sbt build in `target/g8`.
+Updates are then applied to the tracked template sources.
 
 ## Why do Scala Steward updates provide no URLs in PRs?
 

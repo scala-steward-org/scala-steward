@@ -34,7 +34,11 @@ object MockProcessAlg {
             case None => IO.pure((List.empty, state1.files))
           }
           (output, files) = res
-          _ <- ctx.set(state1.copy(files = files))
+          commandFileWrites = state1.commandFileWrites.getOrElse(cmd, Nil)
+          _ <- commandFileWrites.traverse_ { case (file, content) =>
+            FileAlgTest.ioFileAlg.writeFile(file, content)
+          }
+          _ <- ctx.set(state1.copy(files = files ++ commandFileWrites))
         } yield output
       }
     })

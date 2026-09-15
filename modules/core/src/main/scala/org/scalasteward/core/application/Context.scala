@@ -25,6 +25,7 @@ import org.http4s.client.Client
 import org.http4s.headers.`User-Agent`
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.buildtool.BuildToolDispatcher
+import org.scalasteward.core.buildtool.giter8.Giter8Alg
 import org.scalasteward.core.buildtool.gradle.GradleAlg
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -67,6 +68,7 @@ final class Context[F[_]](implicit
     val filterAlg: FilterAlg[F],
     val forgeRepoAlg: ForgeRepoAlg[F],
     val gitAlg: GitAlg[F],
+    val giter8Alg: Giter8Alg[F],
     val gradleAlg: GradleAlg[F],
     val hookExecutor: HookExecutor[F],
     val httpJsonClient: HttpJsonClient[F],
@@ -191,6 +193,7 @@ object Context {
         new SbtAlg[F](config.defaultResolvers, config.ignoreOptsFiles)
       implicit val scalaCliAlg: ScalaCliAlg[F] = new ScalaCliAlg[F]
       implicit val millAlg: MillAlg[F] = new MillAlg[F](config.defaultResolvers)
+      implicit val giter8Alg: Giter8Alg[F] = new Giter8Alg[F]
       implicit val buildToolDispatcher: BuildToolDispatcher[F] = new BuildToolDispatcher[F]
       implicit val refreshErrorAlg: RefreshErrorAlg[F] =
         new RefreshErrorAlg[F](refreshErrorStore, config.refreshBackoffPeriod)
