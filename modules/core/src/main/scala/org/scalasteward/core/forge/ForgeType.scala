@@ -29,6 +29,7 @@ import scala.annotation.nowarn
 
 sealed trait ForgeType extends Product with Serializable {
   def publicWebHost: Option[String]
+  def publicWebScheme: Option[Uri.Scheme]
 
   /** Defines how to construct 'diff' urls for this forge type - ie a url that will show the
     * difference between two git tags. These can be very useful for understanding the difference
@@ -67,6 +68,7 @@ object ForgeType {
 
   case object AzureRepos extends ForgeType {
     override val publicWebHost: Some[String] = Some("dev.azure.com")
+    override val publicWebScheme: Option[Uri.Scheme] = None
     override def supportsForking: Boolean = false
     override val maximumPullRequestLength: Int = 4000
     val diffs: DiffUriPattern = (from, to) =>
@@ -81,6 +83,7 @@ object ForgeType {
 
   case object Bitbucket extends ForgeType {
     override val publicWebHost: Some[String] = Some("bitbucket.org")
+    override val publicWebScheme: Option[Uri.Scheme] = Some(Uri.Scheme.https)
     override def supportsLabels: Boolean = false
     val publicApiBaseUrl = uri"https://api.bitbucket.org/2.0"
     val diffs: DiffUriPattern = (from, to) => _ / "compare" / s"$to..$from" withFragment "diff"
@@ -94,6 +97,7 @@ object ForgeType {
     */
   case object BitbucketServer extends ForgeType {
     override val publicWebHost: None.type = None
+    override val publicWebScheme: Option[Uri.Scheme] = None
     override def supportsForking: Boolean = false
     override def supportsLabels: Boolean = false
     override val maximumPullRequestLength: Int = 32768
@@ -103,6 +107,7 @@ object ForgeType {
 
   case object GitHub extends ForgeType {
     override val publicWebHost: Some[String] = Some("github.com")
+    override val publicWebScheme: Option[Uri.Scheme] = Some(Uri.Scheme.https)
     val publicApiBaseUrl = uri"https://api.github.com"
     val diffs: DiffUriPattern = (from, to) => _ / "compare" / s"$from...$to"
     val files: FileUriPattern = fileName => _ / "blob" / "master" / fileName
@@ -112,6 +117,7 @@ object ForgeType {
 
   case object GitLab extends ForgeType {
     override val publicWebHost: Some[String] = Some("gitlab.com")
+    override val publicWebScheme: Option[Uri.Scheme] = Some(Uri.Scheme.https)
     val publicApiBaseUrl = uri"https://gitlab.com/api/v4"
     val diffs: DiffUriPattern = GitHub.diffs
     val files: FileUriPattern = GitHub.files
@@ -119,6 +125,7 @@ object ForgeType {
 
   case object Gitea extends ForgeType {
     override val publicWebHost: Option[String] = None
+    override val publicWebScheme: Option[Uri.Scheme] = None
     val diffs: DiffUriPattern = GitHub.diffs
     val files: FileUriPattern = fileName => _ / "src" / "branch" / "master" / fileName
   }
