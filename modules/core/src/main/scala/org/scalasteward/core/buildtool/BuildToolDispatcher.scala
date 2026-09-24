@@ -18,6 +18,7 @@ package org.scalasteward.core.buildtool
 
 import cats.Monad
 import cats.syntax.all.*
+import org.scalasteward.core.buildtool.giter8.Giter8Alg
 import org.scalasteward.core.buildtool.gradle.GradleAlg
 import org.scalasteward.core.buildtool.maven.MavenAlg
 import org.scalasteward.core.buildtool.mill.MillAlg
@@ -30,6 +31,7 @@ import org.scalasteward.core.scalafmt.ScalafmtAlg
 import org.typelevel.log4cats.Logger
 
 final class BuildToolDispatcher[F[_]](implicit
+    giter8Alg: Giter8Alg[F],
     gradleAlg: GradleAlg[F],
     logger: Logger[F],
     mavenAlg: MavenAlg[F],
@@ -40,33 +42,39 @@ final class BuildToolDispatcher[F[_]](implicit
     F: Monad[F]
 ) {
   def getDependencies(repo: Repo, repoConfig: RepoConfig): F[List[Scope.Dependencies]] =
-    getBuildRootsAndTools(repo, repoConfig).flatMap(_.flatTraverse { case (buildRoot, buildTools) =>
-      for {
-        dependencies <- buildTools.flatTraverse { buildTool =>
-          logger.info(s"Get dependencies in ${buildRoot.relativePath} from ${buildTool.name}") >>
-            buildTool.getDependencies(buildRoot)
-        }
-        maybeScalafmtDependency <- scalafmtAlg.getScopedScalafmtDependency(buildRoot)
-      } yield Scope.combineByResolvers(maybeScalafmtDependency.toList ::: dependencies)
-    })
+    for {
+      giter8BuildRoot <- giter8Alg.getRenderedGiter8BuildRoot(repo)
+      buildRoots = repoConfig.buildRootsOrDefault(repo) ++ giter8BuildRoot.toList
+      buildRootsAndTools <- getBuildRootsAndTools(buildRoots)
+      dependencies <- buildRootsAndTools.flatTraverse { case (buildRoot, buildTools) =>
+        for {
+          dependencies <- buildTools.flatTraverse { buildTool =>
+            logger.info(s"Get dependencies in ${buildRoot.relativePath} from ${buildTool.name}") >>
+              buildTool.getDependencies(buildRoot)
+          }
+          maybeScalafmtDependency <- scalafmtAlg.getScopedScalafmtDependency(buildRoot)
+        } yield Scope.combineByResolvers(maybeScalafmtDependency.toList ::: dependencies)
+      }
+    } yield dependencies
 
   def runMigration(repo: Repo, repoConfig: RepoConfig, migration: ScalafixMigration): F[Unit] =
-    getBuildRootsAndTools(repo, repoConfig).flatMap(_.traverse_ { case (buildRoot, buildTools) =>
-      buildTools.traverse_(_.runMigration(buildRoot, migration))
-    })
+    getBuildRootsAndTools(repoConfig.buildRootsOrDefault(repo)).flatMap(
+      _.traverse_ { case (buildRoot, buildTools) =>
+        buildTools.traverse_(_.runMigration(buildRoot, migration))
+      }
+    )
 
   private val allBuildTools = List(gradleAlg, mavenAlg, millAlg, sbtAlg, scalaCliAlg)
-  private val fallbackBuildTool = List(sbtAlg)
+  private val fallbackBuildTools = List(sbtAlg)
 
   private def findBuildTools(buildRoot: BuildRoot): F[(BuildRoot, List[BuildToolAlg[F]])] =
     allBuildTools.filterA(_.containsBuild(buildRoot)).map {
-      case Nil  => buildRoot -> fallbackBuildTool
-      case list => buildRoot -> list
+      case Nil        => buildRoot -> fallbackBuildTools
+      case buildTools => buildRoot -> buildTools
     }
 
   private def getBuildRootsAndTools(
-      repo: Repo,
-      repoConfig: RepoConfig
+      buildRoots: List[BuildRoot]
   ): F[List[(BuildRoot, List[BuildToolAlg[F]])]] =
-    repoConfig.buildRootsOrDefault(repo).traverse(findBuildTools)
+    buildRoots.traverse(findBuildTools)
 }

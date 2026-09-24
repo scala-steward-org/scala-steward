@@ -10,7 +10,10 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/fthomas/scala-steward.svg?style=flat&color=blue)](https://hub.docker.com/r/fthomas/scala-steward/)
 
 Scala Steward is a bot that helps you keep your library dependencies and build plugins up-to-date.
-It works with [Maven](https://maven.apache.org/), [Mill](https://mill-build.com/), [sbt](https://www.scala-sbt.org/), and [Scala CLI](https://scala-cli.virtuslab.org/).
+It works with [Maven](https://maven.apache.org/), [Mill](https://mill-build.com/),
+[sbt](https://www.scala-sbt.org/), and [Scala CLI](https://scala-cli.virtuslab.org/).
+It also supports dependencies in [Giter8](https://www.foundweekends.org/giter8/)
+templates using the conventional `src/main/g8` layout.
 
 See also the announcement blog post:
 [*Keep your projects up-to-date with Scala Steward*](https://www.scala-lang.org/blog/2019/07/10/announcing-scala-steward.html)

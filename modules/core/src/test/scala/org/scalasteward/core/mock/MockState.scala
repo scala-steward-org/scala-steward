@@ -14,6 +14,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 final case class MockState(
     trace: Vector[TraceEntry],
     commandOutputs: Map[Cmd, Either[Throwable, List[String]]],
+    commandFileWrites: Map[Cmd, List[(File, String)]],
     execCommands: Boolean,
     files: Map[File, String],
     uris: Map[Uri, String],
@@ -57,6 +58,7 @@ object MockState {
     MockState(
       trace = Vector.empty,
       commandOutputs = Map.empty,
+      commandFileWrites = Map.empty,
       execCommands = false,
       files = Map.empty,
       uris = Map.empty,
