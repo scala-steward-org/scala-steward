@@ -134,7 +134,7 @@ class UpdateCodecTest extends FunSuite {
       Update.Grouped(
         name = "all",
         title = Some("All"),
-        updates = List(("org.specs2".g % "specs2-core".a % "3.9.4" % "test" %> "3.9.5").single)
+        updates = Nel.of(("org.specs2".g % "specs2-core".a % "3.9.4" % "test" %> "3.9.5").single)
       )
     )
     assertEquals(obtained, expected)
@@ -144,7 +144,7 @@ class UpdateCodecTest extends FunSuite {
     val update = Update.Grouped(
       name = "all",
       title = Some("All"),
-      updates = List(("org.specs2".g % "specs2-core".a % "3.9.4" % "test" %> "3.9.5").single)
+      updates = Nel.of(("org.specs2".g % "specs2-core".a % "3.9.4" % "test" %> "3.9.5").single)
     )
     val obtained = Decoder[Update].decodeJson(Encoder[Update].apply(update))
     assertEquals(obtained, Right(update))
