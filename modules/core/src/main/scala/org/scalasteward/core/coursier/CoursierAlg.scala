@@ -19,8 +19,9 @@ package org.scalasteward.core.coursier
 import cats.Parallel
 import cats.effect.Async
 import cats.implicits.*
-import coursier.cache.{CachePolicy, FileCache}
+import coursier.cache.{CacheDefaults, CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
+import coursier.version.VersionConstraint
 import coursier.{Fetch, Module, ModuleName, Organization}
 import org.scalasteward.core.data.Resolver.Credentials
 import org.scalasteward.core.data.{Dependency, Resolver, Version}
@@ -43,10 +44,11 @@ object CoursierAlg {
       F: Async[F]
   ): CoursierAlg[F] = {
     val fetch: Fetch[F] =
-      Fetch[F](FileCache[F]())
+      Fetch[F](FileCache[F](CacheDefaults.location))
 
     val cacheNoTtl: FileCache[F] =
-      FileCache[F]().withTtl(None).withCachePolicies(List(CachePolicy.Update))
+      FileCache[F](CacheDefaults.location)
+        .copy(ttl = None, cachePolicies = List(CachePolicy.Update))
 
     new CoursierAlg[F] {
       override def getMetadata(
@@ -73,8 +75,8 @@ object CoursierAlg {
           case Left(throwable) =>
             logger.debug(throwable)(s"Failed to fetch artifacts of $dependency").as(acc)
           case Right(result) =>
-            val maybeProject = result.resolution.projectCache
-              .get(dependency.moduleVersion)
+            val maybeProject = result.resolution.projectCache0
+              .get(dependency.moduleVersionConstraint)
               .map { case (_, project) => project }
 
             maybeProject.fold(F.pure(acc)) { project =>
@@ -94,7 +96,7 @@ object CoursierAlg {
             case Left(message) =>
               logger.debug(message) >> F.raiseError[List[Version]](new Throwable(message))
             case Right((versions, _)) =>
-              F.pure(versions.available.map(Version.apply).sorted)
+              F.pure(versions.available0.map(_.asString).map(Version.apply).sorted)
           }
         }
 
@@ -110,7 +112,9 @@ object CoursierAlg {
 
   private def toCoursierDependency(dependency: Dependency): coursier.Dependency = {
     val module = toCoursierModule(dependency)
-    coursier.Dependency(module, dependency.version.value).withTransitive(false)
+    coursier
+      .Dependency(module, VersionConstraint(dependency.version.value))
+      .copy(transitive = false)
   }
 
   private def toCoursierModule(dependency: Dependency): Module =
@@ -136,7 +140,7 @@ object CoursierAlg {
   ): Option[Authentication] =
     Option.when(credentials.nonEmpty || headers.nonEmpty) {
       new Authentication(
-        credentials.fold("")(_.user),
+        credentials.map(_.user),
         credentials.map(_.pass),
         headers.map(h => (h.key, h.value)),
         optional = false,
@@ -158,7 +162,7 @@ object CoursierAlg {
     )
 
   private def parentOf(project: Project): Option[coursier.Dependency] =
-    project.parent.map { case (module, version) =>
-      coursier.Dependency(module, version).withTransitive(false)
+    project.parent0.map { case (module, version) =>
+      coursier.Dependency(module, version).copy(transitive = false)
     }
 }

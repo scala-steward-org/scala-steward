@@ -127,8 +127,8 @@ lazy val core = myProject("core")
       Dependencies.circeParser,
       Dependencies.circeRefined,
       Dependencies.commonsIo,
-      Dependencies.coursierCore.cross(CrossVersion.for3Use2_13),
-      Dependencies.coursierSbtMaven.cross(CrossVersion.for3Use2_13),
+      Dependencies.commonsLang3,
+      Dependencies.coursierCore,
       Dependencies.cron4sCore,
       Dependencies.decline,
       Dependencies.fs2Core,
@@ -253,13 +253,6 @@ lazy val docs = myProject("docs")
   .settings(
     libraryDependencies ++= Seq(Dependencies.munitDiff),
     crossScalaVersions := Seq(Scala213, Scala3),
-    conflictWarning := {
-      if (scalaBinaryVersion.value == "3") {
-        ConflictWarning("warn", Level.Info, false)
-      } else {
-        conflictWarning.value
-      }
-    },
     tpolecatExcludeOptions := Set(ScalacOptions.fatalWarnings, ScalacOptions.warnNonUnitStatement),
     mdocIn := baseDirectory.value / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
