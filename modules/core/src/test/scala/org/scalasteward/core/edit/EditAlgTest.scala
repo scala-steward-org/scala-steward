@@ -285,4 +285,54 @@ class EditAlgTest extends FunSuite {
 
     assertEquals(state, expected)
   }
+  // Related to https://github.com/scala-steward-org/scala-steward/issues/3780 and
+  // https://github.com/scala-steward-org/scala-steward/issues/2906: when several
+  // dependencies share a version val, the first update rewrites the val so later
+  // updates should not log a misleading "Unable to bump version" warning.
+  test("applyUpdate does not warn when version was already bumped via shared val") {
+    val repo = Repo("edit-alg", "test-already-bumped")
+    val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
+    val buildSbt = repoDir / "build.sbt"
+    // Different groupIds so these are not merged by Update.groupByGroupId (see #3780).
+    val updateLibrary1 = ("com.foo.core".g % "library-1".a % "1.2.3" %> "1.3.0").single
+    val updateLibrary2 = ("com.foo.extra".g % "library-2".a % "1.2.3" %> "1.3.0").single
+    val original =
+      """val FooLibraryVersion = "1.2.3"
+        |libraryDependencies ++= Seq(
+        |  "com.foo.core" %% "library-1" % FooLibraryVersion,
+        |  "com.foo.extra" %% "library-2" % FooLibraryVersion
+        |)
+        |""".stripMargin
+
+    val state = MockState.empty
+      .copy(execCommands = true)
+      .initGitRepo(repoDir, buildSbt -> original)
+      .flatMap { s =>
+        editAlg.applyUpdate(data, updateLibrary1).runS(s).flatMap { s1 =>
+          editAlg.applyUpdate(data, updateLibrary2).runS(s1)
+        }
+      }
+      .unsafeRunSync()
+
+    val warnLogs = state.trace.collect {
+      case Log((_, msg)) if msg.contains("Unable to bump version") => msg
+    }
+    val infoLogs = state.trace.collect {
+      case Log((_, msg)) if msg.contains("Version already bumped") => msg
+    }
+    assertEquals(warnLogs, Vector.empty)
+    assert(infoLogs.exists(_.contains("library-2")))
+    assertEquals(
+      state.files(buildSbt),
+      """val FooLibraryVersion = "1.3.0"
+        |libraryDependencies ++= Seq(
+        |  "com.foo.core" %% "library-1" % FooLibraryVersion,
+        |  "com.foo.extra" %% "library-2" % FooLibraryVersion
+        |)
+        |""".stripMargin
+    )
+  }
+
+
 }
