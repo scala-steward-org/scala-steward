@@ -95,7 +95,7 @@ class FileAlgTest extends CatsEffectSuite {
       _ <- IO(symlink.symbolicLinkTo(regular))
       _ <- ioFileAlg.deleteForce(regular)
       _ <- ioFileAlg.deleteForce(dir)
-      symlinkExists <- IO(symlink.exists(File.LinkOptions.noFollow))
+      symlinkExists <- IO(symlink.exists(using File.LinkOptions.noFollow))
     } yield symlinkExists
     assertIO(obtained, false)
   }

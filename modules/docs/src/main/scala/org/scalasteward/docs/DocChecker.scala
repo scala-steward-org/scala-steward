@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+package org.scalasteward.docs
+
 import io.circe.config.parser
 import io.circe.{Decoder, Encoder}
 import munit.diff.Diff

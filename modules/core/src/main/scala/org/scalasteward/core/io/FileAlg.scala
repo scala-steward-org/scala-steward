@@ -85,19 +85,19 @@ object FileAlg {
         }
 
       override def isDirectory(file: File): F[Boolean] =
-        F.blocking(file.isDirectory(File.LinkOptions.noFollow))
+        F.blocking(file.isDirectory(using File.LinkOptions.noFollow))
 
       override def isNonEmptyDirectory(dir: File): F[Boolean] =
-        F.blocking(dir.isDirectory(File.LinkOptions.noFollow) && dir.nonEmpty)
+        F.blocking(dir.isDirectory(using File.LinkOptions.noFollow) && dir.nonEmpty)
 
       override def isRegularFile(file: File): F[Boolean] =
-        F.blocking(file.isRegularFile(File.LinkOptions.noFollow))
+        F.blocking(file.isRegularFile(using File.LinkOptions.noFollow))
 
       override def removeTemporarily(file: File): Resource[F, Unit] =
         Resource.make {
           F.blocking {
             val copyOptions = File.CopyOptions(overwrite = true)
-            Option.when(file.exists)(file.moveTo(File.newTemporaryFile())(copyOptions))
+            Option.when(file.exists)(file.moveTo(File.newTemporaryFile())(using copyOptions))
           }
         } {
           case Some(tmpFile) => F.blocking(tmpFile.moveTo(file)).void

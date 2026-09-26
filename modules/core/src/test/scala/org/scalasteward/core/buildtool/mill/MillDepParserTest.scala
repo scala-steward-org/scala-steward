@@ -143,7 +143,7 @@ class MillDepParserTest extends FunSuite {
     val pattern =
       "https://repo.scala-sbt.org/scalasbt/sbt-plugin-releases/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)([branch]/)[revision]/[type]s/[artifact](-[classifier]).[ext]"
     val json = s""" { "pattern": "$pattern", "type": "ivy", "headers": [] } """
-    val obtained = io.circe.parser.decode(json)(MillModule.resolverDecoder)
+    val obtained = io.circe.parser.decode(json)(using MillModule.resolverDecoder)
     val expected = Right(Resolver.IvyRepository(pattern, pattern, None, Some(Nil)))
     assertEquals(obtained, expected)
   }

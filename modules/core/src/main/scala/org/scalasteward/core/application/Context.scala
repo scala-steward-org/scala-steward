@@ -112,11 +112,11 @@ object Context {
         ClientConfiguration.disableFollowRedirect,
         middleware
       )
-      fileAlg = FileAlg.create(logger, F)
-      processAlg = ProcessAlg.create(config.processCfg)(logger, F)
-      workspaceAlg = WorkspaceAlg.create(config)(fileAlg, logger, F)
+      fileAlg = FileAlg.create(using logger, F)
+      processAlg = ProcessAlg.create(config.processCfg)(using logger, F)
+      workspaceAlg = WorkspaceAlg.create(config)(using fileAlg, logger, F)
       context <- Resource.eval {
-        step1(config)(
+        step1(config)(using
           defaultClient,
           UrlCheckerClient(urlCheckerClient),
           fileAlg,
