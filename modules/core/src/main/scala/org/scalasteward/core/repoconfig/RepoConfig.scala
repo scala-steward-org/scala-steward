@@ -31,6 +31,7 @@ final case class RepoConfig(
     private val pullRequests: Option[PullRequestsConfig] = None,
     private val scalafmt: Option[ScalafmtConfig] = None,
     private val updates: Option[UpdatesConfig] = None,
+    private val sbtGithubActions: Option[SbtGithubActionsConfig] = None,
     private val postUpdateHooks: Option[List[PostUpdateHookConfig]] = None,
     private val updatePullRequests: Option[PullRequestUpdateStrategy] = None,
     private val buildRoots: Option[List[BuildRootConfig]] = None,
@@ -50,6 +51,9 @@ final case class RepoConfig(
 
   def updatesOrDefault: UpdatesConfig =
     updates.getOrElse(UpdatesConfig())
+
+  def sbtGithubActionsOrDefault: SbtGithubActionsConfig =
+    sbtGithubActions.getOrElse(SbtGithubActionsConfig())
 
   def buildRootsOrDefault(repo: Repo): List[BuildRoot] =
     buildRoots
@@ -101,6 +105,7 @@ object RepoConfig {
               pullRequests = x.pullRequests |+| y.pullRequests,
               scalafmt = x.scalafmt |+| y.scalafmt,
               updates = x.updates |+| y.updates,
+              sbtGithubActions = x.sbtGithubActions |+| y.sbtGithubActions,
               postUpdateHooks = x.postUpdateHooks |+| y.postUpdateHooks,
               updatePullRequests = x.updatePullRequests.orElse(y.updatePullRequests),
               buildRoots = x.buildRoots |+| y.buildRoots,
