@@ -254,7 +254,7 @@ reviewers = [ "username1", "username2" ]
 signoffCommits = true
 """
 
-DocChecker.verifyParsedEqualsEncoded[RepoConfig](input)
+org.scalasteward.docs.DocChecker.verifyParsedEqualsEncoded[RepoConfig](input)
 
 print("```properties")
 print(input)

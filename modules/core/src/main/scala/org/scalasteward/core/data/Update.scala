@@ -277,7 +277,7 @@ object Update {
   // ForArtifactId
 
   implicit private val forArtifactIdEncoder: Encoder[ForArtifactId] =
-    Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId]) {
+    Encoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(using
       Encoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
         s =>
           (
@@ -287,7 +287,7 @@ object Update {
             s.artifactForUpdate.newerArtifactId
           )
       }
-    }
+    )
 
   private val unwrappedForArtifactIdDecoder: Decoder[ForArtifactId] =
     Decoder.forProduct4("crossDependency", "newerVersions", "newerGroupId", "newerArtifactId") {
@@ -304,7 +304,9 @@ object Update {
     }
 
   private val forArtifactIdDecoderV2 =
-    Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(unwrappedForArtifactIdDecoder)
+    Decoder.forProduct1("ForArtifactId")(identity[ForArtifactId])(using
+      unwrappedForArtifactIdDecoder
+    )
 
   implicit private val forArtifactIdDecoder: Decoder[ForArtifactId] =
     forArtifactIdDecoderV2
@@ -312,9 +314,9 @@ object Update {
   // ForGroupId
 
   private val forGroupIdEncoder: Encoder[ForGroupId] =
-    Encoder.forProduct1("ForGroupId")(identity[ForGroupId]) {
+    Encoder.forProduct1("ForGroupId")(identity[ForGroupId])(using
       Encoder.forProduct1("forArtifactIds")(_.forArtifactIds)
-    }
+    )
 
   private val unwrappedForGroupIdDecoderV3: Decoder[ForGroupId] =
     Decoder.forProduct1("forArtifactIds") { (forArtifactIds: Nel[ForArtifactId]) =>
@@ -322,24 +324,25 @@ object Update {
     }
 
   private val forGroupIdDecoderV3: Decoder[ForGroupId] =
-    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(unwrappedForGroupIdDecoderV3)
+    Decoder.forProduct1("ForGroupId")(identity[ForGroupId])(using unwrappedForGroupIdDecoderV3)
 
   private val forGroupIdDecoder: Decoder[ForGroupId] = forGroupIdDecoderV3
 
   // Grouped
 
   private val groupedEncoder: Encoder[Grouped] =
-    Encoder.forProduct1("Grouped")(identity[Grouped]) {
+    Encoder.forProduct1("Grouped")(identity[Grouped])(using
       Encoder.forProduct3("name", "title", "updates")(s => (s.name, s.title, s.updates))
-    }
+    )
 
   private val groupedDecoder: Decoder[Grouped] =
-    Decoder.forProduct1("Grouped")(identity[Grouped]) {
+    Decoder.forProduct1("Grouped")(identity[Grouped])(
+      using
       Decoder.forProduct3("name", "title", "updates") {
         (name: String, title: Option[String], updates: List[ForArtifactId]) =>
           Grouped(name, title, updates)
       }
-    }
+    )
 
   // Update
 

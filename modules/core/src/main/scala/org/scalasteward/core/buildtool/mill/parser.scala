@@ -147,7 +147,7 @@ object MillModule {
   implicit val decoder: Decoder[MillModule] = Decoder.instance(c =>
     for {
       name <- c.downField("name").as[String]
-      resolvers <- c.downField("repositories").as(Decoder.decodeList(resolverDecoder))
+      resolvers <- c.downField("repositories").as(using Decoder.decodeList(using resolverDecoder))
       dependencies <- c.downField("dependencies").as[List[Dependency]]
     } yield MillModule(name, resolvers, dependencies)
   )

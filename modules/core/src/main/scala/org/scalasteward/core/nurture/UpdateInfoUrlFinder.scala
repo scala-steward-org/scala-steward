@@ -44,7 +44,7 @@ final class UpdateInfoUrlFinder[F[_]](implicit
         )
 
     updateInfoUrls
-      .sorted(UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
+      .sorted(using UpdateInfoUrl.updateInfoUrlOrder.toOrdering)
       .distinctBy(_.url)
       .filterA(updateInfoUrl => urlChecker.exists(updateInfoUrl.url))
   }

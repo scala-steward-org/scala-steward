@@ -46,7 +46,7 @@ final class HttpJsonClient[F[_]](implicit
     */
   def getAll[A: Decoder](uri: Uri, modify: ModReq): Stream[F, A] =
     Stream.unfoldLoopEval(uri) { curr =>
-      requestWithHeaders[A](GET, curr, modify)(jsonOf).map { case (a, headers) =>
+      requestWithHeaders[A](GET, curr, modify)(using jsonOf).map { case (a, headers) =>
         val next = headers.get[Link].flatMap(_.values.find(_.rel.contains("next"))).map(_.uri)
         (a, next)
       }
@@ -65,16 +65,16 @@ final class HttpJsonClient[F[_]](implicit
     request[A](PATCH, uri, modify)
 
   def postWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
-    post[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
+    post[A](uri, modify.compose(_.withEntity(body)(using jsonEncoderOf[B])))
 
   def putWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
-    put[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
+    put[A](uri, modify.compose(_.withEntity(body)(using jsonEncoderOf[B])))
 
   def patchWithBody[A: Decoder, B: Encoder](uri: Uri, body: B, modify: ModReq): F[A] =
-    patch[A](uri, modify.compose(_.withEntity(body)(jsonEncoderOf[B])))
+    patch[A](uri, modify.compose(_.withEntity(body)(using jsonEncoderOf[B])))
 
   private def request[A: Decoder](method: Method, uri: Uri, modify: ModReq): F[A] =
-    requestWithHeaders[A](method, uri, modify)(jsonOf).map { case (a, _) => a }
+    requestWithHeaders[A](method, uri, modify)(using jsonOf).map { case (a, _) => a }
 
   private def request_(method: Method, uri: Uri, modify: ModReq): F[Unit] =
     requestWithHeaders[Unit](method, uri, modify).void

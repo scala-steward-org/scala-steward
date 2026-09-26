@@ -13,7 +13,7 @@ val mainBranch = "main"
 val gitHubUserContent = s"https://raw.githubusercontent.com/$gitHubOwner/$projectName/$mainBranch"
 
 val Scala213 = "2.13.18"
-val Scala3 = "3.3.8"
+val Scala3 = "3.9.0"
 
 /// sbt-typelevel configuration
 
@@ -252,7 +252,14 @@ lazy val docs = myProject("docs")
   .settings(noPublishSettings)
   .settings(
     libraryDependencies ++= Seq(Dependencies.munitDiff),
-    scalacOptions += "-Ytasty-reader",
+    crossScalaVersions := Seq(Scala213, Scala3),
+    conflictWarning := {
+      if (scalaBinaryVersion.value == "3") {
+        ConflictWarning("warn", Level.Info, false)
+      } else {
+        conflictWarning.value
+      }
+    },
     tpolecatExcludeOptions := Set(ScalacOptions.fatalWarnings, ScalacOptions.warnNonUnitStatement),
     mdocIn := baseDirectory.value / "mdoc",
     mdocOut := (LocalRootProject / baseDirectory).value / "docs",
