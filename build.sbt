@@ -289,7 +289,8 @@ lazy val dummy = myProject("dummy")
   .settings(
     libraryDependencies ++= Seq(
       Dependencies.millMain.intransitive(),
-      Dependencies.scalaStewardMillPlugin.intransitive()
+      Dependencies.scalaStewardMillPlugin.intransitive(),
+      Dependencies.scalafix.intransitive()
     )
   )
 
@@ -403,7 +404,7 @@ lazy val dockerSettings = Def.settings(
       Cmd("RUN", installScalaCli),
       Cmd(
         "RUN",
-        s"$csBin bootstrap --main scalafix.cli.Cli ch.epfl.scala:scalafix-cli_2.13.18:0.14.8 -o $binDir/scalafix"
+        s"$csBin bootstrap --main scalafix.cli.Cli ch.epfl.scala:scalafix-cli_2.13.18:${Dependencies.scalafix.revision} -o $binDir/scalafix"
       ),
       Cmd("RUN", s"$csBin install --install-dir $binDir scalafmt"),
       // Ensure binaries are in PATH
