@@ -17,7 +17,9 @@ class VersionTest extends DisciplineSuite {
     val snapshot = "1.0.0-SNAP8"
     val milestone = "1.0.0-M2"
     assert(snapshot.v < milestone.v)
-    assert(coursier.core.Version(snapshot) > coursier.core.Version(milestone)) // Surprising to me
+    assert(
+      coursier.version.Version(snapshot) > coursier.version.Version(milestone)
+    ) // Surprising to me
   }
 
   test("issue 1615: broken transitivity") {
@@ -100,21 +102,26 @@ class VersionTest extends DisciplineSuite {
 
   test("similar ordering as Coursier") {
     List(
-      ("1.0e", "1.0.0-SNAP8"),
-      ("1.0.1e", "1.0.1"),
-      ("42.2.9.jre7", "42.2.9"),
-      ("42.2.9.jre7", "42.2.9.jre8"),
-      ("2.0.M6-SNAP23a", "2.0.M6-SNAP23"),
-      ("2.13.0-M2", "2.13.0-RC1"),
-      ("4.0RC1", "4.0.0"),
-      ("1.7R5", "1.7"),
-      ("1.7R5", "1.7.11"),
-      ("14.0.2.1", "16-ea+2")
-    ).foreach { case (s1, s2) =>
-      val c1 = coursier.core.Version(s1)
-      val c2 = coursier.core.Version(s2)
-      assert(clue(c1) < clue(c2))
-      assert(clue(c2) > clue(c1))
+      ("1.0e", "1.0.0-SNAP8", true),
+      ("1.0.1e", "1.0.1", false),
+      ("42.2.9.jre7", "42.2.9", false),
+      ("42.2.9.jre7", "42.2.9.jre8", true),
+      ("2.0.M6-SNAP23a", "2.0.M6-SNAP23", false),
+      ("2.13.0-M2", "2.13.0-RC1", true),
+      ("4.0RC1", "4.0.0", true),
+      ("1.7R5", "1.7", false),
+      ("1.7R5", "1.7.11", true),
+      ("14.0.2.1", "16-ea+2", true)
+    ).foreach { case (s1, s2, sameAsCoursier) =>
+      val c1 = coursier.version.Version(s1)
+      val c2 = coursier.version.Version(s2)
+      if (sameAsCoursier) {
+        assert(clue(c1) < clue(c2))
+        assert(clue(c2) > clue(c1))
+      } else {
+        assert(clue(c1) > clue(c2))
+        assert(clue(c2) < clue(c1))
+      }
 
       val v1 = Version(s1)
       val v2 = Version(s2)
