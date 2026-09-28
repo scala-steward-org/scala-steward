@@ -29,6 +29,12 @@ class CoursierAlgTest extends CatsEffectSuite {
 
   private val emptyMetadata = DependencyMetadata.empty
 
+  test("majorMinorVersion keeps only major and minor") {
+    assertEquals(CoursierAlg.majorMinorVersion("2.1.25"), "2.1")
+    assertEquals(CoursierAlg.majorMinorVersion("0.39.2-71-c26d11d6-20260926-1520-SNAPSHOT"), "0.39")
+    assertEquals(CoursierAlg.majorMinorVersion("latest"), "latest")
+  }
+
   test("getMetadata: with homePage and scmUrl") {
     val dep = "org.typelevel".g % ("cats-effect", "cats-effect_2.12").a % "1.0.0"
     val obtained = coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty)
@@ -123,5 +129,14 @@ class CoursierAlgTest extends CatsEffectSuite {
     val obtained =
       coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty).map(_.repoUrl.isDefined)
     assertIOBoolean(obtained)
+  }
+
+  test("userAgent") {
+    assert(CoursierAlg.userAgent.contains("Coursier"))
+    assert(
+      CoursierAlg.userAgent.matches(
+        "Coursier/\\d+\\.\\d+ \\(\\+https://github.com/coursier\\) Scala-Steward/\\d+\\.\\d+ \\(\\+https://github.com/scala-steward-org/scala-steward\\)"
+      )
+    )
   }
 }
