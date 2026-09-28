@@ -51,6 +51,7 @@ object UrlChecker {
       F: Sync[F]
   ): F[UrlChecker[F]] =
     buildCache(config).map { statusCache =>
+      val forgeCfg = config.forgeCfg
       new UrlChecker[F] {
         override def exists(url: Uri): F[Boolean] =
           status(url).map(_ === Status.Ok).handleErrorWith { throwable =>
@@ -59,9 +60,21 @@ object UrlChecker {
 
         private def status(url: Uri): F[Status] =
           statusCache.cachingF(url.renderString)(None) {
-            val req = Request[F](method = Method.HEAD, uri = url)
-            modify(req).flatMap(urlCheckerClient.client.status)
+            probeUrl(url).flatMap { probe =>
+              val req = Request[F](method = Method.HEAD, uri = probe)
+              modify(req).flatMap(urlCheckerClient.client.status)
+            }
           }
+
+        // Web UIs of self-hosted forges may redirect to a login page regardless of whether the
+        // url exists, so for urls on the configured forge we ask its API instead.
+        private def probeUrl(url: Uri): F[Uri] =
+          url.host
+            .filter(forgeCfg.apiHost.host.contains)
+            .flatMap(_ => forgeCfg.tpe.existenceApiUrl(forgeCfg.apiHost, url))
+            .fold(F.pure(url)) { apiUrl =>
+              logger.debug(s"Checking if $url exists via $apiUrl").as(apiUrl)
+            }
       }
     }
 }

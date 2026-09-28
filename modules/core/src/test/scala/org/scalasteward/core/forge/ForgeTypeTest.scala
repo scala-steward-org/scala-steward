@@ -17,6 +17,7 @@
 package org.scalasteward.core.forge
 
 import munit.FunSuite
+import org.http4s.syntax.literals.*
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.forge.ForgeType.{GitHub, GitLab}
@@ -71,4 +72,58 @@ class ForgeTypeTest extends FunSuite {
     }
   }
 
+  // existenceApiUrl
+
+  {
+    val apiHost = uri"https://ghe.example.com/api/v3"
+    val webRepo = uri"https://ghe.example.com/foo/bar"
+
+    test("existenceApiUrl (GitHub): repo") {
+      assertEquals(
+        GitHub.existenceApiUrl(apiHost, webRepo),
+        Some(uri"https://ghe.example.com/api/v3/repos/foo/bar")
+      )
+    }
+
+    test("existenceApiUrl (GitHub): file") {
+      assertEquals(
+        GitHub.existenceApiUrl(apiHost, webRepo / "blob" / "main" / "docs" / "CHANGELOG.md"),
+        Some(uri"https://ghe.example.com/api/v3/repos/foo/bar/contents/docs/CHANGELOG.md?ref=main")
+      )
+    }
+
+    test("existenceApiUrl (GitHub): file with fragment") {
+      assertEquals(
+        GitHub.existenceApiUrl(
+          apiHost,
+          (webRepo / "blob" / "master" / "README.md").withFragment("changelog")
+        ),
+        Some(uri"https://ghe.example.com/api/v3/repos/foo/bar/contents/README.md?ref=master")
+      )
+    }
+
+    test("existenceApiUrl (GitHub): release") {
+      assertEquals(
+        GitHub.existenceApiUrl(apiHost, webRepo / "releases" / "tag" / "v1.2.3"),
+        Some(uri"https://ghe.example.com/api/v3/repos/foo/bar/releases/tags/v1.2.3")
+      )
+    }
+
+    test("existenceApiUrl (GitHub): compare") {
+      assertEquals(
+        GitHub.existenceApiUrl(apiHost, webRepo / "compare" / "v1.2.2...v1.2.3"),
+        Some(uri"https://ghe.example.com/api/v3/repos/foo/bar/compare/v1.2.2...v1.2.3")
+      )
+    }
+
+    test("existenceApiUrl (GitHub): unknown paths") {
+      assertEquals(GitHub.existenceApiUrl(apiHost, uri"https://ghe.example.com/foo"), None)
+      assertEquals(GitHub.existenceApiUrl(apiHost, webRepo / "blob" / "main"), None)
+      assertEquals(GitHub.existenceApiUrl(apiHost, webRepo / "wiki" / "Home"), None)
+    }
+
+    test("existenceApiUrl (other forges)") {
+      assertEquals(GitLab.existenceApiUrl(apiHost, webRepo), None)
+    }
+  }
 }
