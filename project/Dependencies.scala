@@ -44,6 +44,6 @@ object Dependencies {
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
     "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill1_3" % "0.19.1"
-  val scalafix = "ch.epfl.scala" %% "scalafix-core" % "0.14.8"
+  val scalafix = "ch.epfl.scala" %% "scalafix-core" % "0.14.9"
   val tomlj = "org.tomlj" % "tomlj" % "2.0.1"
 }
