@@ -14,7 +14,7 @@ object Dependencies {
   val circeRefined = "io.circe" %% "circe-refined" % "0.15.1"
   val commonsIo = "commons-io" % "commons-io" % "2.22.0"
   val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.21.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.25"
+  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.26"
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.8.2"
   val decline = "com.monovore" %% "decline" % "2.6.2"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "2.0.0"
@@ -27,7 +27,7 @@ object Dependencies {
   val http4sEmberServer = "org.http4s" %% "http4s-ember-server" % http4sCore.revision
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M10"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.8.0"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.6.4"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.6.5"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.13.0"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
@@ -45,5 +45,5 @@ object Dependencies {
   val scalaStewardMillPlugin =
     "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill1_3" % "0.19.1"
   val scalafix = "ch.epfl.scala" %% "scalafix-core" % "0.14.9"
-  val tomlj = "org.tomlj" % "tomlj" % "2.1.1"
+  val tomlj = "org.tomlj" % "tomlj" % "2.2.0"
 }
