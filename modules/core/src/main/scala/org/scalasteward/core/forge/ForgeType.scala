@@ -41,6 +41,14 @@ sealed trait ForgeType extends Product with Serializable {
     * PR description.
     */
   val files: FileUriPattern
+
+  /** Translates a web url on this forge into an API url whose status (200 vs 404) tells whether the
+    * web resource exists. This is needed for forges whose web UI requires a session cookie (e.g.
+    * GitHub Enterprise), where the web url redirects to a login page whether or not the resource
+    * exists.
+    */
+  def existenceApiUrl(apiHost: Uri, webUrl: Uri): Option[Uri] = None
+
   def supportsForking: Boolean = true
   def supportsLabels: Boolean = true
 
@@ -106,6 +114,22 @@ object ForgeType {
     val publicApiBaseUrl = uri"https://api.github.com"
     val diffs: DiffUriPattern = (from, to) => _ / "compare" / s"$from...$to"
     val files: FileUriPattern = fileName => _ / "blob" / "master" / fileName
+
+    override def existenceApiUrl(apiHost: Uri, webUrl: Uri): Option[Uri] =
+      webUrl.path.segments.map(_.decoded()).toList match {
+        case owner :: repo :: rest =>
+          val repoApiUrl = apiHost / "repos" / owner / repo
+          rest match {
+            case Nil                                    => Some(repoApiUrl)
+            case "blob" :: ref :: path if path.nonEmpty =>
+              Some(path.foldLeft(repoApiUrl / "contents")(_ / _).withQueryParam("ref", ref))
+            case "releases" :: "tag" :: tag :: Nil => Some(repoApiUrl / "releases" / "tags" / tag)
+            case "compare" :: range :: Nil         => Some(repoApiUrl / "compare" / range)
+            case _                                 => None
+          }
+        case _ => None
+      }
+
     override def pullRequestHeadFor(fork: Repo, updateBranch: Branch): String =
       s"${fork.owner}:${updateBranch.name}"
   }
