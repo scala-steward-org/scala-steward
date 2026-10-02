@@ -23,8 +23,9 @@ import coursier.cache.{CacheDefaults, CachePolicy, FileCache}
 import coursier.core.{Authentication, Project}
 import coursier.version.VersionConstraint
 import coursier.{Fetch, Module, ModuleName, Organization}
+import org.scalasteward.core.BuildInfo
 import org.scalasteward.core.data.Resolver.Credentials
-import org.scalasteward.core.data.{Dependency, Resolver, Version}
+import org.scalasteward.core.data.{Dependency, Resolver, SemVer, Version}
 import org.scalasteward.core.util.uri
 import org.typelevel.log4cats.Logger
 
@@ -38,16 +39,28 @@ trait CoursierAlg[F[_]] {
 }
 
 object CoursierAlg {
+  private[coursier] def majorMinorVersion(version: String): String =
+    SemVer.parse(version) match {
+      case Some(semver) => s"${semver.major}.${semver.minor}"
+      case None         => version
+    }
+
+  private[coursier] val userAgent: String =
+    s"Coursier/${majorMinorVersion(coursier.util.Properties.version)} " +
+      s"(+https://github.com/coursier) Scala-Steward/${majorMinorVersion(BuildInfo.version)} " +
+      s"(+${BuildInfo.gitHubUrl})"
+
   def create[F[_]](implicit
       logger: Logger[F],
       parallel: Parallel[F],
       F: Async[F]
   ): CoursierAlg[F] = {
     val fetch: Fetch[F] =
-      Fetch[F](FileCache[F](CacheDefaults.location))
+      Fetch[F](FileCache[F](CacheDefaults.location).withUserAgent(userAgent))
 
     val cacheNoTtl: FileCache[F] =
       FileCache[F](CacheDefaults.location)
+        .withUserAgent(userAgent)
         .copy(ttl = None, cachePolicies = List(CachePolicy.Update))
 
     new CoursierAlg[F] {
