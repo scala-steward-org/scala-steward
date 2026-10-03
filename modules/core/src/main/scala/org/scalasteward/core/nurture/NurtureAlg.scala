@@ -35,7 +35,7 @@ import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
-final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
+final class NurtureAlg[F[_]](config: ForgeCfg, dryRun: Boolean)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
     forgeApiAlg: ForgeApiAlg[F],
@@ -149,10 +149,13 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   }
 
   private def deleteRemoteBranch(repo: Repo, branch: Branch): F[Unit] =
-    logger.attemptWarn.log_(s"Deleting remote branch ${branch.name} failed") {
-      val remoteBranch = branch.withPrefix("origin/")
-      gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
-    }
+    if (dryRun)
+      logger.info(s"[dry-run] Would delete remote branch ${branch.name}")
+    else
+      logger.attemptWarn.log_(s"Deleting remote branch ${branch.name} failed") {
+        val remoteBranch = branch.withPrefix("origin/")
+        gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
+      }
 
   private def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
@@ -176,6 +179,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
 
   private def pushCommits(data: UpdateData, commits: List[Commit]): F[ProcessResult] =
     if (commits.isEmpty) F.pure[ProcessResult](Ignored)
+    else if (dryRun)
+      logger.info(s"[dry-run] Would push ${commits.length} commit(s)").as(Updated)
     else
       for {
         _ <- logger.info(s"Push ${commits.length} commit(s)")
