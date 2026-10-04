@@ -37,6 +37,7 @@ class PruningAlgTest extends FunSuite {
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "commitDate": 0,
           |  "dependencyInfos": [],
           |  "maybeRepoConfig": {
           |    "pullRequests": {
@@ -95,6 +96,7 @@ class PruningAlgTest extends FunSuite {
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "commitDate": 0,
           |  "dependencyInfos" : [
           |    {
           |      "value" : [
@@ -557,6 +559,7 @@ class PruningAlgTest extends FunSuite {
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "commitDate": 0,
           |  "dependencyInfos" : [
           |    {
           |      "value" : [
@@ -669,6 +672,7 @@ class PruningAlgTest extends FunSuite {
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "commitDate": 0,
           |  "dependencyInfos" : [
           |    {
           |      "value" : [
@@ -780,6 +784,7 @@ class PruningAlgTest extends FunSuite {
     val Right(repoCache) = decode[RepoCache](
       s"""|{
           |  "sha1": "12def27a837ba6dc9e17406cbbe342fba3527c14",
+          |  "commitDate": 0,
           |  "dependencyInfos" : [
           |    {
           |      "value" : [
