@@ -35,6 +35,12 @@ object string {
       .filter(_.length >= minLength)
   }
 
+  /** Builds a regex that matches `s` literally, except that every `*` in it matches one or more
+    * arbitrary characters.
+    */
+  def wildcardRegex(s: String): Regex =
+    new Regex(Regex.quote(s).replaceAll("\\*", "\\\\E.+\\\\Q"))
+
   def indentLines[F[_]: Foldable](fs: F[String]): String = {
     val indent = "  "
     val delim = "\n" + indent

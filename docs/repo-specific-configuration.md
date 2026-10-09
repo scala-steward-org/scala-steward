@@ -119,6 +119,9 @@ pullRequests.draft = true
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
+# A `*` in `groupId` matches one or more arbitrary characters, e.g. `com.example.*`
+# matches `com.example.foo` and `com.example.foo.bar` (but not `com.example` itself).
+# This applies to every `groupId` pattern below as well.
 # Defaults to empty `[]` which mean Scala Steward will update all dependencies.
 updates.allow  = [ { groupId = "com.example" } ]
 
@@ -221,6 +224,11 @@ dependencyOverrides = [
   },
   {
     dependency = { groupId = "com.my-company" },
+    pullRequests = {},
+    cooldown = { minimumAge = "2 days" },
+  },
+  {
+    dependency = { groupId = "com.my-company.*" },
     pullRequests = {},
     cooldown = { minimumAge = "2 days" },
   },
