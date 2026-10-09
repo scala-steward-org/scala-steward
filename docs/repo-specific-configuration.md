@@ -227,6 +227,8 @@ dependencyOverrides = [
     pullRequests = {},
     cooldown = { minimumAge = "2 days" },
   },
+  # `com.my-company.*` doesn't match `com.my-company` itself, so list both to cover the
+  # group and all of its sub-groups.
   {
     dependency = { groupId = "com.my-company.*" },
     pullRequests = {},
