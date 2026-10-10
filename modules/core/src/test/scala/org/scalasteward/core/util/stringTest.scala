@@ -33,6 +33,16 @@ class stringTest extends ScalaCheckSuite {
     assertEquals(string.extractWords("abDEF-xy.GHI"), List("DEF", "GHI"))
   }
 
+  test("wildcardRegex") {
+    assert(string.wildcardRegex("com.example").matches("com.example"))
+    assert(!string.wildcardRegex("com.example").matches("comXexample"))
+    assert(string.wildcardRegex("com.example.*").matches("com.example.foo.bar"))
+    assert(!string.wildcardRegex("com.example.*").matches("com.example"))
+    assert(!string.wildcardRegex("com.example.*").matches("com.examples"))
+    assert(string.wildcardRegex("*.example").matches("com.example"))
+    assert(string.wildcardRegex("*").matches("com.example"))
+  }
+
   test("indentLines") {
     assertEquals(string.indentLines(List.empty[String]), "  ")
     assertEquals(string.indentLines(List("abc", "def", "ghi")), "  abc\n  def\n  ghi")

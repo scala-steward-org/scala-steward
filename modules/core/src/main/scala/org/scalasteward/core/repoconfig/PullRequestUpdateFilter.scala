@@ -21,8 +21,7 @@ import cats.syntax.all.*
 import io.circe.*
 import io.circe.syntax.*
 import org.scalasteward.core.data.{SemVer, Update}
-
-import scala.util.matching.Regex
+import org.scalasteward.core.util.string.wildcardRegex
 
 final case class PullRequestUpdateFilter private (
     group: Option[String],
@@ -39,11 +38,6 @@ final case class PullRequestUpdateFilter private (
 
   private lazy val groupRegex = group.map(wildcardRegex)
   private lazy val artifactRegex = artifact.map(wildcardRegex)
-
-  private def wildcardRegex(groupOrArtifact: String) = {
-    val pattern = Regex.quote(groupOrArtifact).replaceAll("\\*", "\\\\E.+\\\\Q")
-    new Regex(pattern)
-  }
 
   private def isMatchedVersion(versionType: SemVer.Change, update: Update.ForArtifactId): Boolean =
     (SemVer.parse(update.currentVersion.value), SemVer.parse(update.nextVersion.value)).tupled
