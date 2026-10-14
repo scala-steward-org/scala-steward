@@ -229,6 +229,7 @@ final class GiteaApiAlg[F[_]: HttpJsonClient](
         .get[Vector[PullRequestResp]](
           url
             .pulls(repo)
+            .withQueryParam("base_branch", base.name)
             .withQueryParam("page", page)
             .withQueryParam("limit", PULL_REQUEST_PAGE_SIZE),
           modify
