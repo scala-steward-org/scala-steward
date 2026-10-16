@@ -1,18 +1,14 @@
 # Code of Conduct
 
-We are committed to providing a friendly, safe and welcoming environment for
-all, regardless of level of experience, gender, gender identity and expression,
-sexual orientation, disability, personal appearance, body size, race, ethnicity,
-age, religion, nationality, or other such characteristics.
+Every member of our community has the right to have their identity respected. 
+The Typelevel community is dedicated to providing a positive experience for everyone, regardless of age, gender identity and expression, sexual orientation, disability, neurodivergence, physical appearance, body size, ethnicity, nationality, race, or religion (or lack thereof), education, or socio-economic status.
 
-Everyone is expected to follow the [Scala Code of Conduct] when discussing the
-project on the available communication channels. If you are being harassed, please
-contact us immediately so that we can support you.
+Everyone is expected to follow the [Typelevel Code of Conduct][coc] when discussing the project on the available communication channels.
 
 ## Moderation
 
-For any questions, concerns, or moderation requests please contact a member of the project.
+If you have any questions, concerns, or moderation requests, please [contact the Code of Conduct Committee][contact] or feel free to reach out to anyone with the **mods** role on the [Typelevel Discord server][discord].
 
-- [Frank S. Thomas](mailto:frank@timepit.eu)
-
-[Scala Code of Conduct]: https://www.scala-lang.org/conduct/
+[coc]: https://typelevel.org/code-of-conduct/
+[contact]: https://typelevel.org/code-of-conduct/#contact
+[discord]: https://discord.gg/typelevel-632277896739946517
