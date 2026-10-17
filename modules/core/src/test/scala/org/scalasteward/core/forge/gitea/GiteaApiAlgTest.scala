@@ -38,14 +38,13 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
   private val repo = Repo("foo", "baz")
 
   object PageQ extends QueryParamDecoderMatcher[Int]("page")
+  object BaseBranchQ extends QueryParamDecoderMatcher[String]("base_branch")
 
   private val httpApp = HttpApp[MockEff] {
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo =>
       Ok(getRepo)
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "branches" / "main" =>
       Ok(getBranch)
-    case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" :? PageQ(page) =>
-      if (page == 1) Ok(listPulls) else Ok(json"[]")
     case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" / IntVar(1) =>
       Ok(getPull1)
     case PATCH -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls" / "1" =>
@@ -62,6 +61,9 @@ class GiteaApiAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       Ok(listLabels)
     case POST -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "forks" =>
       Ok(forkRepo)
+    case GET -> Root / "api" / "v1" / "repos" / repo.owner / repo.repo / "pulls"
+        :? PageQ(page) +& BaseBranchQ("main") =>
+      if (page == 1) Ok(listPulls) else Ok(json"[]")
     case _ => NotFound()
   }
 
