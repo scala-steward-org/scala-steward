@@ -20,6 +20,7 @@ import cats.syntax.all.*
 import io.circe.Codec
 import io.circe.generic.semiauto.*
 import org.scalasteward.core.data.{ArtifactUpdateVersions, GroupId, Version}
+import org.scalasteward.core.util.string.wildcardRegex
 
 final case class UpdatePattern(
     groupId: GroupId,
@@ -27,6 +28,14 @@ final case class UpdatePattern(
     version: Option[VersionPattern]
 ) {
   def isWholeGroupIdAllowed: Boolean = artifactId.isEmpty && version.isEmpty
+
+  private lazy val groupIdRegex = wildcardRegex(groupId.value)
+
+  /** Returns `true` if `other` equals this pattern's `groupId`, where every `*` in the latter
+    * matches one or more arbitrary characters.
+    */
+  def matchesGroupId(other: GroupId): Boolean =
+    groupIdRegex.matches(other.value)
 }
 
 object UpdatePattern {
@@ -41,7 +50,7 @@ object UpdatePattern {
       include: Boolean
   ): MatchResult = {
     val artifactForUpdate = update.artifactForUpdate
-    val byGroupId = patterns.filter(_.groupId === artifactForUpdate.groupId)
+    val byGroupId = patterns.filter(_.matchesGroupId(artifactForUpdate.groupId))
     val byArtifactId =
       byGroupId.filter(_.artifactId.forall(_ === artifactForUpdate.artifactId.name))
     val filteredVersions = update.refersToUpdateVersions.filter(newVersion =>

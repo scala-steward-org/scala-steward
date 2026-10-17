@@ -466,6 +466,56 @@ class FilterAlgTest extends FunSuite {
     )
   }
 
+  test("dependencyOverrides can override cooldown for a wildcard groupId") {
+    val config = RepoConfig(
+      updates = UpdatesConfig(cooldown = CooldownConfig(7.days).some).some,
+      dependencyOverrides = List(
+        GroupRepoConfig(
+          cooldown = CooldownConfig(0.seconds).some,
+          dependency = UpdatePattern("com.example.*".g, None, None)
+        )
+      ).some
+    )
+
+    val internalUpdate =
+      ("com.example.widgets".g % "widgets".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(9))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(internalUpdate, config, Timestamp(10)),
+      Right(internalUpdate.asSoleUpdate)
+    )
+
+    val externalUpdate =
+      ("com.examples".g % "widgets".a % "1.0.0" %> VersionWithFirstSeen(
+        "1.0.1".v,
+        Some(Timestamp(9))
+      )).single
+    assertEquals(
+      FilterAlg.localFilter(externalUpdate, config, Timestamp(10)),
+      Left(TooRecentForCooldown(externalUpdate))
+    )
+  }
+
+  test("ignore update via config updates.ignore using a wildcard groupId") {
+    val config = RepoConfig(updates =
+      UpdatesConfig(ignore = List(UpdatePattern("com.example.*".g, None, None)).some).some
+    )
+
+    val ignored = ("com.example.widgets".g % "widgets".a % "1.0.0" %> Nel.of("1.0.1")).single
+    assertEquals(
+      FilterAlg.localFilter(ignored, config, currentTime),
+      Left(IgnoredByConfig(ignored))
+    )
+
+    val notIgnored = ("com.example".g % "widgets".a % "1.0.0" %> Nel.of("1.0.1")).single
+    assertEquals(
+      FilterAlg.localFilter(notIgnored, config, currentTime),
+      Right(notIgnored.asSpecificUpdate("1.0.1".v))
+    )
+  }
+
   test("dependencyOverrides cooldown applies only to matching candidate versions") {
     val config = RepoConfig(
       updates = UpdatesConfig(cooldown = CooldownConfig(7.days).some).some,
