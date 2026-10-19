@@ -88,9 +88,9 @@ object FilterAlg {
       ) {
         // already on Scala Next
         Right(update)
-      } else if (update.artifactForUpdate.currentVersion.value.startsWith("2.13")) {
-        // no updates from 2.13 to 3.x
-        Left(NoSuitableNextVersion(update))
+      } else if (update.artifactForUpdate.currentVersion.value.startsWith("2.")) {
+        // no updates from Scala 2 to Scala 3; newer Scala 2 versions stay eligible
+        update.filterVersions(_.value.startsWith("2.")).toRight(NoSuitableNextVersion(update))
       } else {
         // on Scala LTS (3.3.x or 3.9.x), stay on LTS versions
         update.filterVersions(isScalaLtsVersion).toRight(IgnoreScalaNext(update))
@@ -107,7 +107,7 @@ object FilterAlg {
   private def isScalaLibraryFor3(update: ArtifactUpdateCandidates): Boolean =
     (update.artifactForUpdate.groupId == scalaLangGroupId &&
       update.artifactForUpdate.artifactId.name == scalaLibrary.name &&
-      update.newerVersions.forall(_ > scala38))
+      update.newerVersions.exists(_ > scala38))
 
   private def globalFilter(
       update: ArtifactUpdateCandidates,
