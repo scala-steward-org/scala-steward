@@ -59,6 +59,24 @@ class FilterAlgTest extends FunSuite {
     )
   }
 
+  test("localFilter: Scala 2.13 is not updated to Scala 3 when a newer 2.13 pre-release exists") {
+    val update =
+      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
+        "2.13.19-M1",
+        "3.10.0"
+      )).single
+    assert(clue(localFilter(update, config, currentTime)).isLeft)
+  }
+
+  test("localFilter: Scala 2.13 is updated to a newer 2.13 release, not to Scala 3") {
+    val update =
+      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
+        "2.13.19",
+        "3.10.0"
+      )).single
+    assertEquals(localFilter(update, config, currentTime).map(_.nextVersion), Right("2.13.19".v))
+  }
+
   test("localFilter: update with bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
     assertEquals(
