@@ -249,6 +249,19 @@ dependencyOverrides = [
   }
 ]
 
+# The dependencies which match the given patterns are never sent to api.osv.dev
+# when the instance runs with --enable-vulnerability-check.
+#
+# Each pattern must have `groupId`, and may have `artifactId` (without the Scala suffix).
+# Patterns from the default config and the repo config are combined.
+# To opt out of the check entirely, use `[ { groupId = "*" } ]`.
+# Default: []
+vulnerabilityCheck.exclude = [
+  { groupId = "com.my-company" },
+  { groupId = "com.my-company.*" },
+  { groupId = "com.example", artifactId = "internal-lib" }
+]
+
 # Assign people from the list to the pull request or request a review.
 # Currently supported only for GitLab and GitHub.
 # GitLab users - free version of GitLab only supports one assignee and one reviewer, others will be ignored.
