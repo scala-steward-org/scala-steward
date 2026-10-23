@@ -32,16 +32,18 @@ import org.scalasteward.core.git.{Branch, Commit, GitAlg}
 import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
+import org.scalasteward.core.vulnerability.{OsvAlg, Vulnerability}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
-final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
+final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean)(implicit
     coursierAlg: CoursierAlg[F],
     editAlg: EditAlg[F],
     forgeApiAlg: ForgeApiAlg[F],
     forgeRepoAlg: ForgeRepoAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
+    osvAlg: OsvAlg[F],
     pullRequestService: PullRequestService[F],
     updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     urlChecker: UrlChecker[F],
@@ -189,6 +191,41 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       u => u.dependencies.map(_.copy(version = u.nextVersion)).tupleLeft(u.currentVersion).toList,
       _.updates.flatMap(dependenciesUpdatedWithNextAndCurrentVersion(_))
     )
+
+  /** Returns advisories affecting the current but not the next version, per artifact name. */
+  private[nurture] def fixedVulnerabilities(
+      data: UpdateData
+  ): F[Map[String, List[Vulnerability]]] = {
+    val vulnerabilityCheck = data.repoConfig.vulnerabilityCheckOrDefault
+    val currentAndNext = dependenciesUpdatedWithNextAndCurrentVersion(data.update).collect {
+      case (currentVersion, next) if !vulnerabilityCheck.isExcluded(next) =>
+        (next.copy(version = currentVersion), next)
+    }
+    if (!enableVulnerabilityCheck || currentAndNext.isEmpty) F.pure(Map.empty)
+    else {
+      val dependencies =
+        currentAndNext.flatMap { case (current, next) => List(current, next) }.distinct
+      val coordinates = dependencies.map { dependency =>
+        s"${dependency.groupId}:${dependency.artifactId.crossName}:${dependency.version}"
+      }
+      val result = for {
+        _ <- logger.debug(s"Query OSV for ${coordinates.mkString(", ")}")
+        dependencyToIds <- osvAlg.vulnerabilityIds(dependencies)
+        idsOf = (dependency: Dependency) => dependencyToIds.getOrElse(dependency, Set.empty[String])
+        artifactIdToFixedIds = currentAndNext.foldMap { case (current, next) =>
+          Map(next.artifactId.name -> (idsOf(current) -- idsOf(next)))
+        }
+        allFixedIds = artifactIdToFixedIds.values.toList.flatMap(_.toList).distinct
+        idToVulnerability <- allFixedIds
+          .traverse(id => osvAlg.vulnerability(id).tupleLeft(id))
+          .map(_.toMap)
+      } yield artifactIdToFixedIds.collect {
+        case (artifactId, fixedIds) if fixedIds.nonEmpty =>
+          artifactId -> fixedIds.toList.sorted.flatMap(idToVulnerability.get)
+      }
+      logger.attemptWarn.log("Vulnerability check failed")(result).map(_.getOrElse(Map.empty))
+    }
+  }
 
   private[nurture] def preparePullRequest(
       data: UpdateData,

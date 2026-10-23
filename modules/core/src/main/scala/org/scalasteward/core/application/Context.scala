@@ -203,7 +203,8 @@ object Context {
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val scannerAlg: ScannerAlg[F] = new ScannerAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg)
+      implicit val nurtureAlg: NurtureAlg[F] =
+        new NurtureAlg[F](config.forgeCfg, config.enableVulnerabilityCheck)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val reposFilesLoader: ReposFilesLoader[F] = new ReposFilesLoader[F]
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
