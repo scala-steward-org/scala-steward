@@ -37,7 +37,8 @@ final case class RepoConfig(
     private val assignees: Option[List[String]] = None,
     private val reviewers: Option[List[String]] = None,
     private val dependencyOverrides: Option[List[GroupRepoConfig]] = None,
-    signoffCommits: Option[Boolean] = None
+    signoffCommits: Option[Boolean] = None,
+    private val vulnerabilityCheck: Option[VulnerabilityCheckConfig] = None
 ) {
   def commitsOrDefault: CommitsConfig =
     commits.getOrElse(CommitsConfig())
@@ -71,6 +72,9 @@ final case class RepoConfig(
 
   def updatePullRequestsOrDefault: PullRequestUpdateStrategy =
     updatePullRequests.getOrElse(PullRequestUpdateStrategy.default)
+
+  def vulnerabilityCheckOrDefault: VulnerabilityCheckConfig =
+    vulnerabilityCheck.getOrElse(VulnerabilityCheckConfig())
 
   def show: String =
     this.asJson.deepDropNullValues.spaces2
@@ -107,7 +111,8 @@ object RepoConfig {
               assignees = x.assignees |+| y.assignees,
               reviewers = x.reviewers |+| y.reviewers,
               dependencyOverrides = x.dependencyOverrides |+| y.dependencyOverrides,
-              signoffCommits = x.signoffCommits.orElse(y.signoffCommits)
+              signoffCommits = x.signoffCommits.orElse(y.signoffCommits),
+              vulnerabilityCheck = x.vulnerabilityCheck |+| y.vulnerabilityCheck
             )
         }
     )
