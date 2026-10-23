@@ -186,6 +186,19 @@ object TestInstances {
       )
     )
 
+  implicit val artifactPatternArbitrary: Arbitrary[ArtifactPattern] =
+    Arbitrary(for {
+      groupId <- Arbitrary.arbitrary[String].map(GroupId.apply)
+      artifactId <- Arbitrary.arbitrary[Option[String]]
+    } yield ArtifactPattern(groupId = groupId, artifactId = artifactId))
+
+  implicit val vulnerabilityCheckConfigArbitrary: Arbitrary[VulnerabilityCheckConfig] =
+    Arbitrary(
+      Gen
+        .option(smallListOf(4, Arbitrary.arbitrary[ArtifactPattern]))
+        .map(exclude => VulnerabilityCheckConfig(exclude = exclude))
+    )
+
   implicit val repoConfigArbitrary: Arbitrary[RepoConfig] =
     Arbitrary(
       for {
@@ -194,12 +207,14 @@ object TestInstances {
         scalafmt <- Arbitrary.arbitrary[Option[ScalafmtConfig]]
         updates <- Arbitrary.arbitrary[Option[UpdatesConfig]]
         updatePullRequests <- Arbitrary.arbitrary[Option[PullRequestUpdateStrategy]]
+        vulnerabilityCheck <- Arbitrary.arbitrary[Option[VulnerabilityCheckConfig]]
       } yield RepoConfig(
         commits = commits,
         pullRequests = pullRequests,
         scalafmt = scalafmt,
         updates = updates,
-        updatePullRequests = updatePullRequests
+        updatePullRequests = updatePullRequests,
+        vulnerabilityCheck = vulnerabilityCheck
       )
     )
 }

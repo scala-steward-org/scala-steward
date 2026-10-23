@@ -332,6 +332,12 @@ object Cli {
     if (ifAnyRepoSucceeds) SuccessIfAnyRepoSucceeds else SuccessOnlyIfAllReposSucceed
   }
 
+  private val enableVulnerabilityCheck: Opts[Boolean] =
+    flag(
+      "enable-vulnerability-check",
+      "Whether to mark updates that fix known vulnerabilities, using api.osv.dev; default: false"
+    ).orFalse
+
   private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
@@ -351,7 +357,8 @@ object Cli {
     urlCheckerTestUrls,
     defaultMavenRepos,
     refreshBackoffPeriod,
-    exitCodePolicy
+    exitCodePolicy,
+    enableVulnerabilityCheck
   ).mapN(Config.apply).map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =
