@@ -332,6 +332,13 @@ object Cli {
     if (ifAnyRepoSucceeds) SuccessIfAnyRepoSucceeds else SuccessOnlyIfAllReposSucceed
   }
 
+  private val dryRun: Opts[Boolean] =
+    flag(
+      "dry-run",
+      "Whether to only do a dry run that does everything except pushing commits and opening, " +
+        "updating or closing pull requests; implies --do-not-fork; default: false"
+    ).orFalse
+
   private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
@@ -351,8 +358,36 @@ object Cli {
     urlCheckerTestUrls,
     defaultMavenRepos,
     refreshBackoffPeriod,
-    exitCodePolicy
-  ).mapN(Config.apply).map(Usage.Regular.apply)
+    exitCodePolicy,
+    dryRun
+  ).mapN { (workspace, reposFiles, gitCfg, forgeCfg, ignoreOptsFiles, processCfg, repoConfigCfg,
+        scalafixCfg, artifactCfg, cacheTtl, bitbucketCfg, bitbucketServerCfg, gitLabCfg,
+        azureReposCfg, gitHubApp, urlCheckerTestUrls, defaultMavenRepos, refreshBackoffPeriod,
+        exitCodePolicy, dryRun) =>
+    Config(
+      workspace,
+      reposFiles,
+      gitCfg,
+      // A dry run never pushes to a fork, so forking would only create an unused fork.
+      if (dryRun) forgeCfg.copy(doNotFork = true) else forgeCfg,
+      ignoreOptsFiles,
+      processCfg,
+      repoConfigCfg,
+      scalafixCfg,
+      artifactCfg,
+      cacheTtl,
+      bitbucketCfg,
+      bitbucketServerCfg,
+      gitLabCfg,
+      azureReposCfg,
+      gitHubApp,
+      urlCheckerTestUrls,
+      defaultMavenRepos,
+      refreshBackoffPeriod,
+      exitCodePolicy,
+      dryRun
+    )
+  }.map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =
     Opts
