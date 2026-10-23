@@ -55,6 +55,7 @@ import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, Artifact
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.*
 import org.scalasteward.core.util.uri.*
+import org.scalasteward.core.vulnerability.OsvAlg
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -91,6 +92,7 @@ final class Context[F[_]](implicit
     val updateAlg: UpdateAlg[F],
     val updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     val urlChecker: UrlChecker[F],
+    val osvAlg: OsvAlg[F],
     val workspaceAlg: WorkspaceAlg[F]
 )
 
@@ -176,6 +178,7 @@ object Context {
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val forgeCfg: ForgeCfg = config.forgeCfg
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
+      implicit val osvAlg: OsvAlg[F] = new OsvAlg[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val pullRequestService: PullRequestService[F] =
