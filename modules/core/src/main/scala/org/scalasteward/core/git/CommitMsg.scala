@@ -58,17 +58,12 @@ object CommitMsg {
   def groupMessage(group: Update.Grouped, baseBranch: Option[Branch]): String = {
     def innerGroupMessage(shortNotation: Boolean) = {
       val artifactsWithVersions = group.updates
-        .groupBy(_.nextVersion)
-        .map {
-          case (version, List(update)) =>
-            s"${update.artifactId.name} to ${version.value}"
-
-          case (version, updates) if shortNotation =>
-            val firstArtifactName = updates.headOption.map(_.artifactId.name).getOrElse("")
-            s"$firstArtifactName and ${updates.size - 1} more to ${version.value}"
-
-          case (version, updates) =>
-            s"${updates.map(_.artifactId.name).mkString(", ")} to ${version.value}"
+        .groupMap(_.nextVersion)(_.artifactId.name)
+        .map { case (version, updates) =>
+          updates.head + Nel.fromList(updates.tail).map { tails =>
+            if (shortNotation) s" and ${tails.size} more"
+            else tails.map(", " + _).toList.mkString
+          } + s" to ${version.value}"
         }
         .mkString(" - ")
 

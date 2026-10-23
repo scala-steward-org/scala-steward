@@ -16,7 +16,8 @@
 
 package org.scalasteward.core.edit.update.data
 
-import cats.ApplicativeThrow
+import cats.{ApplicativeThrow, Order}
+
 import scala.util.matching.Regex.Match
 
 object Substring {
@@ -28,6 +29,8 @@ object Substring {
   }
 
   object Position {
+    implicit val orderPosition: Order[Position] = Order.by(p => (p.path, p.start, p.value))
+
     def fromMatch(path: String, m: Match, value: String): Position = {
       val start = m.start + m.matched.indexOf(value)
       Position(path, start, value)
@@ -42,6 +45,8 @@ object Substring {
   final case class Replacement(position: Position, replacement: String)
 
   object Replacement {
+    implicit val orderReplacement: Order[Replacement] = Order.by(r => (r.position, r.replacement))
+
     def applyAll[F[_]](replacements: List[Replacement])(source: String)(implicit
         F: ApplicativeThrow[F]
     ): F[String] =
