@@ -299,6 +299,24 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
     assertIO(obtained.runA(state), Map("akka-http-core" -> List(fixedVulnerability)))
   }
 
+  test("preparePullRequest with a fixed vulnerability") {
+    val state = osvState(Ok(json"""{
+      "results": [{ "vulns": [{ "id": "GHSA-3hw2-h67c-wq66" }] }, {}]
+    }"""))
+    val updateData = vulnerabilityUpdateData(RepoConfig.empty)
+    val edits = List(UpdateEdit(updateData.update.asSingleUpdates.head, Commit(dummySha1)))
+    vulnerabilityCheckAlg.preparePullRequest(updateData, edits).runA(state).map { obtained =>
+      assert(clue(obtained.labels).contains("security-fix"))
+      assert(
+        clue(obtained.body).contains(
+          """|🔒 Fixes vulnerabilities:
+             |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP
+             |""".stripMargin
+        )
+      )
+    }
+  }
+
   test("fixedVulnerabilities: none fixed") {
     val state = osvState(Ok(json"""{
       "results": [

@@ -263,7 +263,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
           .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
-      allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
+      artifactIdToVulnerabilities <- fixedVulnerabilities(data)
+      allLabels = labelsFor(
+        data.update,
+        edits,
+        filesWithOldVersion,
+        artifactIdToVersionScheme,
+        artifactIdToVulnerabilities
+      )
       pullRequestsConfig = data.repoData.config.pullRequestsOrDefault
       labels =
         filterLabels(allLabels, pullRequestsConfig.includeMatchedLabels)
@@ -273,6 +280,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
       edits = edits,
       artifactIdToUrl = artifactIdToUrl,
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
+      artifactIdToVulnerabilities = artifactIdToVulnerabilities,
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
       draft = pullRequestsConfig.draft.contains(true),
