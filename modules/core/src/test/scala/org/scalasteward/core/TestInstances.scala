@@ -128,13 +128,21 @@ object TestInstances {
     } yield GroupRepoConfig(pullRequestsConfig, cooldown, pattern))
 
   implicit val pullRequestsConfigArbitrary: Arbitrary[PullRequestsConfig] =
-    Arbitrary(for {
-      frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
-      frequencySpread <- Arbitrary.arbitrary[Option[FiniteDuration]]
-      allowedHours <- Gen.option(
-        Gen.choose(0, 23).map(h => AllowedHours.fromString(h.toString).toOption.get)
+    Arbitrary(
+      for {
+        frequency <- Arbitrary.arbitrary[Option[PullRequestFrequency]]
+        frequencySpread <- Arbitrary.arbitrary[Option[FiniteDuration]]
+        allowedHours <- Gen.option(
+          Gen.choose(0, 23).map(h => AllowedHours.fromString(h.toString).toOption.get)
+        )
+        closeNoLongerNeeded <- Arbitrary.arbitrary[Option[Boolean]]
+      } yield PullRequestsConfig(
+        frequency,
+        frequencySpread,
+        allowedHours,
+        closeNoLongerNeeded = closeNoLongerNeeded
       )
-    } yield PullRequestsConfig(frequency, frequencySpread, allowedHours))
+    )
 
   implicit val cooldownConfigArbitrary: Arbitrary[CooldownConfig] =
     Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig.apply))

@@ -35,12 +35,22 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
     dateTimeAlg: DateTimeAlg[F],
     F: Monad[F]
 ) {
-  def changeState(repo: Repo, url: Uri, newState: PullRequestState): F[Unit] =
+
+  /** Changes the state of a pull request. A `closedReason` is only kept while the pull request is
+    * closed; it is dropped as soon as the pull request is open again.
+    */
+  def changeState(
+      repo: Repo,
+      url: Uri,
+      newState: PullRequestState,
+      closedReason: Option[ClosedReason] = None
+  ): F[Unit] =
     kvStore
       .modifyF(repo) { maybePullRequests =>
         val pullRequests = maybePullRequests.getOrElse(Map.empty)
         pullRequests.get(url).traverse { found =>
-          val entry = found.copy(state = newState)
+          val newReason = if (newState.isClosed) closedReason.orElse(found.closedReason) else None
+          val entry = found.copy(state = newState, closedReason = newReason)
           pullRequests.updated(url, entry).pure[F]
         }
       }
@@ -50,8 +60,8 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
     kvStore
       .modifyF(repo) { maybePullRequests =>
         val pullRequests = maybePullRequests.getOrElse(Map.empty)
-        pullRequests
-          .get(data.url)
+        val found = pullRequests.get(data.url)
+        found
           .fold(dateTimeAlg.currentTimestamp)(_.entryCreatedAt.pure[F])
           .map { createdAt =>
             val entry = Entry(
@@ -60,7 +70,9 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
               data.state,
               createdAt,
               Some(data.number),
-              Some(data.updateBranch)
+              Some(data.updateBranch),
+              found.flatMap(_.closedReason).filter(_ => data.state.isClosed),
+              found.flatMap(_.absentSince)
             )
             pullRequests.updated(data.url, entry).some
           }
@@ -70,7 +82,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
   def getObsoleteOpenPullRequests(repo: Repo, update: Update.Single): F[List[PullRequestData[Id]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.collect {
-        case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch))
+        case (url, Entry(baseSha1, u: Update.Single, state, _, number, updateBranch, _, _))
             if state === PullRequestState.Open && update.supersedes(u) =>
           for {
             number <- number
@@ -87,7 +99,16 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       pullRequets.flatMap {
         case (
               url,
-              Entry(baseSha1, u: Update.Single, PullRequestState.Open, _, number, updateBranch)
+              Entry(
+                baseSha1,
+                u: Update.Single,
+                PullRequestState.Open,
+                _,
+                number,
+                updateBranch,
+                _,
+                _
+              )
             ) =>
           for {
             prNumber <- number
@@ -102,6 +123,63 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
       }.toList
     }
 
+  /** Finds the open pull requests that are no longer needed given `dependencies`, the ones of the
+    * base branch at `baseSha1`, and `pendingUpdates`, the updates for them. Each is paired with its
+    * reason.
+    *
+    * A removed dependency only counts once it has been found absent at two different `baseSha1`s,
+    * to be robust against a single bad scan of the build. For that, this also records the first
+    * sighting of an absence as `absentSince` and clears it as soon as the dependency is back.
+    */
+  def findNoLongerNeededOpenPullRequests(
+      repo: Repo,
+      dependencies: List[Dependency],
+      pendingUpdates: List[Update.ForArtifactId],
+      baseSha1: Sha1
+  ): F[List[(PullRequestData[Id], NoLongerNeeded)]] =
+    kvStore.get(repo).flatMap { maybePullRequests =>
+      val pullRequests = maybePullRequests.getOrElse(Map.empty)
+      val checked = pullRequests.toList.map { case (url, entry) =>
+        val verdict = entry.update match {
+          case u: Update.Single if !entry.state.isClosed =>
+            u.noLongerNeededIn(dependencies, pendingUpdates)
+          case _ => None
+        }
+        val absentSince =
+          if (verdict.contains(NoLongerNeeded.DependencyRemoved))
+            entry.absentSince.orElse(Some(baseSha1))
+          else None
+        val reason = verdict.filter {
+          case NoLongerNeeded.DependencyRemoved => absentSince.exists(_ =!= baseSha1)
+          case NoLongerNeeded.AlreadyApplied(_) => true
+        }
+        (url, entry.copy(absentSince = absentSince), reason)
+      }
+      val updated = checked.map { case (url, entry, _) => url -> entry }.toMap
+      val noLongerNeeded = checked.flatMap {
+        case (url, entry, Some(reason)) =>
+          (entry.update, entry.number) match {
+            case (u: Update.Single, Some(number)) =>
+              val branch = entry.updateBranch.getOrElse(git.branchFor(u, repo.branch))
+              Some(
+                (PullRequestData[Id](url, entry.baseSha1, u, entry.state, number, branch), reason)
+              )
+            case _ => None
+          }
+        case _ => None
+      }
+      F.whenA(updated != pullRequests)(kvStore.set(repo, Some(updated)))
+        .as(noLongerNeeded.sortBy(_._1.number.value))
+    }
+
+  /** Whether Scala Steward closed the pull request itself because the base branch made its update
+    * unnecessary, see [[ClosedReason]].
+    */
+  def wasClosedAsNoLongerNeeded(repo: Repo, url: Uri): F[Boolean] =
+    kvStore.get(repo).map {
+      _.flatMap(_.get(url)).exists(entry => entry.state.isClosed && entry.closedReason.nonEmpty)
+    }
+
   def findLatestPullRequest(
       repo: Repo,
       crossDependency: CrossDependency,
@@ -109,7 +187,7 @@ final class PullRequestRepository[F[_]](kvStore: KeyValueStore[F, Repo, Map[Uri,
   ): F[Option[PullRequestData[Option]]] =
     kvStore.getOrElse(repo, Map.empty).map {
       _.filter {
-        case (_, Entry(_, u: Update.Single, _, _, _, _)) =>
+        case (_, Entry(_, u: Update.Single, _, _, _, _, _, _)) =>
           UpdateAlg.isUpdateFor(u, crossDependency) && u.nextVersion === newVersion
         case _ => false
       }
@@ -148,7 +226,9 @@ object PullRequestRepository {
       state: PullRequestState,
       entryCreatedAt: Timestamp,
       number: Option[PullRequestNumber],
-      updateBranch: Option[Branch]
+      updateBranch: Option[Branch],
+      closedReason: Option[ClosedReason] = None,
+      absentSince: Option[Sha1] = None
   )
 
   object Entry {
