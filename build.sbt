@@ -43,6 +43,26 @@ ThisBuild / githubWorkflowPublish := Seq(
   )
 )
 ThisBuild / githubWorkflowJavaVersions := Seq("25", "21", "17").map(JavaSpec(Temurin, _))
+// clean.yml is hand-maintained, see the comment in that file.
+ThisBuild / githubWorkflowIncludeClean := false
+// Hardening required by jactionlint (rules: artipacked, cache-poisoning).
+ThisBuild / githubWorkflowJobSetup ~= { steps =>
+  steps.map {
+    case step: WorkflowStep.Use =>
+      step.ref match {
+        case UseRef.Public("actions", "checkout", _) =>
+          step.updatedParams("persist-credentials", "false")
+        case UseRef.Public("actions", "setup-java", _) =>
+          // Tag pushes publish artifacts, so they must not restore a cache.
+          step.updatedParams(
+            "cache",
+            "${{ !startsWith(github.ref, 'refs/tags/') && 'sbt' || '' }}"
+          )
+        case _ => step
+      }
+    case step => step
+  }
+}
 ThisBuild / githubWorkflowBuild := {
   val scalafmtVersion =
     com.typesafe.config.ConfigFactory.parseFile(file(".scalafmt.conf")).getString("version").trim
