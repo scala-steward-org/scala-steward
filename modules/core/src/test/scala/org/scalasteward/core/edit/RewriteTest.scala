@@ -251,6 +251,30 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  test("mill 1.x version file update") {
+    val update = ("com.lihaoyi".g % "mill-dist".a % "1.1.7" %> "1.3.1").single
+    val original = Map(
+      ".mill-version" -> "1.1.7",
+      "mill" -> """if [ -z "${DEFAULT_MILL_VERSION}" ] ; then DEFAULT_MILL_VERSION="1.1.7"; fi""",
+      "build.mill" -> """//| mvnDeps:
+                        |//|   - "com.lihaoyi::mill-contrib-docker:$MILL_VERSION"
+                        |""".stripMargin
+    )
+    val expected = original.updated(".mill-version", "1.3.1")
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("mill 1.x version in build header") {
+    val update = ("com.lihaoyi".g % "mill-dist".a % "1.1.7" %> "1.3.1").single
+    val original = Map("build.mill" -> """//| mill-version: 1.1.7
+                                         |package build
+                                         |""".stripMargin)
+    val expected = Map("build.mill" -> """//| mill-version: 1.3.1
+                                         |package build
+                                         |""".stripMargin)
+    runApplyUpdate(update, original, expected)
+  }
+
   test("disable updates on single lines with 'off' (no 'on')") {
     val update =
       ("com.typesafe.akka".g % Nel.of("akka-actor".a, "akka-testkit".a) % "2.4.0" %> "2.5.0").group
