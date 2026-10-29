@@ -104,6 +104,17 @@ JAVA_OPTS="-Dhttp.proxyHost=webcache.example.com -Dhttp.proxyPort=8080 -Dhttps.p
 
 See Oracle proxies documentation for more info.
 
+### Vulnerability check
+
+With `--enable-vulnerability-check`, PRs that fix known vulnerabilities list the fixed advisories from [OSV.dev](https://osv.dev) and get the `security-fix` label (with `--add-labels`).
+
+The `groupId`, `artifactId`, and current and next versions of every updated dependency are sent to `api.osv.dev`.
+To keep dependencies private, list them in [`vulnerabilityCheck.exclude`](repo-specific-configuration.md), e.g. in the `--repo-config` file to cover all repos:
+
+```properties
+vulnerabilityCheck.exclude = [ { groupId = "com.my-company" }, { groupId = "com.my-company.*" } ]
+```
+
 ### Running locally from sbt
 
 #### Sample run for GitLab

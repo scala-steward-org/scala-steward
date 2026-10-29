@@ -29,6 +29,7 @@ import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.nurture.UpdateInfoUrl
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
+import org.scalasteward.core.vulnerability.Vulnerability
 
 class NewPullRequestDataTest extends FunSuite {
   test("bodyFor()") {
@@ -39,6 +40,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = List.empty,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List("library-update"),
@@ -128,6 +130,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = List(scalafixEdit),
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List("library-update"),
@@ -225,6 +228,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = edits,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List("library-update"),
@@ -359,6 +363,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = edits,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List("library-update"),
@@ -388,6 +393,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = List.empty,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = Some("parsing error"),
       labels = List("library-update"),
@@ -482,6 +488,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = edits,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List("library-update"),
@@ -565,6 +572,130 @@ class NewPullRequestDataTest extends FunSuite {
           |} -->""".stripMargin
 
     assertEquals(body, expected)
+  }
+
+  private val akkaHttpVulnerability = Vulnerability(
+    id = "GHSA-3hw2-h67c-wq66",
+    summary = Some("Uncontrolled Recursion in Akka HTTP"),
+    aliases = List("CVE-2021-42697"),
+    severity = Some("HIGH")
+  )
+
+  private def aboutThisPr(
+      update: Update,
+      vulnerabilitiesByArtifact: Map[(GroupId, String), List[Vulnerability]]
+  ): String = {
+    val edits = update.asSingleUpdates.map(UpdateEdit(_, Commit(dummySha1)))
+    val body = bodyFor(
+      update = update,
+      edits = edits,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map(
+        "akka-http-core" -> List(
+          UpdateInfoUrl.VersionDiff(uri"https://github.com/akka/akka-http/compare/v1...v2")
+        )
+      ),
+      vulnerabilitiesByArtifact = vulnerabilitiesByArtifact,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List.empty,
+      maximumPullRequestLength = 65536
+    )
+    body.substring(0, body.indexOf("\n\n## Usage"))
+  }
+
+  test("bodyFor() single update with fixed vulnerabilities") {
+    val update =
+      ("com.typesafe.akka".g % "akka-http-core".a % "10.1.10" %> "10.2.10").single
+    val obtained = aboutThisPr(
+      update,
+      Map(("com.typesafe.akka".g, "akka-http-core") -> List(akkaHttpVulnerability))
+    )
+    val expected =
+      """|## About this PR
+         |📦 Updates com.typesafe.akka:akka-http-core from `10.1.10` to `10.2.10`
+         |
+         |📜 [Version Diff](https://github.com/akka/akka-http/compare/v1...v2)
+         |
+         |⚠️ Fixes vulnerabilities:
+         |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP""".stripMargin
+    assertEquals(obtained, expected)
+  }
+
+  test("bodyFor() single update without fixed vulnerabilities") {
+    val update =
+      ("com.typesafe.akka".g % "akka-http-core".a % "10.1.10" %> "10.2.10").single
+    val obtained = aboutThisPr(update, Map.empty)
+    val expected =
+      """|## About this PR
+         |📦 Updates com.typesafe.akka:akka-http-core from `10.1.10` to `10.2.10`
+         |
+         |📜 [Version Diff](https://github.com/akka/akka-http/compare/v1...v2)""".stripMargin
+    assertEquals(obtained, expected)
+  }
+
+  test("bodyFor() update for group id with vulnerability in a non-main artifact") {
+    val update =
+      ("com.typesafe.akka".g % Nel.of(
+        "akka-http".a,
+        "akka-http-core".a
+      ) % "10.1.10" %> "10.2.10").group
+    val vulnerability = akkaHttpVulnerability.copy(summary = None, aliases = Nil, severity = None)
+    val obtained =
+      aboutThisPr(update, Map(("com.typesafe.akka".g, "akka-http-core") -> List(vulnerability)))
+    assert(
+      clue(obtained).endsWith(
+        """|⚠️ Fixes vulnerabilities:
+           |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66)""".stripMargin
+      )
+    )
+  }
+
+  test("bodyFor() grouped update with fixed vulnerabilities") {
+    val update = Update.Grouped(
+      "my-group",
+      None,
+      List(
+        ("com.typesafe.akka".g % "akka-http-core".a % "10.1.10" %> "10.2.10").single,
+        ("com.example".g % "foo".a % "1.0.0" %> "1.0.1").single
+      )
+    )
+    val obtained = aboutThisPr(
+      update,
+      Map(("com.typesafe.akka".g, "akka-http-core") -> List(akkaHttpVulnerability))
+    )
+    val expected =
+      """|## About this PR
+         |Updates:
+         |
+         |* 📦 com.typesafe.akka:akka-http-core from `10.1.10` to `10.2.10`
+         |  + 📜 [Version Diff](https://github.com/akka/akka-http/compare/v1...v2)
+         |  + ⚠️ Fixes vulnerabilities:
+         |    * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP
+         |* 📦 com.example:foo from `1.0.0` to `1.0.1`""".stripMargin
+    assertEquals(obtained, expected)
+  }
+
+  test("bodyFor() grouped update with same-named artifacts of different groups") {
+    val update = Update.Grouped(
+      "my-group",
+      None,
+      List(
+        ("org.a".g % "core".a % "1.0.0" %> "1.0.1").single,
+        ("org.b".g % "core".a % "2.0.0" %> "2.0.1").single
+      )
+    )
+    val vulnerability = akkaHttpVulnerability.copy(summary = None, aliases = Nil, severity = None)
+    val obtained = aboutThisPr(update, Map(("org.b".g, "core") -> List(vulnerability)))
+    val expected =
+      """|## About this PR
+         |Updates:
+         |
+         |* 📦 org.a:core from `1.0.0` to `1.0.1`
+         |* 📦 org.b:core from `2.0.0` to `2.0.1`
+         |  + ⚠️ Fixes vulnerabilities:
+         |    * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66)""".stripMargin
+    assertEquals(obtained, expected)
   }
 
   test("fromTo") {
@@ -828,6 +959,15 @@ class NewPullRequestDataTest extends FunSuite {
     )
 
     assertEquals(labels, expected)
+  }
+
+  test("security-fix label") {
+    val update = ("a".g % "b".a % "1" -> "2").single
+    val vulnerability = Vulnerability("GHSA-1", None, Nil, None)
+    val obtained =
+      labelsFor(update, vulnerabilitiesByArtifact = Map(("a".g, "b") -> List(vulnerability)))
+    assertEquals(obtained, List("library-update", "security-fix", "commit-count:0"))
+    assertEquals(labelsFor(update), List("library-update", "commit-count:0"))
   }
 
   test("artifact-migrations label") {
@@ -1175,6 +1315,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = List.empty,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List(
@@ -1261,6 +1402,7 @@ class NewPullRequestDataTest extends FunSuite {
       edits = List.empty,
       artifactIdToUrl = Map.empty,
       artifactIdToUpdateInfoUrls = Map.empty,
+      vulnerabilitiesByArtifact = Map.empty,
       filesWithOldVersion = List.empty,
       configParsingError = None,
       labels = List(
