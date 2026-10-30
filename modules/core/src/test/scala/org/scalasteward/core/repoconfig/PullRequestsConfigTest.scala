@@ -33,4 +33,18 @@ class PullRequestsConfigTest extends DisciplineSuite {
     assert((draftTrue |+| draftFalse).draft === Some(true))
     assert((draftUnset |+| draftUnset).draft === None)
   }
+
+  test(
+    "closeNoLongerNeeded defaults to true and the repo config (right) wins over the global one"
+  ) {
+    val unset = PullRequestsConfig()
+    val disabled = PullRequestsConfig(closeNoLongerNeeded = Some(false))
+    val enabled = PullRequestsConfig(closeNoLongerNeeded = Some(true))
+
+    assert(unset.closeNoLongerNeededOrDefault)
+    assert((disabled |+| enabled).closeNoLongerNeededOrDefault)
+    assert(!(enabled |+| disabled).closeNoLongerNeededOrDefault)
+    assert(!(unset |+| disabled).closeNoLongerNeededOrDefault)
+    assert(!(disabled |+| unset).closeNoLongerNeededOrDefault)
+  }
 }

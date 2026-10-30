@@ -35,7 +35,8 @@ final case class PullRequestsConfig(
     private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
     private val customLabels: Option[List[String]] = None,
-    draft: Option[Boolean] = None
+    draft: Option[Boolean] = None,
+    closeNoLongerNeeded: Option[Boolean] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
@@ -45,10 +46,14 @@ final case class PullRequestsConfig(
 
   def customLabelsOrDefault: List[String] =
     customLabels.getOrElse(Nil)
+
+  def closeNoLongerNeededOrDefault: Boolean =
+    closeNoLongerNeeded.getOrElse(PullRequestsConfig.defaultCloseNoLongerNeeded)
 }
 
 object PullRequestsConfig {
   val defaultFrequency: PullRequestFrequency = PullRequestFrequency.Asap
+  val defaultCloseNoLongerNeeded: Boolean = true
 
   implicit val pullRequestsConfigEq: Eq[PullRequestsConfig] =
     Eq.fromUniversalEquals
@@ -75,7 +80,10 @@ object PullRequestsConfig {
           draft = {
             implicit val booleanOrMonoid: Monoid[Boolean] = Monoid.instance(false, _ || _)
             x.draft |+| y.draft
-          }
+          },
+          // The repo config (right) wins over the global config (left) so that an instance can
+          // roll this out gradually: disabled globally, enabled per repo.
+          closeNoLongerNeeded = y.closeNoLongerNeeded.orElse(x.closeNoLongerNeeded)
         )
     )
 }

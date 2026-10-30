@@ -27,8 +27,14 @@ import org.scalasteward.core.git.Branch
 
 object MockForgeApiAlg {
 
-  case class PRState(initialData: NewPullRequestData, current: PullRequestOut) {
+  case class PRState(
+      initialData: NewPullRequestData,
+      current: PullRequestOut,
+      comments: List[String] = Nil
+  ) {
     def close: PRState = copy(current = current.copy(state = Closed))
+
+    def comment(body: String): PRState = copy(comments = comments :+ body)
 
     def update(newData: NewPullRequestData): PRState =
       PRState(newData, current.copy(title = newData.title))
@@ -59,6 +65,11 @@ object MockForgeApiAlg {
 
     def closePullRequest(number: PullRequestNumber): (RepoState, PullRequestOut) =
       update(number, _.close)
+
+    def commentPullRequest(number: PullRequestNumber, body: String): (RepoState, Comment) = {
+      val (state, _) = update(number, _.comment(body))
+      (state, Comment(body))
+    }
 
     def updatePullRequest(
         number: PullRequestNumber,
@@ -119,6 +130,6 @@ object MockForgeApiAlg {
         repo: Repo,
         number: PullRequestNumber,
         comment: String
-    ): MockEff[Comment] = ???
+    ): MockEff[Comment] = modifyRepo(repo, _.commentPullRequest(number, comment))
   }
 }

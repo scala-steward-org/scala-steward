@@ -18,7 +18,7 @@ package org.scalasteward.core.nurture
 
 import cats.effect.Concurrent
 import cats.syntax.all.*
-import cats.{Applicative, Id}
+import cats.{Applicative, Id, Order}
 import org.scalasteward.core.application.Config.ForgeCfg
 import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
@@ -93,20 +93,30 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
   private def processUpdate(data: UpdateData): F[ProcessResult] =
     for {
       _ <- logger.info(s"Process update ${data.update.show}")
-      pullRequests <- pullRequestService.listPullRequestsForUpdate(data, config.tpe)
-      result <- pullRequests.headOption match {
+      maybePr <- pullRequestService.findPullRequestForUpdate(data, config.tpe)
+      result <- maybePr match {
         case Some(pr) if pr.state.isClosed && data.update.isInstanceOf[Update.Single] =>
-          logger.info(s"PR ${pr.html_url} is closed") >>
-            deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
+          pullRequestService
+            .wasClosedAsNoLongerNeeded(data.repo, pr.html_url)
+            .ifM[ProcessResult](
+              ifTrue = logger.info(
+                s"PR ${pr.html_url} was closed because its update had already been applied, " +
+                  "but the update is needed again"
+              ) >> createNewPullRequest(data),
+              ifFalse = logger.info(s"PR ${pr.html_url} is closed") >>
+                deleteRemoteBranch(data.repo, data.updateBranch).as(Ignored)
+            )
         case Some(pr) if !pr.state.isClosed =>
           logger.info(s"Found PR ${pr.html_url}") >> updatePullRequest(data, pr.number)
-        case _ =>
-          applyNewUpdate(data).flatTap {
-            case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
-            case _                    => F.unit
-          }
+        case _ => createNewPullRequest(data)
       }
     } yield result
+
+  private def createNewPullRequest(data: UpdateData): F[ProcessResult] =
+    applyNewUpdate(data).flatTap {
+      case Created(newPrNumber) => closeObsoletePullRequests(data, newPrNumber)
+      case _                    => F.unit
+    }
 
   private def closeObsoletePullRequests(data: UpdateData, newNumber: PullRequestNumber): F[Unit] =
     data.update.on(
@@ -125,20 +135,31 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     logger.attemptWarn.label_(
       s"Closing obsolete PR ${oldPr.url.renderString} for ${oldPr.update.show} in PR #$newNumber"
     ) {
-      val oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
-      for {
-        _ <- forgeApiAlg
-          .commentPullRequest(data.repo, oldPr.number, commentForBeingSupersededBy(newNumber))
-        oldBranchExists <- gitAlg.branchExists(data.repo, oldRemoteBranch)
-        authors <-
-          if (oldBranchExists) gitAlg.branchAuthors(data.repo, oldRemoteBranch, data.baseBranch)
-          else List.empty.pure[F]
-        _ <- F.whenA(authors.size <= 1) {
-          pullRequestService.closePullRequest(data.repo, oldPr.number) >>
-            deleteRemoteBranch(data.repo, oldPr.updateBranch)
-        }
-      } yield ()
+      forgeApiAlg
+        .commentPullRequest(data.repo, oldPr.number, commentForBeingSupersededBy(newNumber)) >>
+        isUnmodifiedByOthers(data.repo, data.baseBranch, oldPr)
+          .ifM(closeAndDeleteBranch(data.repo, oldPr, closedReason = None), F.unit)
     }
+
+  /** Checks that nobody but Scala Steward has pushed commits to the branch of `oldPr`. */
+  private def isUnmodifiedByOthers(
+      repo: Repo,
+      baseBranch: Branch,
+      oldPr: PullRequestData[Id]
+  ): F[Boolean] = {
+    val oldRemoteBranch = oldPr.updateBranch.withPrefix("origin/")
+    gitAlg
+      .branchExists(repo, oldRemoteBranch)
+      .ifM(gitAlg.branchAuthors(repo, oldRemoteBranch, baseBranch).map(_.size <= 1), true.pure[F])
+  }
+
+  private def closeAndDeleteBranch(
+      repo: Repo,
+      oldPr: PullRequestData[Id],
+      closedReason: Option[ClosedReason]
+  ): F[Unit] =
+    pullRequestService.closePullRequest(repo, oldPr.number, closedReason) >>
+      deleteRemoteBranch(repo, oldPr.updateBranch)
 
   private def commentForBeingSupersededBy(newNumber: PullRequestNumber): String = config.tpe match {
     // If a PR is part of a list element, GitHub renders its title
@@ -298,6 +319,117 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       requestData <- preparePullRequest(data, edits)
       _ <- forgeApiAlg.updatePullRequest(number: PullRequestNumber, data.repo, requestData)
     } yield result
+
+  /** Closes open PRs that are no longer needed because the base branch moved on by other means:
+    * their dependency was bumped to the proposed version or a newer one, or it was removed from the
+    * build. `pendingUpdates` tell which occurrences of a dependency a PR is still needed for.
+    * Failures are logged and swallowed so that they never prevent the repo from being nurtured.
+    */
+  def closeNoLongerNeededPullRequests(
+      data: RepoData,
+      fork: RepoOut,
+      pendingUpdates: List[Update.ForArtifactId]
+  ): F[Unit] =
+    if (!data.config.pullRequestsOrDefault.closeNoLongerNeededOrDefault)
+      logger.debug("Closing no longer needed PRs is disabled by config")
+    else if (data.cache.maybeRepoConfigParsingError.isDefined)
+      // the cache is then based on the default config, e.g. only the default build root
+      logger.info("Not closing no longer needed PRs because the repo config could not be parsed")
+    else if (data.cache.dependencyInfos.forall(_.value.isEmpty))
+      // a build Steward can work with always has some dependency; an empty scan is a broken scan
+      logger.info("Not closing no longer needed PRs because no dependencies were found")
+    else
+      logger.attemptWarn.log_("Closing no longer needed PRs failed") {
+        // all dependencies of the build, also those Steward cannot update (e.g. the Scala version
+        // of the sbt meta-build), because every occurrence counts for "already applied"
+        val dependencies = data.cache.dependencyInfos.flatMap(_.value.map(_.dependency))
+        pullRequestService
+          .findNoLongerNeededOpenPullRequests(
+            data.repo,
+            dependencies,
+            pendingUpdates,
+            data.cache.sha1
+          )
+          .flatMap { noLongerNeeded =>
+            // The clone is needed to check whether somebody else has pushed to the PR branches.
+            F.whenA(noLongerNeeded.nonEmpty) {
+              cloneAndSync(data.repo, fork).flatMap { baseBranch =>
+                noLongerNeeded.traverse_ { case (oldPr, reason) =>
+                  closeNoLongerNeededPullRequest(data, baseBranch, oldPr, reason)
+                }
+              }
+            }
+          }
+      }
+
+  private def closeNoLongerNeededPullRequest(
+      data: RepoData,
+      baseBranch: Branch,
+      oldPr: PullRequestData[Id],
+      reason: NoLongerNeeded
+  ): F[Unit] =
+    logger.attemptWarn.label_(
+      s"Closing PR ${oldPr.url.renderString} for ${oldPr.update.show} which is no longer needed"
+    ) {
+      isUnmodifiedByOthers(data.repo, baseBranch, oldPr).ifM(
+        // close first, so that a failed close never leaves a comment behind
+        ifTrue = closeAndDeleteBranch(data.repo, oldPr, Some(ClosedReason.of(reason))) >>
+          forgeApiAlg
+            .commentPullRequest(
+              data.repo,
+              oldPr.number,
+              commentForBeingNoLongerNeeded(baseBranch, oldPr.update, reason)
+            )
+            .void,
+        ifFalse = logger.info(
+          s"Keeping PR ${oldPr.url.renderString} open because it has commits by others"
+        )
+      )
+    }
+
+  /** The comment for a PR that is closed because it is no longer needed. */
+  private[nurture] def commentForBeingNoLongerNeeded(
+      baseBranch: Branch,
+      update: Update,
+      reason: NoLongerNeeded
+  ): String = {
+    val closing = "so this PR is no longer needed and is closed."
+    reason match {
+      case NoLongerNeeded.AlreadyApplied(baseDependencies) =>
+        val found = baseDependencies.toList
+          .groupBy(d => (d.groupId, d.artifactId.name))
+          .toList
+          .sortBy { case ((groupId, artifactIdName), _) => (groupId.value, artifactIdName) }
+          .map { case ((groupId, artifactIdName), dependencies) =>
+            val versions = versionsOf(dependencies)
+            val label = if (versions.sizeIs == 1) "version" else "versions"
+            s"$groupId:$artifactIdName in $label ${joinWithAnd(versions)}"
+          }
+        val several = found.sizeIs > 1 || baseDependencies.map(_.version).distinct.size > 1
+        val comparison =
+          if (several) "all of which are the same as or newer than"
+          else "which is the same as or newer than"
+        val proposed = update.asSingleUpdates.map(_.nextVersion.value).distinct
+        s"The base branch `${baseBranch.name}` already contains ${joinWithAnd(found)}, " +
+          s"$comparison the ${joinWithAnd(proposed)} this PR proposes, $closing"
+      case NoLongerNeeded.DependencyRemoved =>
+        val artifacts = update.asSingleUpdates
+          .flatMap(u => u.artifactIds.toList.map(a => s"${u.groupId}:${a.name}"))
+          .distinct
+        s"Scala Steward no longer finds ${joinWithAnd(artifacts)} in the build of " +
+          s"`${baseBranch.name}`, $closing"
+    }
+  }
+
+  private def versionsOf(dependencies: List[Dependency]): List[String] =
+    dependencies.map(_.version).distinct.sorted(using Order[Version].toOrdering).map(_.value)
+
+  private def joinWithAnd(items: List[String]): String =
+    items.reverse match {
+      case Nil                  => ""
+      case last :: Nil          => last
+      case last :: initReversed => s"${initReversed.reverse.mkString(", ")} and $last"
+    }
 
   def closeRetractedPullRequests(data: RepoData): F[Unit] =
     pullRequestService

@@ -114,3 +114,7 @@ folder is persisted between different runs.
 
 That's where Steward holds intermediate state about dependency versions and created PRs which ultimately
 helps it make decisions about which PRs to close and which ones to keep open.
+
+Scala Steward also closes a PR when the base branch no longer needs it, because it already contains
+the proposed version or a newer one, or the dependency was removed from the build. See
+`pullRequests.closeNoLongerNeeded` in the [repo-specific configuration](repo-specific-configuration.md).
