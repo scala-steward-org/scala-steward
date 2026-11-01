@@ -22,6 +22,7 @@ import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.{Repo, RepoData, Update}
 import org.scalasteward.core.mock.MockContext.context.*
+import org.scalasteward.core.mock.MockState.TraceEntry.Log
 import org.scalasteward.core.mock.{MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.scalafmt.scalafmtConfName
@@ -248,6 +249,30 @@ class RewriteTest extends FunSuite {
       ".mill-version" -> "0.9.9 \n ",
       ".travis.yml" -> """- TEST_MILL_VERSION=0.9.5"""
     )
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("mill 1.x version file update") {
+    val update = ("com.lihaoyi".g % "mill-dist".a % "1.1.7" %> "1.3.1").single
+    val original = Map(
+      ".mill-version" -> "1.1.7",
+      "mill" -> """if [ -z "${DEFAULT_MILL_VERSION}" ] ; then DEFAULT_MILL_VERSION="1.1.7"; fi""",
+      "build.mill" -> """//| mvnDeps:
+                        |//|   - "com.lihaoyi::mill-contrib-docker:$MILL_VERSION"
+                        |""".stripMargin
+    )
+    val expected = original.updated(".mill-version", "1.3.1")
+    runApplyUpdate(update, original, expected)
+  }
+
+  test("mill 1.x version in build header") {
+    val update = ("com.lihaoyi".g % "mill-dist".a % "1.1.7" %> "1.3.1").single
+    val original = Map("build.mill" -> """//| mill-version: 1.1.7
+                                         |package build
+                                         |""".stripMargin)
+    val expected = Map("build.mill" -> """//| mill-version: 1.3.1
+                                         |package build
+                                         |""".stripMargin)
     runApplyUpdate(update, original, expected)
   }
 
@@ -954,6 +979,34 @@ class RewriteTest extends FunSuite {
     runApplyUpdate(update, original, expected)
   }
 
+  // https://github.com/scala-steward-org/scala-steward/issues/2906
+  test("grouped update of artifacts sharing a version val") {
+    val update1 = ("io.circe".g % "circe-core".a % "0.13.0" %> "0.14.4").single
+    val update2 = ("io.circe".g % "circe-parser".a % "0.13.0" %> "0.14.4").single
+    val update = Update.Grouped("circe", None, List(update1, update2))
+    val original = Map(
+      "build.sbt" ->
+        """val circeVersion = "0.13.0"
+          |libraryDependencies ++= Seq(
+          |  "io.circe" %% "circe-core" % circeVersion,
+          |  "io.circe" %% "circe-parser" % circeVersion
+          |)""".stripMargin
+    )
+    val expected = Map(
+      "build.sbt" ->
+        """val circeVersion = "0.14.4"
+          |libraryDependencies ++= Seq(
+          |  "io.circe" %% "circe-core" % circeVersion,
+          |  "io.circe" %% "circe-parser" % circeVersion
+          |)""".stripMargin
+    )
+    val state = runApplyUpdate(update, original, expected)
+    val warnings = state.trace.collect {
+      case Log((_, msg)) if msg.startsWith("Unable to bump version") => msg
+    }
+    assertEquals(warnings, Vector.empty[String])
+  }
+
   // https://github.com/scala-steward-org/scala-steward/issues/3206
   test("sbt module where the artifactId is also part of the groupId") {
     val update = ("com.typesafe.play".g % "play".a % "2.9.0" %> "3.0.0").single
@@ -1002,22 +1055,27 @@ class RewriteTest extends FunSuite {
   }
 
   private def runApplyUpdate(
-      update: Update.Single,
+      update: Update,
       files: Map[String, String],
       expected: Map[String, String]
-  ): Unit = {
+  ): MockState = {
     val repo = Repo("edit-alg", s"runApplyUpdate-${nextInt()}")
     val data = RepoData(repo, dummyRepoCache, RepoConfig.empty)
     val repoDir = workspaceAlg.repoDir(repo).unsafeRunSync()
     val filesInRepoDir = files.map { case (file, content) => repoDir / file -> content }
+    val applyUpdate = update.on(
+      update = editAlg.applyUpdate(data, _),
+      grouped = editAlg.applyGroupedUpdate(data, _)
+    )
     val state = MockState.empty
       .copy(execCommands = true)
       .initGitRepo(repoDir, filesInRepoDir.toSeq*)
-      .flatMap(editAlg.applyUpdate(data, update).runS)
+      .flatMap(applyUpdate.runS)
       .unsafeRunSync()
     val obtained = state.files
       .map { case (file, content) => file.toString.replace(repoDir.toString + "/", "") -> content }
     assertEquals(obtained, expected)
+    state
   }
 
   private var counter = 0

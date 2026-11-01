@@ -148,15 +148,15 @@ object NewPullRequestData {
     update match {
       case single: Update.Single   => single
       case grouped: Update.Grouped =>
-        grouped.copy(updates = grouped.updates.filter { update =>
-          edits
-            .collect { case EditAttempt.UpdateEdit(update, _) =>
-              update.groupAndMainArtifactId
-            }
-            .exists { case (groupId, artifactId) =>
-              update.groupId == groupId && update.mainArtifactId == artifactId
-            }
-        })
+        val editedArtifacts = edits
+          .collect { case EditAttempt.UpdateEdit(edited, _) =>
+            edited.forArtifactIds.toList.map(_.groupAndMainArtifactId)
+          }
+          .flatten
+          .toSet
+        grouped.copy(updates =
+          grouped.updates.filter(update => editedArtifacts(update.groupAndMainArtifactId))
+        )
     }
 
   def renderUpdateInfoUrls(updateInfoUrls: List[UpdateInfoUrl]): Option[String] =

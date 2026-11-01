@@ -175,14 +175,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       gitAlg.branchExists(repo, remoteBranch).ifM(gitAlg.deleteRemoteBranch(repo, branch), F.unit)
     }
 
-  private def applyNewUpdate(data: UpdateData): F[ProcessResult] =
+  private[nurture] def applyNewUpdate(data: UpdateData): F[ProcessResult] =
     gitAlg.returnToCurrentBranch(data.repo) {
       val createBranch = logger.info(s"Create branch ${data.updateBranch.name}") >>
         gitAlg.createBranch(data.repo, data.updateBranch)
       data.update
         .on(
           update = editAlg.applyUpdate(data.repoData, _, createBranch),
-          grouped = createBranch >> _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
+          grouped = createBranch >> editAlg.applyGroupedUpdate(data.repoData, _)
         )
         .flatMap { edits =>
           val editCommits = edits.flatMap(_.commits)
@@ -304,7 +304,10 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     result.flatMap { case (update, msg) => logger.info(msg).as(update) }
   }
 
-  private def resetAndApplyAgain(number: PullRequestNumber, data: UpdateData): F[ProcessResult] =
+  private[nurture] def resetAndApplyAgain(
+      number: PullRequestNumber,
+      data: UpdateData
+  ): F[ProcessResult] =
     for {
       _ <- logger.info(
         s"Reset ${data.updateBranch.name} to ${data.baseBranch.name} and apply again"
@@ -312,7 +315,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _ <- gitAlg.resetHard(data.repo, data.baseBranch)
       edits <- data.update.on(
         update = editAlg.applyUpdate(data.repoData, _),
-        grouped = _.updates.flatTraverse(editAlg.applyUpdate(data.repoData, _))
+        grouped = editAlg.applyGroupedUpdate(data.repoData, _)
       )
       editCommits = edits.flatMap(_.commits)
       result <- pushCommits(data, editCommits)

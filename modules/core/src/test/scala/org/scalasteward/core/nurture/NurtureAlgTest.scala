@@ -16,11 +16,15 @@
 
 package org.scalasteward.core.nurture
 
+import better.files.File
 import cats.syntax.all.*
+import io.circe.Json
+import io.circe.literal.*
 import munit.CatsEffectSuite
-import org.http4s.HttpApp
+import org.http4s.circe.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.syntax.literals.*
+import org.http4s.{HttpApp, Request, Response}
 import org.scalasteward.core.TestInstances.*
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.coursier.CoursierAlg
@@ -28,6 +32,7 @@ import org.scalasteward.core.data.{
   Dependency,
   DependencyInfo,
   NoLongerNeeded,
+  ProcessResult,
   Repo,
   RepoData,
   Update,
@@ -625,4 +630,107 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       )
     )
   }
+  test("applyNewUpdate: grouped update of artifacts sharing a version val") {
+    val repo = Repo("nurture-alg", "grouped-new")
+    val repoDir = context.workspaceAlg.repoDir(repo).unsafeRunSync()
+    val data = circeUpdateData(repo)
+    val initial = MockState.empty.copy(
+      execCommands = true,
+      commandOutputs = Map(gitPush(repoDir, data.updateBranch) -> Right(List.empty)),
+      clientResponses = circeForgeApi(number = 1347)
+    )
+    for {
+      state0 <- initial.initGitRepo(repoDir, repoDir / "build.sbt" -> circeBuildSbt)
+      stateAndResult <- context.nurtureAlg.applyNewUpdate(data).runSA(state0)
+    } yield {
+      val (state, result) = stateAndResult
+      assertEquals(result, ProcessResult.Created(PullRequestNumber(1347)))
+      val commit = Cmd.gitCommit(repoDir, "Update circe-core, circe-parser to 0.14.4")
+      assertEquals(state.trace.count(_ == commit), 1)
+      assertEquals(unableToBumpWarnings(state), Vector.empty)
+    }
+  }
+
+  test("resetAndApplyAgain: grouped update of artifacts sharing a version val") {
+    val repo = Repo("nurture-alg", "grouped-existing")
+    val repoDir = context.workspaceAlg.repoDir(repo).unsafeRunSync()
+    val data = circeUpdateData(repo)
+    val initial = MockState.empty.copy(
+      execCommands = true,
+      commandOutputs = Map(gitPush(repoDir, data.updateBranch) -> Right(List.empty)),
+      clientResponses = circeForgeApi(number = 42)
+    )
+    for {
+      state0 <- initial.initGitRepo(repoDir, repoDir / "build.sbt" -> circeBuildSbt)
+      state1 <- context.gitAlg.createBranch(repo, data.updateBranch).runS(state0)
+      stateAndResult <- context.nurtureAlg
+        .resetAndApplyAgain(PullRequestNumber(42), data)
+        .runSA(state1)
+    } yield {
+      val (state, result) = stateAndResult
+      assertEquals(result, ProcessResult.Updated)
+      assertEquals(
+        state.files.get(repoDir / "build.sbt"),
+        Some(circeBuildSbt.replace("0.13.0", "0.14.4"))
+      )
+      assertEquals(unableToBumpWarnings(state), Vector.empty)
+    }
+  }
+
+  private val master = Branch("master")
+
+  private val circeBuildSbt =
+    """val circeVersion = "0.13.0"
+      |libraryDependencies ++= Seq(
+      |  "io.circe" %% "circe-core" % circeVersion,
+      |  "io.circe" %% "circe-parser" % circeVersion
+      |)""".stripMargin
+
+  private def circeUpdateData(repo: Repo): UpdateData = {
+    val grouped = Update.Grouped(
+      "circe",
+      Some("Circe updates"),
+      List(
+        ("io.circe".g % "circe-core".a % "0.13.0" %> "0.14.4").single,
+        ("io.circe".g % "circe-parser".a % "0.13.0" %> "0.14.4").single
+      )
+    )
+    val repoData = RepoData(repo, dummyRepoCache, RepoConfig.empty)
+    val fork = Repo("scala-steward", repo.repo)
+    UpdateData(repoData, fork, grouped, master, dummySha1, Branch("update/circe"))
+  }
+
+  private def gitPush(repoDir: File, branch: Branch): Cmd =
+    Cmd.git(repoDir, "push", "--force", "--set-upstream", "origin", branch.name)
+
+  private def circeForgeApi(number: Int): HttpApp[MockEff] =
+    GitHubAuth.api(List.empty) <+> HttpApp[MockEff] {
+      case req @ POST -> Root / "repos" / _ / _ / "pulls" =>
+        respondIfBodyListsBothArtifacts(req, number)
+      case req @ PATCH -> Root / "repos" / _ / _ / "pulls" / IntVar(_) =>
+        respondIfBodyListsBothArtifacts(req, number)
+      case POST -> Root / "repos" / _ / _ / "issues" / IntVar(_) / "labels" =>
+        Ok(Json.arr())
+      case _ => NotFound()
+    }
+
+  private def respondIfBodyListsBothArtifacts(
+      req: Request[MockEff],
+      number: Int
+  ): MockEff[Response[MockEff]] =
+    req.as[Json].flatMap { json =>
+      val body = json.hcursor.get[String]("body").getOrElse("")
+      val htmlUrl = s"https://github.com/octocat/Hello-World/pull/$number"
+      if (body.contains("circe-core") && body.contains("circe-parser"))
+        Ok(json"""{
+          "html_url": $htmlUrl,
+          "state": "open",
+          "number": $number,
+          "title": "Circe updates"
+        }""")
+      else BadRequest(s"PR body does not list both artifacts: $body")
+    }
+
+  private def unableToBumpWarnings(state: MockState): Vector[String] =
+    state.trace.collect { case Log((_, msg)) if msg.startsWith("Unable to bump version") => msg }
 }

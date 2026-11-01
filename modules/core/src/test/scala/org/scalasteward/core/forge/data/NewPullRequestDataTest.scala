@@ -567,6 +567,39 @@ class NewPullRequestDataTest extends FunSuite {
     assertEquals(body, expected)
   }
 
+  test("bodyFor() grouped update keeps all artifacts of a ForGroupId edit") {
+    val update1 = ("io.circe".g % "circe-core".a % "0.13.0" %> "0.14.4").single
+    val update2 = ("io.circe".g % "circe-parser".a % "0.13.0" %> "0.14.4").single
+    val update = Update.Grouped("circe", Some("Circe updates"), List(update1, update2))
+    val edits = List(
+      UpdateEdit(
+        update =
+          ("io.circe".g % Nel.of("circe-core".a, "circe-parser".a) % "0.13.0" %> "0.14.4").group,
+        commit = Commit(dummySha1)
+      )
+    )
+
+    val body = bodyFor(
+      update = update,
+      edits = edits,
+      artifactIdToUrl = Map.empty,
+      artifactIdToUpdateInfoUrls = Map.empty,
+      filesWithOldVersion = List.empty,
+      configParsingError = None,
+      labels = List("library-update"),
+      maximumPullRequestLength = 65536
+    )
+    val expected =
+      """|## About this PR
+         |Updates:
+         |
+         |* 📦 io.circe:circe-core from `0.13.0` to `0.14.4`
+         |* 📦 io.circe:circe-parser from `0.13.0` to `0.14.4`
+         |""".stripMargin
+
+    assert(body.startsWith(expected), body)
+  }
+
   test("fromTo") {
     val obtained = fromTo(("com.example".g % "foo".a % "1.2.0" %> "1.2.3").single)
     assertEquals(obtained, "from `1.2.0` to `1.2.3`")

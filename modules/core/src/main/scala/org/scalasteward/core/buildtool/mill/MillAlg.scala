@@ -142,12 +142,18 @@ object MillAlg {
   private val millMainGroupId = GroupId("com.lihaoyi")
   private val millMainArtifactId = ArtifactId("mill-main", "mill-main_2.13")
 
-  private def millMainArtifact(version: Version): Dependency =
-    Dependency(millMainGroupId, millMainArtifactId, version)
+  // Mill 1.x is not published as mill-main, but mill-dist carries every release.
+  private val millDistArtifactId = ArtifactId("mill-dist")
+
+  private[mill] def millMainArtifact(version: Version): Dependency =
+    if (version >= Version("1.0.0-M1")) Dependency(millMainGroupId, millDistArtifactId, version)
+    else Dependency(millMainGroupId, millMainArtifactId, version)
 
   def isMillMainUpdate(update: Update.Single): Boolean =
     update.groupId === millMainGroupId &&
-      update.artifactIds.exists(_.name === millMainArtifactId.name)
+      update.artifactIds.exists(a =>
+        a.name === millMainArtifactId.name || a.name === millDistArtifactId.name
+      )
 
   val millVersionName = "mill-version"
 }

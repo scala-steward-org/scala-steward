@@ -19,6 +19,7 @@ package org.scalasteward.core.buildtool.mill
 import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.scalasteward.core.BuildInfo
+import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.buildtool.BuildRoot
 import org.scalasteward.core.buildtool.mill.MillAlg.extractDeps
 import org.scalasteward.core.data.{Repo, Version}
@@ -151,6 +152,43 @@ class MillAlgTest extends FunSuite {
       )
     )
     assertEquals(state, expected)
+  }
+
+  test("getDependencies, 1 <= version: Mill itself is looked up as mill-dist") {
+    val repo = Repo("mill-alg", "test-4")
+    val buildRoot = BuildRoot(repo, ".")
+    val buildRootDir = workspaceAlg.buildRootDir(buildRoot).unsafeRunSync()
+    val millCmd = Cmd.execSandboxed(
+      buildRootDir,
+      "mill",
+      "--no-server",
+      "--ticker",
+      "false",
+      "--import",
+      s"ivy:org.scala-steward::${BuildInfo.millPluginArtifactName}::${BuildInfo.millPluginVersion}",
+      "show",
+      extractDeps
+    )
+    val initial = MockState.empty
+      .copy(commandOutputs = Map(millCmd -> Right(List("""{"modules":[]}"""))))
+      .addFiles(buildRootDir / ".mill-version" -> "1.1.7", buildRootDir / "build.mill" -> "")
+      .unsafeRunSync()
+    val deps = millAlg.getDependencies(buildRoot).runA(initial).unsafeRunSync()
+    assert(deps.flatMap(_.value).contains("com.lihaoyi".g % "mill-dist".a % "1.1.7"))
+  }
+
+  test("millMainArtifact") {
+    assertEquals(MillAlg.millMainArtifact(Version("0.12.17")).artifactId.name, "mill-main")
+    assertEquals(MillAlg.millMainArtifact(Version("1.0.0-M1")).artifactId.name, "mill-dist")
+    assertEquals(MillAlg.millMainArtifact(Version("1.1.7")).artifactId.name, "mill-dist")
+  }
+
+  test("isMillMainUpdate") {
+    assert(
+      MillAlg.isMillMainUpdate(("com.lihaoyi".g % "mill-main".a % "0.12.5" %> "0.12.17").single)
+    )
+    assert(MillAlg.isMillMainUpdate(("com.lihaoyi".g % "mill-dist".a % "1.1.7" %> "1.3.1").single))
+    assert(!MillAlg.isMillMainUpdate(("com.lihaoyi".g % "mill-libs".a % "1.1.7" %> "1.3.1").single))
   }
 
   test("predef-content") {

@@ -67,6 +67,12 @@ final class EditAlg[F[_]](implicit
         } yield preScalafixEdits ++ updateEdit ++ postScalafixEdits ++ hooksEdits
     }
 
+  /** Merges updates with the same groupId first because they often share a version val. Applying
+    * them one by one would bump the val with the first update and find nothing for the others.
+    */
+  def applyGroupedUpdate(data: RepoData, grouped: Update.Grouped): F[List[EditAttempt]] =
+    Update.groupByGroupId(grouped.updates).flatTraverse(applyUpdate(data, _))
+
   private def findUpdateReplacements(
       repo: Repo,
       config: RepoConfig,
