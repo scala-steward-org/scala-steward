@@ -35,6 +35,18 @@ class ValidateRepoConfigAlgTest extends CatsEffectSuite {
     assertIO(obtained, ExitCode.Success)
   }
 
+  test("accepts vulnerabilityCheck.exclude") {
+    val file = mockRoot / ".scala-steward.conf"
+    val content =
+      """|vulnerabilityCheck.exclude = [
+         |  { groupId = "com.example" },
+         |  { groupId = "org.acme", artifactId = "secret" }
+         |]""".stripMargin
+    val state = MockState.empty.addFiles(file -> content)
+    val obtained = state.flatMap(validateRepoConfigAlg.validateAndReport(file).runA)
+    assertIO(obtained, ExitCode.Success)
+  }
+
   test("rejects config with a parsing failure") {
     val file = mockRoot / ".scala-steward.conf"
     val content =

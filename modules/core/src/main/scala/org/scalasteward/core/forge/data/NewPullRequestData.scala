@@ -28,6 +28,7 @@ import org.scalasteward.core.nurture.UpdateInfoUrl
 import org.scalasteward.core.nurture.UpdateInfoUrl.*
 import org.scalasteward.core.repoconfig.{GroupRepoConfig, RepoConfigAlg}
 import org.scalasteward.core.util.{Details, Nel}
+import org.scalasteward.core.vulnerability.Vulnerability
 import scala.util.matching.Regex
 
 final case class NewPullRequestData(
@@ -47,6 +48,7 @@ object NewPullRequestData {
       edits: List[EditAttempt],
       artifactIdToUrl: Map[String, Uri],
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]],
+      vulnerabilitiesByArtifact: Map[(GroupId, String), List[Vulnerability]],
       filesWithOldVersion: List[String],
       configParsingError: Option[String],
       labels: List[String],
@@ -68,12 +70,14 @@ object NewPullRequestData {
         val artifacts = artifactsWithOptionalUrl(u, artifactIdToUrl)
 
         val updateInfoUrls = artifactIdToUpdateInfoUrls.getOrElse(u.mainArtifactId, Nil)
+        val notes = List(
+          renderUpdateInfoUrls(updateInfoUrls).map(urls => s"📜 $urls"),
+          renderVulnerabilities(vulnerabilitiesFor(u, vulnerabilitiesByArtifact), "")
+        ).flatten
 
         s"""|## About this PR
             |📦 Updates $artifacts ${fromTo(u)}${showMajorUpgradeWarning(u)}
-            |${renderUpdateInfoUrls(updateInfoUrls)
-             .map(urls => s"\n📜 $urls")
-             .getOrElse("")}""".stripMargin.trim
+            |${notes.mkString("\n", "\n\n", "")}""".stripMargin.trim
       },
       grouped = g => {
         val artifacts = g.updates
@@ -82,6 +86,9 @@ object NewPullRequestData {
             s"* 📦 ${artifactsWithOptionalUrl(u, artifactIdToUrl)} ${fromTo(u)}${showMajorUpgradeWarning(u)}" +
               renderUpdateInfoUrls(updateInfoUrls)
                 .map(urls => s"\n  + 📜 $urls")
+                .getOrElse("") +
+              renderVulnerabilities(vulnerabilitiesFor(u, vulnerabilitiesByArtifact), "  ")
+                .map(vulnerabilities => s"\n  + $vulnerabilities")
                 .getOrElse("")
           }
           .mkString_("\n", "\n", "\n")
@@ -144,7 +151,7 @@ object NewPullRequestData {
     else minimalPlainBody
   }
 
-  private def filterUpdateWithEditAttempts(update: Update, edits: List[EditAttempt]): Update =
+  def filterUpdateWithEditAttempts(update: Update, edits: List[EditAttempt]): Update =
     update match {
       case single: Update.Single   => single
       case grouped: Update.Grouped =>
@@ -170,6 +177,35 @@ object NewPullRequestData {
         }
         .mkString(" - ")
     }
+
+  // Advisories may be keyed by any artifact of an `Update.ForGroupId`, not only the main one.
+  private def vulnerabilitiesFor(
+      update: Update.Single,
+      vulnerabilitiesByArtifact: Map[(GroupId, String), List[Vulnerability]]
+  ): List[Vulnerability] =
+    update.dependencies.toList
+      .map(dependency => (dependency.groupId, dependency.artifactId.name))
+      .distinct
+      .flatMap(vulnerabilitiesByArtifact.getOrElse(_, Nil))
+      .distinct
+
+  private def renderVulnerabilities(
+      vulnerabilities: List[Vulnerability],
+      indent: String
+  ): Option[String] =
+    Option.when(vulnerabilities.nonEmpty) {
+      vulnerabilities
+        .map(vulnerability => s"$indent  * ${renderVulnerability(vulnerability)}")
+        .mkString("⚠️ Fixes vulnerabilities:\n", "\n", "")
+    }
+
+  private def renderVulnerability(vulnerability: Vulnerability): String = {
+    val link = s"[${vulnerability.id}](https://osv.dev/vulnerability/${vulnerability.id})"
+    val aliases = vulnerability.aliases.filter(_.startsWith("CVE-")).map(alias => s" / $alias")
+    val severity = vulnerability.severity.fold("")(severity => s" ($severity)")
+    val summary = vulnerability.summary.fold("")(summary => s": $summary")
+    link + aliases.mkString + severity + summary
+  }
 
   def fromTo(update: Update.Single): String =
     s"from `${update.currentVersion}` to `${update.nextVersion}`"
@@ -286,6 +322,7 @@ object NewPullRequestData {
       edits: List[EditAttempt] = List.empty,
       artifactIdToUrl: Map[String, Uri] = Map.empty,
       artifactIdToUpdateInfoUrls: Map[String, List[UpdateInfoUrl]] = Map.empty,
+      vulnerabilitiesByArtifact: Map[(GroupId, String), List[Vulnerability]] = Map.empty,
       filesWithOldVersion: List[String] = List.empty,
       addLabels: Boolean = false,
       draft: Boolean = false,
@@ -305,6 +342,7 @@ object NewPullRequestData {
         edits,
         artifactIdToUrl,
         artifactIdToUpdateInfoUrls,
+        vulnerabilitiesByArtifact,
         filesWithOldVersion,
         data.repoData.cache.maybeRepoConfigParsingError,
         customLabels ++ labels,
@@ -339,7 +377,8 @@ object NewPullRequestData {
       update: Update,
       edits: List[EditAttempt] = List.empty,
       filesWithOldVersion: List[String] = List.empty,
-      artifactIdToVersionScheme: Map[String, String] = Map.empty
+      artifactIdToVersionScheme: Map[String, String] = Map.empty,
+      vulnerabilitiesByArtifact: Map[(GroupId, String), List[Vulnerability]] = Map.empty
   ): List[String] = {
     val commitCount = edits.flatMap(_.commits).size
     val commitCountLabel = "commit-count:" + (commitCount match {
@@ -370,6 +409,8 @@ object NewPullRequestData {
     }("artifact-migrations")
     val scalafixLabel = edits.collectFirst { case _: ScalafixEdit => "scalafix-migrations" }
     val oldVersionLabel = Option.when(filesWithOldVersion.nonEmpty)("old-version-remains")
+    val securityFixLabel =
+      Option.when(vulnerabilitiesByArtifact.values.exists(_.nonEmpty))("security-fix")
 
     List.concat(
       updateTypeLabels(update),
@@ -377,6 +418,7 @@ object NewPullRequestData {
       artifactMigrationsLabel,
       scalafixLabel,
       oldVersionLabel,
+      securityFixLabel,
       List(commitCountLabel)
     )
   }

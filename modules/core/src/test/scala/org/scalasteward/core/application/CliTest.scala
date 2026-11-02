@@ -235,6 +235,17 @@ class CliTest extends FunSuite {
     assert(obtained.exitCodePolicy == SuccessIfAnyRepoSucceeds)
   }
 
+  test("parseArgs: --enable-vulnerability-check") {
+    val params = minimumRequiredParams ++ List(List("--enable-vulnerability-check"))
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten): @unchecked
+    assert(obtained.enableVulnerabilityCheck)
+  }
+
+  test("parseArgs: vulnerability check disabled by default") {
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(minimumRequiredParams.flatten): @unchecked
+    assert(!obtained.enableVulnerabilityCheck)
+  }
+
   test("parseArgs: exit code policy: default") {
     val Success(Usage.Regular(obtained)) = Cli.parseArgs(minimumRequiredParams.flatten): @unchecked
     assert(obtained.exitCodePolicy == SuccessOnlyIfAllReposSucceed)
