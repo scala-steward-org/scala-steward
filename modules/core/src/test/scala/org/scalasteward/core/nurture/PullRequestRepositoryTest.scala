@@ -168,6 +168,47 @@ class PullRequestRepositoryTest extends FunSuite {
     assertEquals(secondAbsent, List((data, DependencyRemoved)))
   }
 
+  test("findNoLongerNeededOpenPullRequests handles legacy entries without number or branch") {
+    val repo = Repo("pr-repo-test", "legacy")
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    val update = Update.updateEncoder(portableScala).noSpaces
+    // the first entry predates the `number` and `updateBranch` fields, the second only the branch
+    val content =
+      s"""|{
+          |  "https://github.com/typelevel/cats/pull/1" : {
+          |    "baseSha1" : "${sha1.value.value}",
+          |    "update" : $update,
+          |    "state" : "open",
+          |    "entryCreatedAt" : 1581969227183
+          |  },
+          |  "https://github.com/typelevel/cats/pull/2" : {
+          |    "baseSha1" : "${sha1.value.value}",
+          |    "update" : $update,
+          |    "state" : "open",
+          |    "entryCreatedAt" : 1581969227184,
+          |    "number" : 2
+          |  }
+          |}""".stripMargin
+    val applied = "org.portable-scala".g % "sbt-scalajs-crossproject".a % "1.0.0"
+    val obtained = (for {
+      initial <- MockState.empty.addFiles(store -> content)
+      result <- pullRequestRepository
+        .findNoLongerNeededOpenPullRequests(repo, List(applied), Nil, sha1)
+        .runA(initial)
+    } yield result).unsafeRunSync()
+    assertEquals(
+      obtained.map { case (pr, reason) => (pr.number, pr.updateBranch, reason) },
+      List(
+        (
+          number.copy(value = 2),
+          Branch("update/sbt-scalajs-crossproject-1.0.0"),
+          AlreadyApplied(Nel.one(applied))
+        )
+      )
+    )
+  }
+
   test("Entry decodes store files written before closedReason and absentSince existed") {
     val json =
       s"""|{

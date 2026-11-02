@@ -30,7 +30,7 @@ import org.scalasteward.core.git.{branchFor, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
 import org.scalasteward.core.mock.MockContext.context.{pruningAlg, pullRequestRepository}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.nurture.{ClosedReason, PullRequestData}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
@@ -240,6 +240,18 @@ class PruningAlgTest extends FunSuite {
   private def needsAttentionWithClosedPr(
       repoName: String,
       closedReason: Option[ClosedReason]
+  ): Option[Nel[Update]] =
+    needsAttentionWithPr(repoName, closedReason, prBaseSha1 = dummyRepoCache.sha1)
+
+  /** Runs `findUpdates` for a repo with a single dependency and one PR for its update. The PR is
+    * closed with `closedReason` if given (`Some(None)` means closed by somebody), otherwise it is
+    * open and was created at `prBaseSha1`.
+    */
+  private def needsAttentionWithPr(
+      repoName: String,
+      closedReason: Option[ClosedReason],
+      prBaseSha1: Sha1,
+      closed: Boolean = true
   ): Option[Nel[Update]] = {
     val repo = Repo("pruning-test", repoName)
     val dependency = "com.example".g % "thing-a".a % "1.0.0"
@@ -266,7 +278,7 @@ class PruningAlgTest extends FunSuite {
     val url = uri"https://github.com/pruning-test/pull/1"
     val closedPr = PullRequestData[cats.Id](
       url,
-      Sha1.unsafeFrom("12def27a837ba6dc9e17406cbbe342fba3527c14"),
+      prBaseSha1,
       update,
       PullRequestState.Open,
       PullRequestNumber(1),
@@ -277,7 +289,10 @@ class PruningAlgTest extends FunSuite {
       program =
         for {
           _ <- pullRequestRepository.createOrUpdate(repo, closedPr)
-          _ <- pullRequestRepository.changeState(repo, url, PullRequestState.Closed, closedReason)
+          _ <-
+            if (closed)
+              pullRequestRepository.changeState(repo, url, PullRequestState.Closed, closedReason)
+            else MockEff.unit
           found <- pruningAlg.findUpdates(data)
         } yield {
           // the update is found either way, whether it needs attention or not
@@ -286,6 +301,19 @@ class PruningAlgTest extends FunSuite {
         }
       result <- program.runA(initial)
     } yield result).unsafeRunSync()
+  }
+
+  test("needsAttention: an open PR created at the current base commit is up to date") {
+    val obtained =
+      needsAttentionWithPr("repo-pr-up-to-date", None, dummyRepoCache.sha1, closed = false)
+    assertEquals(obtained, None)
+  }
+
+  test("needsAttention: an open PR created at an older base commit needs attention") {
+    val olderSha1 = Sha1.unsafeFrom("b2ced5793c2832ada8c14ba5c77e51c4bc9656a9")
+    val obtained = needsAttentionWithPr("repo-pr-outdated", None, olderSha1, closed = false)
+    val update = ("com.example".g % "thing-a".a % "1.0.0" %> "2.0.0").single
+    assertEquals(obtained, Some(Nel.one(update: Update)))
   }
 
   test("needsAttention: an update whose PR was closed by somebody is not proposed again") {

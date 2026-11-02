@@ -291,7 +291,8 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       repoConfig: RepoConfig = RepoConfig(),
       emptyScan: Boolean = false,
       pendingUpdates: List[Update.ForArtifactId] = Nil,
-      moreDependencies: List[Dependency] = Nil
+      moreDependencies: List[Dependency] = Nil,
+      remoteBranchExists: Boolean = true
   ) {
     val baseBranch: Branch = Branch("main")
     val repo: Repo = Repo("no-longer-needed", repoName)
@@ -336,7 +337,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
         forgeState = MockForgeState(Map(repo -> RepoState())),
         commandOutputs = Map(
           Cmd.git(repoDir, "branch", "--list", "--no-color", "--all", remoteUpdateBranch.name) ->
-            Right(List(s"  remotes/${remoteUpdateBranch.name}")),
+            Right(if (remoteBranchExists) List(s"  remotes/${remoteUpdateBranch.name}") else Nil),
           Cmd.git(repoDir, "log", "--pretty=format:'%an'", s"main..${remoteUpdateBranch.name}") ->
             Right(branchAuthors)
         )
@@ -611,6 +612,66 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
       .toList
       .sortBy(_._1.value)
     (logs, prs)
+  }
+
+  /** Runs `nurture` for the update 1.0.0 -> 2.0.0 while an open Steward PR for 1.0.0 -> 1.5.0
+    * exists, and returns the state of that older PR and its comments afterwards.
+    */
+  private def nurtureSupersedes(
+      repoName: String,
+      remoteBranchExists: Boolean
+  ): (PullRequestState, List[String], List[PullRequestNumber]) = {
+    val olderUpdate = (thingA %> "1.5.0").single
+    val newerUpdate = (thingA %> "2.0.0").single
+    val fixture = new NoLongerNeededFixture(
+      repoName,
+      olderUpdate,
+      List("1.0.0"),
+      List("Bot Doe"),
+      remoteBranchExists = remoteBranchExists
+    )
+    val (nurtureAlg, pullRequestService) = nurtureAlgWithMockForge
+    val buildFile = fixture.repoDir / "build.sbt"
+    val newerBranch = branchFor(newerUpdate, None)
+    val program = for {
+      olderPr <- pullRequestService.createPullRequest(
+        fixture.updateData,
+        NewPullRequestData.from(fixture.updateData, branchName = fixture.updateBranch.name)
+      )
+      _ <- nurtureAlg.nurture(fixture.repoData, fixture.fork, Nel.one(newerUpdate))
+    } yield olderPr.number
+    val initial = fixture.initialState
+      .addFiles(buildFile -> """libraryDependencies += "com.example" % "thing-A" % "1.0.0"""")
+      .unsafeRunSync()
+    val state = initial.copy(commandOutputs =
+      initial.commandOutputs ++ Map(
+        Cmd.git(fixture.repoDir, "rev-parse", "--verify", "main") ->
+          Right(List(dummySha1.value.value)),
+        Cmd.gitGrep(fixture.repoDir, "1.0.0") -> Right(List("build.sbt")),
+        Cmd.gitStatus(fixture.repoDir) -> Right(List(" M build.sbt")),
+        Cmd.gitLatestSha1(fixture.repoDir) -> Right(List(dummySha1.value.value)),
+        Cmd.git(fixture.repoDir, "diff", "--name-only", "main", newerBranch.name, "--") ->
+          Right(List("build.sbt"))
+      )
+    )
+    val (finalState, olderNumber) = fixture.withClone(program, state)
+    val prs = finalState.forgeState.repos(fixture.repo).prs
+    val olderPr = prs(olderNumber)
+    (olderPr.current.state, olderPr.comments, prs.keys.toList.sortBy(_.value))
+  }
+
+  test("nurture supersedes an open PR for an older version with the new one") {
+    val (olderState, comments, numbers) = nurtureSupersedes("supersedes", remoteBranchExists = true)
+    assertEquals(numbers, List(PullRequestNumber(1), PullRequestNumber(2)))
+    assertEquals(olderState, PullRequestState.Closed)
+    assertEquals(comments, List("Superseded by\n- #2"))
+  }
+
+  test("nurture supersedes an open PR even if its remote branch is already gone") {
+    val (olderState, comments, _) =
+      nurtureSupersedes("supersedes-no-branch", remoteBranchExists = false)
+    assertEquals(olderState, PullRequestState.Closed)
+    assertEquals(comments.size, 1)
   }
 
   test("nurture does not propose an update again whose PR was closed by somebody") {
