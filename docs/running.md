@@ -109,6 +109,7 @@ See Oracle proxies documentation for more info.
 With `--enable-vulnerability-check`, PRs that fix known vulnerabilities list the fixed advisories from [OSV.dev](https://osv.dev) and get the `security-fix` label (with `--add-labels`).
 
 The `groupId`, `artifactId`, and current and next versions of every updated dependency are sent to `api.osv.dev`.
+OSV results are cached in the workspace for `--cache-ttl`.
 To keep dependencies private, list them in [`vulnerabilityCheck.exclude`](repo-specific-configuration.md), e.g. in the `--repo-config` file to cover all repos:
 
 ```properties

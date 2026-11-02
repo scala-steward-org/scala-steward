@@ -55,7 +55,7 @@ import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, Artifact
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.*
 import org.scalasteward.core.util.uri.*
-import org.scalasteward.core.vulnerability.OsvAlg
+import org.scalasteward.core.vulnerability.{OsvAlg, OsvCache, Vulnerability}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -93,6 +93,7 @@ final class Context[F[_]](implicit
     val updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     val urlChecker: UrlChecker[F],
     val osvAlg: OsvAlg[F],
+    val osvCache: OsvCache[F],
     val workspaceAlg: WorkspaceAlg[F]
 )
 
@@ -160,6 +161,10 @@ object Context {
         .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
+      osvIdsStore <- JsonKeyValueStore
+        .create[F, OsvCache.Key, OsvCache.Cached[Set[String]]]("osv_vulnerability_ids", "1")
+      osvVulnerabilityStore <- JsonKeyValueStore
+        .create[F, String, OsvCache.Cached[Vulnerability]]("osv_vulnerabilities", "1")
     } yield {
       implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
       implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
@@ -179,6 +184,8 @@ object Context {
       implicit val forgeCfg: ForgeCfg = config.forgeCfg
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
       implicit val osvAlg: OsvAlg[F] = new OsvAlg[F]
+      implicit val osvCache: OsvCache[F] =
+        new OsvCache[F](config.cacheTtl, osvIdsStore, osvVulnerabilityStore)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val pullRequestService: PullRequestService[F] =

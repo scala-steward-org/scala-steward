@@ -41,7 +41,7 @@ import org.scalasteward.core.repoconfig.{
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
-import org.scalasteward.core.vulnerability.{OsvAlg, Vulnerability}
+import org.scalasteward.core.vulnerability.{OsvCache, Vulnerability}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
@@ -52,7 +52,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
     forgeRepoAlg: ForgeRepoAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
-    osvAlg: OsvAlg[F],
+    osvCache: OsvCache[F],
     pullRequestService: PullRequestService[F],
     updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     urlChecker: UrlChecker[F],
@@ -238,17 +238,10 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
     val dependencies =
       dependencyPairs.flatMap { case (current, next) => List(current, next) }.distinct
     for {
-      _ <- logger.debug(
-        dependencies
-          .map { dependency =>
-            s"${dependency.groupId}:${dependency.artifactId.crossName}:${dependency.version}"
-          }
-          .mkString("Query OSV for ", ", ", "")
-      )
-      dependencyToIds <- osvAlg.vulnerabilityIds(dependencies)
+      dependencyToIds <- osvCache.vulnerabilityIds(dependencies)
       fixedIds = fixedIdsByArtifact(dependencyPairs, dependencyToIds)
       idToVulnerability <- fixedIds.values.toList.flatten.distinct
-        .traverse(id => osvAlg.vulnerability(id).tupleLeft(id))
+        .traverse(id => osvCache.vulnerability(id).tupleLeft(id))
         .map(_.toMap)
     } yield fixedIds.map { case (artifact, ids) =>
       artifact -> ids.toList.sorted.flatMap(idToVulnerability.get)
