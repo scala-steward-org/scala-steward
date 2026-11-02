@@ -23,13 +23,18 @@ import munit.FunSuite
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.Resolver.MavenRepository
-import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, Scope}
+import org.scalasteward.core.data.{DependencyInfo, Repo, RepoData, Scope, Update}
+import org.http4s.syntax.literals.*
+import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
+import org.scalasteward.core.git.{branchFor, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
-import org.scalasteward.core.mock.MockContext.context.pruningAlg
+import org.scalasteward.core.mock.MockContext.context.{pruningAlg, pullRequestRepository}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
-import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
+import org.scalasteward.core.nurture.{ClosedReason, PullRequestData}
 import org.scalasteward.core.repocache.RepoCache
 import org.scalasteward.core.repoconfig.RepoConfig
+import org.scalasteward.core.util.Nel
 
 class PruningAlgTest extends FunSuite {
   test("needsAttention") {
@@ -78,7 +83,7 @@ class PruningAlgTest extends FunSuite {
           |}""".stripMargin
     val initial = MockState.empty.addFiles(pullRequestsFile -> pullRequestsContent).unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log("Find updates for fthomas/scalafix-test"),
@@ -182,7 +187,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),
@@ -225,8 +230,101 @@ class PruningAlgTest extends FunSuite {
     (for {
       initial <- MockState.empty.addFiles(versionsFile -> versionsContent)
       // This should not propose an update from 2.12.13 to 2.13.5.
-      updateStates <- pruningAlg.needsAttention(data).runA(initial)
+      updateStates <- pruningAlg.findUpdates(data).map(_.needingAttention).runA(initial)
     } yield assertEquals(updateStates, None)).unsafeRunSync()
+  }
+
+  /** Runs `findUpdates` for a repo with a single dependency whose only PR is closed, either by
+    * somebody else or by Scala Steward because the update had already been applied.
+    */
+  private def needsAttentionWithClosedPr(
+      repoName: String,
+      closedReason: Option[ClosedReason]
+  ): Option[Nel[Update]] =
+    needsAttentionWithPr(repoName, closedReason, prBaseSha1 = dummyRepoCache.sha1)
+
+  /** Runs `findUpdates` for a repo with a single dependency and one PR for its update. The PR is
+    * closed with `closedReason` if given (`Some(None)` means closed by somebody), otherwise it is
+    * open and was created at `prBaseSha1`.
+    */
+  private def needsAttentionWithPr(
+      repoName: String,
+      closedReason: Option[ClosedReason],
+      prBaseSha1: Sha1,
+      closed: Boolean = true
+  ): Option[Nel[Update]] = {
+    val repo = Repo("pruning-test", repoName)
+    val dependency = "com.example".g % "thing-a".a % "1.0.0"
+    val update = (dependency %> "2.0.0").single
+    val repoCache = dummyRepoCache.copy(dependencyInfos =
+      List(
+        Scope(
+          List(DependencyInfo(dependency, List("build.sbt"))),
+          List(MavenRepository("public", s"https://$repoName.org/maven/", None, None))
+        )
+      )
+    )
+    val data = RepoData(repo, repoCache, RepoConfig.empty)
+    val versionsFile =
+      config.workspace / s"store/versions/v2/https/$repoName.org/maven/com/example/thing-a/versions.json"
+    val versionsContent =
+      s"""|{
+          |  "updatedAt" : 9999999999999,
+          |  "versions" : [
+          |    "1.0.0",
+          |    "2.0.0"
+          |  ]
+          |}""".stripMargin
+    val url = uri"https://github.com/pruning-test/pull/1"
+    val closedPr = PullRequestData[cats.Id](
+      url,
+      prBaseSha1,
+      update,
+      PullRequestState.Open,
+      PullRequestNumber(1),
+      branchFor(update)
+    )
+    (for {
+      initial <- MockState.empty.addFiles(versionsFile -> versionsContent)
+      program =
+        for {
+          _ <- pullRequestRepository.createOrUpdate(repo, closedPr)
+          _ <-
+            if (closed)
+              pullRequestRepository.changeState(repo, url, PullRequestState.Closed, closedReason)
+            else MockEff.unit
+          found <- pruningAlg.findUpdates(data)
+        } yield {
+          // the update is found either way, whether it needs attention or not
+          assertEquals(found.all.map(u => u: Update), List(update: Update))
+          found.needingAttention.map(_.map(_.update))
+        }
+      result <- program.runA(initial)
+    } yield result).unsafeRunSync()
+  }
+
+  test("needsAttention: an open PR created at the current base commit is up to date") {
+    val obtained =
+      needsAttentionWithPr("repo-pr-up-to-date", None, dummyRepoCache.sha1, closed = false)
+    assertEquals(obtained, None)
+  }
+
+  test("needsAttention: an open PR created at an older base commit needs attention") {
+    val olderSha1 = Sha1.unsafeFrom("b2ced5793c2832ada8c14ba5c77e51c4bc9656a9")
+    val obtained = needsAttentionWithPr("repo-pr-outdated", None, olderSha1, closed = false)
+    val update = ("com.example".g % "thing-a".a % "1.0.0" %> "2.0.0").single
+    assertEquals(obtained, Some(Nel.one(update: Update)))
+  }
+
+  test("needsAttention: an update whose PR was closed by somebody is not proposed again") {
+    assertEquals(needsAttentionWithClosedPr("repo-closed-by-human", None), None)
+  }
+
+  test("needsAttention: an update whose PR Steward closed as already applied is proposed again") {
+    val obtained =
+      needsAttentionWithClosedPr("repo-closed-as-applied", Some(ClosedReason.AlreadyApplied))
+    val update = ("com.example".g % "thing-a".a % "1.0.0" %> "2.0.0").single
+    assertEquals(obtained, Some(Nel.one(update: Update)))
   }
 
   test("needsAttention: repo frequency (monthly) with zero frequencySpread") {
@@ -321,7 +419,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),
@@ -427,7 +525,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),
@@ -536,7 +634,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),
@@ -649,7 +747,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),
@@ -760,7 +858,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),
@@ -876,7 +974,7 @@ class PruningAlgTest extends FunSuite {
       .addFiles(pullRequestsFile -> pullRequestsContent, versionsFile -> versionsContent)
       .unsafeRunSync()
     val data = RepoData(repo, repoCache, repoCache.maybeRepoConfig.getOrElse(RepoConfig.empty))
-    val state = pruningAlg.needsAttention(data).runS(initial).unsafeRunSync()
+    val state = pruningAlg.findUpdates(data).runS(initial).unsafeRunSync()
     val expected = initial.copy(
       trace = Vector(
         Log(s"Find updates for ${repo.show}"),

@@ -121,6 +121,13 @@ pullRequests.customLabels = [ "dependencies", "scala" ]
 # Defaults to false (PRs are not raised in draft).
 pullRequests.draft = true
 
+# pullRequests.closeNoLongerNeeded controls whether Scala Steward closes its own PRs once the
+# base branch no longer needs them: it already contains the proposed version or a newer one,
+# or the dependency was removed from the build. Unlike most settings, a value here overrides
+# the global default config, so an instance can disable it globally and let repos opt in.
+# Defaults to true.
+pullRequests.closeNoLongerNeeded = false
+
 # Only these dependencies which match the given patterns are updated.
 #
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.

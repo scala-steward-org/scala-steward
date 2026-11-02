@@ -123,6 +123,37 @@ object Update {
 
     def supersedes(that: Update.Single): Boolean =
       groupAndMainArtifactId == that.groupAndMainArtifactId && nextVersion > that.nextVersion
+
+    /** Tells whether this update is no longer needed, judging by `dependencies`, usually the ones
+      * of the base branch, and `pendingUpdates`, the updates Scala Steward currently wants to apply
+      * to them. Occurrences older than `currentVersion` only count if a pending update brings them
+      * to `nextVersion` too, since that update shares this update's PR; otherwise they are a
+      * different thing, like the Scala version of the sbt meta-build or a pinned version.
+      */
+    def noLongerNeededIn(
+        dependencies: List[Dependency],
+        pendingUpdates: List[Update.ForArtifactId]
+    ): Option[NoLongerNeeded] = {
+      val artifactIdNames = artifactIds.map(_.name).toList
+      val sameArtifacts = dependencies.filter { d =>
+        d.groupId === groupId && artifactIdNames.contains_(d.artifactId.name)
+      }
+      def sharesThisPullRequest(occurrence: Dependency): Boolean =
+        pendingUpdates.exists { u =>
+          u.groupId === groupId &&
+          u.currentVersion === occurrence.version &&
+          u.nextVersion === nextVersion &&
+          u.artifactIds.contains_(occurrence.artifactId)
+        }
+      val relevant =
+        sameArtifacts.filter(d => d.version >= currentVersion || sharesThisPullRequest(d))
+      (sameArtifacts, Nel.fromList(relevant)) match {
+        case (Nil, _) => Some(NoLongerNeeded.DependencyRemoved)
+        case (_, Some(occurrences)) if occurrences.forall(_.version >= nextVersion) =>
+          Some(NoLongerNeeded.AlreadyApplied(occurrences))
+        case _ => None
+      }
+    }
   }
 
   /** Denotes the update of a specific single artifact to some particular chosen next version.

@@ -42,7 +42,9 @@ final class PruningAlg[F[_]](implicit
     updateAlg: UpdateAlg[F],
     F: Monad[F]
 ) {
-  def needsAttention(data: RepoData): F[Option[Nel[WithUpdate]]] = {
+
+  /** Finds all updates for the repo and which of them need attention right now. */
+  def findUpdates(data: RepoData): F[FoundUpdates] = {
     val dependencies = data.cache.dependencyInfos
       .flatMap(_.sequence)
       .collect { case info if !ignoreDependency(info.value) => info.map(_.dependency) }
@@ -53,7 +55,7 @@ final class PruningAlg[F[_]](implicit
   private def findUpdatesNeedingAttention(
       data: RepoData,
       dependencies: List[Scope.Dependency]
-  ): F[Option[Nel[WithUpdate]]] = {
+  ): F[FoundUpdates] = {
     val repo = data.repo
     val repoCache = data.cache
     val repoConfig = data.config
@@ -77,7 +79,7 @@ final class PruningAlg[F[_]](implicit
       (updateStates1, updates1) = res
       _ <- logger.info(util.logger.showUpdates(updates1.widen[Update.Single]))
       result <- filterUpdateStates(repo, repoConfig, updateStates1)
-    } yield result
+    } yield FoundUpdates(updates1, result)
   }
 
   private def ensureFreshUpdates(
@@ -119,16 +121,24 @@ final class PruningAlg[F[_]](implicit
     updates.find(UpdateAlg.isUpdateFor(_, crossDependency)) match {
       case None         => F.pure(DependencyUpToDate(crossDependency))
       case Some(update) =>
-        pullRequestRepository.findLatestPullRequest(repo, crossDependency, update.nextVersion).map {
-          case None =>
-            DependencyOutdated(crossDependency, update)
-          case Some(pr) if pr.state.isClosed =>
-            PullRequestClosed(crossDependency, update, pr.url)
-          case Some(pr) if pr.baseSha1 === repoCache.sha1 =>
-            PullRequestUpToDate(crossDependency, update, pr.url)
-          case Some(pr) =>
-            PullRequestOutdated(crossDependency, update, pr.url)
-        }
+        pullRequestRepository
+          .findLatestPullRequest(repo, crossDependency, update.nextVersion)
+          .flatMap {
+            case None =>
+              F.pure(DependencyOutdated(crossDependency, update))
+            case Some(pr) if pr.state.isClosed =>
+              // A PR that Scala Steward closed itself because the base branch made the update
+              // unnecessary does not mean that the update was declined. If it is needed again,
+              // e.g. after a revert, it is proposed again.
+              pullRequestRepository.wasClosedAsNoLongerNeeded(repo, pr.url).map {
+                case true  => DependencyOutdated(crossDependency, update)
+                case false => PullRequestClosed(crossDependency, update, pr.url)
+              }
+            case Some(pr) if pr.baseSha1 === repoCache.sha1 =>
+              F.pure(PullRequestUpToDate(crossDependency, update, pr.url))
+            case Some(pr) =>
+              F.pure(PullRequestOutdated(crossDependency, update, pr.url))
+          }
     }
 
   private def filterUpdateStates(
@@ -200,6 +210,16 @@ final class PruningAlg[F[_]](implicit
 }
 
 object PruningAlg {
+
+  /** All updates found for a repo and the subset that needs attention right now, i.e. for which a
+    * PR should be created or updated. `all` also contains updates that are held back, e.g. by
+    * `pullRequests.frequency`, but not those that are ignored or pinned by config.
+    */
+  final case class FoundUpdates(
+      all: List[Update.ForArtifactId],
+      needingAttention: Option[Nel[WithUpdate]]
+  )
+
   def ignoreDependency(info: DependencyInfo): Boolean =
     info.filesContainingVersion.isEmpty ||
       FilterAlg.isDependencyConfigurationIgnored(info.dependency)
