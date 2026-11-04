@@ -137,7 +137,7 @@ object TestInstances {
     } yield PullRequestsConfig(frequency, frequencySpread, allowedHours))
 
   implicit val cooldownConfigArbitrary: Arbitrary[CooldownConfig] =
-    Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig.apply))
+    Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig(_)))
 
   implicit val pullRequestUpdateStrategyArbitrary: Arbitrary[PullRequestUpdateStrategy] =
     Arbitrary(
