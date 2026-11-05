@@ -47,9 +47,9 @@ import org.scalasteward.core.repoconfig.{
   RepoConfig,
   VulnerabilityCheckConfig
 }
-import org.scalasteward.core.vulnerability.Vulnerability
+import org.scalasteward.core.vulnerability.{ClearOsvCache, Vulnerability}
 
-class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] {
+class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearOsvCache {
   test("preparePullRequest") {
     val nurtureAlg = context.nurtureAlg
     val repo = Repo("scala-steward-org", "scala-steward")
