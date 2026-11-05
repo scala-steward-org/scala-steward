@@ -164,7 +164,10 @@ object Context {
       osvIdsStore <- JsonKeyValueStore
         .create[F, OsvCache.Key, OsvCache.Cached[Set[String]]]("osv_vulnerability_ids", "1")
       osvVulnerabilityStore <- JsonKeyValueStore
-        .create[F, String, OsvCache.Cached[Vulnerability]]("osv_vulnerabilities", "1")
+        .create[F, OsvCache.VulnerabilityKey, OsvCache.Cached[Vulnerability]](
+          "osv_vulnerabilities",
+          "1"
+        )
     } yield {
       implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
       implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
