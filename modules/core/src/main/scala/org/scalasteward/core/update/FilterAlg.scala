@@ -37,70 +37,91 @@ final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
       update: ArtifactUpdateCandidates
   ): F[Option[Update.ForArtifactId]] = for {
     currentTime <- dateTimeAlg.currentTimestamp
-    cooldownExempt <- vulnerabilityFixesInCooldown(config, update, currentTime)
-    result <- localFilter(update, config, currentTime, cooldownExempt) match {
+    baseline = localFilter(update, config, currentTime, cooldownExempt = None)
+    vulnerabilityFix <-
+      vulnerabilityFixInCooldown(config, update, currentTime, baseline.toOption)
+    result <- vulnerabilityFix.fold(baseline)(_.asRight) match {
       case Right(update) => F.pure(update.some)
       case Left(reason)  =>
         logger.info(s"Ignore ${reason.update.show} (reason: ${reason.show})").as(None)
     }
   } yield result
 
-  private def vulnerabilityFixesInCooldown(
+  private def vulnerabilityFixInCooldown(
       config: RepoConfig,
       update: ArtifactUpdateCandidates,
-      currentTime: Timestamp
-  ): F[Set[Version]] =
-    if (!enableVulnerabilityCheck) F.pure(Set.empty)
+      currentTime: Timestamp,
+      baseline: Option[Update.ForArtifactId]
+  ): F[Option[Update.ForArtifactId]] =
+    if (!enableVulnerabilityCheck) F.pure(None)
     else {
-      val pairsByVersion = config.updatesOrDefault
+      // Updates to cooldown versions that win selection once exempted.
+      val pairsByExempted = config.updatesOrDefault
         .versionsInCooldown(update, currentTime, config.dependencyOverridesOrDefault)
-        // Exempting a version that would still lose selection is pointless.
-        .filter(version =>
-          localFilter(update, config, currentTime, Set(version)).exists(_.nextVersion === version)
-        )
-        .map(version => version -> UpdateAlg.dependencyPairs(update.artifactForUpdate, version))
+        .flatMap { version =>
+          localFilter(update, config, currentTime, cooldownExempt = version.some).toOption
+            .filter(_.nextVersion === version)
+        }
+        .map(exempted => exempted -> dependencyPairs(exempted))
       val vulnerabilityCheck = config.vulnerabilityCheckOrDefault
-      val isExcluded = pairsByVersion.exists { case (_, pairs) =>
+      val isExcluded = pairsByExempted.exists { case (_, pairs) =>
         pairs.exists { case (current, next) =>
           vulnerabilityCheck.isExcluded(current) || vulnerabilityCheck.isExcluded(next)
         }
       }
-      if (pairsByVersion.isEmpty || isExcluded) F.pure(Set.empty)
+      if (pairsByExempted.isEmpty || isExcluded) F.pure(None)
       else
         logger.attemptWarn
-          .log("Vulnerability check failed")(lowestVulnerabilityFix(update, pairsByVersion))
-          .map(_.getOrElse(Set.empty))
+          .log("Vulnerability check failed")(
+            selectVulnerabilityFix(update, baseline, pairsByExempted)
+          )
+          .map(_.toOption.flatten)
     }
 
-  private def lowestVulnerabilityFix(
+  // Picks the cooldown version fixing most open advisories, lowest on ties.
+  private def selectVulnerabilityFix(
       update: ArtifactUpdateCandidates,
-      pairsByVersion: List[(Version, List[(Dependency, Dependency)])]
-  ): F[Set[Version]] = {
+      baseline: Option[Update.ForArtifactId],
+      pairsByExempted: List[(Update.ForArtifactId, List[(Dependency, Dependency)])]
+  ): F[Option[Update.ForArtifactId]] = {
+    val baselinePairs = baseline.toList.flatMap(dependencyPairs)
+    // Without a baseline update, the current dependency stays.
+    val nextInBaseline = baselinePairs.toMap.withDefault(identity)
     val dependencies = (update.artifactForUpdate.crossDependency.dependencies.toList ++
-      pairsByVersion.flatMap { case (_, pairs) => pairs.map { case (_, next) => next } }).distinct
+      baselinePairs.map { case (_, next) => next } ++
+      pairsByExempted.flatMap { case (_, pairs) => pairs.map { case (_, next) => next } }).distinct
     osvCache.vulnerabilityIds(dependencies).flatMap { dependencyToIds =>
       def idsOf(dependency: Dependency): Set[String] =
         dependencyToIds.getOrElse(dependency, Set.empty)
 
-      val fixedIdsByVersion = pairsByVersion
-        .map { case (version, pairs) =>
-          version -> pairs.foldMap { case (current, next) => idsOf(current) -- idsOf(next) }
+      // Only advisories the baseline would leave or introduce count as fixes.
+      val fixedIdsByExempted = pairsByExempted
+        .map { case (exempted, pairs) =>
+          exempted -> pairs.foldMap { case (current, next) =>
+            idsOf(nextInBaseline(current)) -- idsOf(next)
+          }
         }
         .filter { case (_, fixedIds) => fixedIds.nonEmpty }
-      fixedIdsByVersion.minimumByOption { case (version, _) => version } match {
-        case Some((version, fixedIds)) =>
+      fixedIdsByExempted.minimumByOption { case (exempted, fixedIds) =>
+        (-fixedIds.size, exempted.nextVersion)
+      } match {
+        case Some((exempted, fixedIds)) =>
           val artifact = update.artifactForUpdate
+          val version = exempted.nextVersion
           val coordinates =
             s"${artifact.groupId}:${artifact.crossDependency.showArtifactNames}:$version"
           logger
             .info(
               s"Skip cooldown for $coordinates (fixes ${fixedIds.toList.sorted.mkString(", ")})"
             )
-            .as(Set(version))
-        case None => F.pure(Set.empty)
+            .as(exempted.some)
+        case None => F.pure(None)
       }
     }
   }
+
+  private def dependencyPairs(update: Update.ForArtifactId): List[(Dependency, Dependency)] =
+    UpdateAlg.dependencyPairs(update.artifactForUpdate, update.nextVersion)
 }
 
 object FilterAlg {
@@ -132,7 +153,7 @@ object FilterAlg {
       update: ArtifactUpdateCandidates,
       repoConfig: RepoConfig,
       currentTime: Timestamp,
-      cooldownExempt: Set[Version]
+      cooldownExempt: Option[Version]
   ): Either[RejectionReason, Update.ForArtifactId] =
     repoConfig.updatesOrDefault
       .keep(update, currentTime, repoConfig.dependencyOverridesOrDefault, cooldownExempt)

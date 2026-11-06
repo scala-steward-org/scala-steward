@@ -151,7 +151,7 @@ updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 # the artefact version's age from that time.
 updates.cooldown = {
   minimumAge: "7 days"
-  # Updates that fix a known vulnerability skip cooldown when Scala Steward runs with `--enable-vulnerability-check`.
+  # Updates that avoid a known vulnerability skip cooldown when Scala Steward runs with `--enable-vulnerability-check`.
   # Default: true
   skipForVulnerabilityCheck = true
 }

@@ -38,11 +38,11 @@ class UpdatesConfigBenchmark {
     val currentTime = Timestamp(millis = 0)
     val dependencyOverrides = Nil
 
-    UpdatesConfig().keep(update, currentTime, dependencyOverrides, cooldownExempt = Set.empty)
+    UpdatesConfig().keep(update, currentTime, dependencyOverrides, cooldownExempt = None)
     UpdatesConfig(allow = Some(List(UpdatePattern(groupId, None, None))))
-      .keep(update, currentTime, dependencyOverrides, cooldownExempt = Set.empty)
+      .keep(update, currentTime, dependencyOverrides, cooldownExempt = None)
     UpdatesConfig(allow =
       Some(List(UpdatePattern(groupId, None, Some(VersionPattern(prefix = Some("6.0"))))))
-    ).keep(update, currentTime, dependencyOverrides, cooldownExempt = Set.empty)
+    ).keep(update, currentTime, dependencyOverrides, cooldownExempt = None)
   }
 }

@@ -110,7 +110,7 @@ With `--enable-vulnerability-check`, PRs that fix known vulnerabilities list the
 PRs whose next version is still affected list those advisories and the version that fixes them.
 
 The `groupId`, `artifactId`, and current and next versions of every updated dependency are sent to `api.osv.dev`.
-Versions still in [`updates.cooldown`](repo-specific-configuration.md) are also sent, and skip cooldown when they fix an advisory.
+Versions still in [`updates.cooldown`](repo-specific-configuration.md) are also sent, and skip cooldown when they avoid an advisory that the update allowed by cooldown would leave or introduce.
 OSV results are cached in the workspace for `--cache-ttl`.
 To keep dependencies private, list them in [`vulnerabilityCheck.exclude`](repo-specific-configuration.md), e.g. in the `--repo-config` file to cover all repos:
 

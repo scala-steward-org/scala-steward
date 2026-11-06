@@ -61,7 +61,7 @@ final case class UpdatesConfig(
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp,
       dependencyOverrides: List[GroupRepoConfig],
-      cooldownExempt: Set[Version]
+      cooldownExempt: Option[Version]
   ): FilterResult =
     isAllowed(update)
       .flatMap(isPinned)
@@ -119,7 +119,7 @@ final case class UpdatesConfig(
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp,
       dependencyOverrides: List[GroupRepoConfig],
-      cooldownExempt: Set[Version]
+      cooldownExempt: Option[Version]
   ): FilterResult =
     update
       .filterVersionsWithFirstSeen(
@@ -132,7 +132,7 @@ final case class UpdatesConfig(
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp,
       dependencyOverrides: List[GroupRepoConfig],
-      cooldownExempt: Set[Version]
+      cooldownExempt: Option[Version]
   ): Boolean =
     cooldownExempt.contains(versionWithFirstSeen.version) ||
       cooldownFor(versionWithFirstSeen, update, dependencyOverrides)

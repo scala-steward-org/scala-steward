@@ -50,7 +50,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     val update =
       ("org.scalatest".g % "scalatest".a % "3.0.8-SNAP2" %> Nel.of("3.0.8-SNAP10")).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSoleUpdate)
     )
   }
@@ -58,7 +58,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
   test("localFilter: RC -> SNAP") {
     val update = ("org.scalatest".g % "scalatest".a % "3.0.8-RC2" %> Nel.of("3.1.0-SNAP10")).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Left(NoSuitableNextVersion(update))
     )
   }
@@ -66,7 +66,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
   test("localFilter: update without bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.0" %> Nel.of("1.1.2", "2.0.0")).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSpecificUpdate("1.1.2".v))
     )
   }
@@ -77,7 +77,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         "2.13.19-M1",
         "3.10.0"
       )).single
-    assert(clue(localFilter(update, config, currentTime, cooldownExempt = Set.empty)).isLeft)
+    assert(clue(localFilter(update, config, currentTime, cooldownExempt = None)).isLeft)
   }
 
   test("localFilter: Scala 2.13 is updated to a newer 2.13 release, not to Scala 3") {
@@ -87,7 +87,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         "3.10.0"
       )).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty).map(_.nextVersion),
+      localFilter(update, config, currentTime, cooldownExempt = None).map(_.nextVersion),
       Right("2.13.19".v)
     )
   }
@@ -95,7 +95,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
   test("localFilter: update with bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSpecificUpdate("2.0.0".v))
     )
   }
@@ -104,7 +104,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     val update = ("net.sourceforge.plantuml".g % "plantuml".a % "1.2019.11" %>
       Nel.of("7726", "8020", "2017.09", "1.2019.12")).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSpecificUpdate("1.2019.12".v))
     )
   }
@@ -112,7 +112,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
   test("localFilter: update to pre-releases of a different series") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Left(NoSuitableNextVersion(update))
     )
   }
@@ -127,7 +127,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
     val expected = Right(update.asSpecificUpdate("2.0.1-M3".v))
     assertEquals(
-      localFilter(update, configWithAllowed, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, configWithAllowed, currentTime, cooldownExempt = None),
       expected
     )
   }
@@ -182,7 +182,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ).some
     )
     val expected = Right(update.asSpecificUpdate("2.13.7".v))
-    assertEquals(localFilter(update, config, currentTime, cooldownExempt = Set.empty), expected)
+    assertEquals(localFilter(update, config, currentTime, cooldownExempt = None), expected)
   }
 
   test("ignore update via config updates.pin") {
@@ -287,7 +287,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ).some
     )
 
-    val filtered = localFilter(update, config, currentTime, cooldownExempt = Set.empty)
+    val filtered = localFilter(update, config, currentTime, cooldownExempt = None)
     assertEquals(filtered, Right(update.asSpecificUpdate("7.3.0.jre8".v)))
   }
 
@@ -307,7 +307,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ).some
     )
 
-    val filtered = localFilter(update, config, currentTime, cooldownExempt = Set.empty)
+    val filtered = localFilter(update, config, currentTime, cooldownExempt = None)
     assertEquals(filtered, Right(update.asSpecificUpdate("7.3.0.jre8".v)))
   }
 
@@ -329,7 +329,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     )
 
     assertEquals(
-      localFilter(update, config, currentTime, cooldownExempt = Set.empty),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Left(VersionPinnedByConfig(update))
     )
   }
@@ -342,7 +342,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     )
     val obtained =
       repoConfig.flatMap(
-        localFilter(update, _, currentTime, cooldownExempt = Set.empty).leftMap(_.show)
+        localFilter(update, _, currentTime, cooldownExempt = None).leftMap(_.show)
       )
     assertEquals(obtained.map(_.nextVersion), Right("7.3.0".v))
   }
@@ -462,7 +462,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         Some(Timestamp(8))
       )).single
     assertEquals(
-      FilterAlg.localFilter(update1, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(update1, config, Timestamp(10), cooldownExempt = None),
       Left(TooRecentForCooldown(update1))
     )
 
@@ -472,7 +472,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       Some(Timestamp(3))
     )).single
     assertEquals(
-      FilterAlg.localFilter(update2, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(update2, config, Timestamp(10), cooldownExempt = None),
       Right(update2.asSoleUpdate)
     )
 
@@ -480,7 +480,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       update1.newerVersionsWithFirstSeen.concatNel(update2.newerVersionsWithFirstSeen)
     )
     assertEquals(
-      FilterAlg.localFilter(update3, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(update3, config, Timestamp(10), cooldownExempt = None),
       Right(update2.asSoleUpdate)
     )
   }
@@ -502,7 +502,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(internalUpdate, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(internalUpdate, config, Timestamp(10), cooldownExempt = None),
       Right(internalUpdate.asSoleUpdate)
     )
 
@@ -512,7 +512,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(externalUpdate, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(externalUpdate, config, Timestamp(10), cooldownExempt = None),
       Left(TooRecentForCooldown(externalUpdate))
     )
   }
@@ -534,7 +534,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(internalUpdate, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(internalUpdate, config, Timestamp(10), cooldownExempt = None),
       Right(internalUpdate.asSoleUpdate)
     )
 
@@ -544,7 +544,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(externalUpdate, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(externalUpdate, config, Timestamp(10), cooldownExempt = None),
       Left(TooRecentForCooldown(externalUpdate))
     )
   }
@@ -556,13 +556,13 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
     val ignored = ("com.example.widgets".g % "widgets".a % "1.0.0" %> Nel.of("1.0.1")).single
     assertEquals(
-      FilterAlg.localFilter(ignored, config, currentTime, cooldownExempt = Set.empty),
+      FilterAlg.localFilter(ignored, config, currentTime, cooldownExempt = None),
       Left(IgnoredByConfig(ignored))
     )
 
     val notIgnored = ("com.example".g % "widgets".a % "1.0.0" %> Nel.of("1.0.1")).single
     assertEquals(
-      FilterAlg.localFilter(notIgnored, config, currentTime, cooldownExempt = Set.empty),
+      FilterAlg.localFilter(notIgnored, config, currentTime, cooldownExempt = None),
       Right(notIgnored.asSpecificUpdate("1.0.1".v))
     )
   }
@@ -594,7 +594,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       )).single
 
     assertEquals(
-      FilterAlg.localFilter(update, config, Timestamp(10), cooldownExempt = Set.empty),
+      FilterAlg.localFilter(update, config, Timestamp(10), cooldownExempt = None),
       Right(expected.asSoleUpdate)
     )
   }
@@ -699,7 +699,31 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     assertEquals(obtainedState.trace, Vector(refinedTooRecent))
   }
 
-  test("cooldown is skipped only for the lowest version that fixes a vulnerability") {
+  test("cooldown is skipped for the version that fixes the most vulnerabilities") {
+    val update = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1", "1.0.2")).single
+    val state = osvState(
+      Ok(json"""{
+        "results": [
+          { "vulns": [{ "id": "GHSA-1" }, { "id": "GHSA-2" }] },
+          { "vulns": [{ "id": "GHSA-2" }] },
+          {}
+        ]
+      }"""),
+      osvQuery("1.0.0", "1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, update)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("1.0.2".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.2 (fixes GHSA-1, GHSA-2)")
+      )
+    )
+  }
+
+  test("cooldown is skipped for the lowest of equal vulnerability fixes") {
     val update = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1", "1.0.2")).single
     val state = osvState(
       Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}, {}] }"""),
@@ -710,6 +734,65 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       .runA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
+  }
+
+  private val updateWithOldFix = ArtifactUpdateCandidates(
+    ArtifactForUpdate(CrossDependency("eu.timepit".g % "refined".a % "1.0.0")),
+    Nel.of(VersionWithFirstSeen("1.0.1".v, Some(Timestamp(0))), "1.0.2".vfs)
+  )
+
+  test("cooldown is not skipped when the version out of cooldown already fixes it") {
+    val state = osvState(
+      Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}, {}] }"""),
+      osvQuery("1.0.0", "1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, updateWithOldFix)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.1".v)))
+    assertEquals(
+      obtainedState.trace.collect { case Log((_, message)) => message },
+      Vector(
+        "Query OSV for eu.timepit:refined:1.0.0, eu.timepit:refined:1.0.1, eu.timepit:refined:1.0.2"
+      )
+    )
+  }
+
+  test("cooldown is skipped when the version out of cooldown is still affected") {
+    val state = osvState(
+      Ok(json"""{
+        "results": [{ "vulns": [{ "id": "GHSA-1" }] }, { "vulns": [{ "id": "GHSA-1" }] }, {}]
+      }"""),
+      osvQuery("1.0.0", "1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, updateWithOldFix)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.2".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.2 (fixes GHSA-1)")
+      )
+    )
+  }
+
+  test("cooldown is skipped when the version out of cooldown introduces a vulnerability") {
+    val state = osvState(
+      Ok(json"""{ "results": [{}, { "vulns": [{ "id": "GHSA-1" }] }, {}] }"""),
+      osvQuery("1.0.0", "1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, updateWithOldFix)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.2".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.2 (fixes GHSA-1)")
+      )
+    )
   }
 
   test("cooldown is not skipped for a fix that would not be selected") {
