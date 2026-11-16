@@ -185,7 +185,7 @@ object Context {
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val forgeCfg: ForgeCfg = config.forgeCfg
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
-      implicit val osvAlg: OsvAlg[F] = new OsvAlg[F]
+      implicit val osvAlg: OsvAlg[F] = new OsvAlg[F](config.osvApiHost)
       implicit val osvCache: OsvCache[F] =
         new OsvCache[F](config.cacheTtl, osvIdsStore, osvVulnerabilityStore)
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F](config.enableVulnerabilityCheck)

@@ -65,7 +65,8 @@ final case class Config(
     defaultResolvers: List[Resolver],
     refreshBackoffPeriod: FiniteDuration,
     exitCodePolicy: ExitCodePolicy,
-    enableVulnerabilityCheck: Boolean
+    enableVulnerabilityCheck: Boolean,
+    osvApiHost: Uri
 ) {
   def forgeSpecificCfg: ForgeSpecificCfg =
     forgeCfg.tpe match {

@@ -244,6 +244,13 @@ class CliTest extends FunSuite {
   test("parseArgs: vulnerability check disabled by default") {
     val Success(Usage.Regular(obtained)) = Cli.parseArgs(minimumRequiredParams.flatten): @unchecked
     assert(!obtained.enableVulnerabilityCheck)
+    assertEquals(obtained.osvApiHost, uri"https://api.osv.dev")
+  }
+
+  test("parseArgs: --osv-api-host") {
+    val params = minimumRequiredParams ++ List(List("--osv-api-host", "https://osv.example.com"))
+    val Success(Usage.Regular(obtained)) = Cli.parseArgs(params.flatten): @unchecked
+    assertEquals(obtained.osvApiHost, uri"https://osv.example.com")
   }
 
   test("parseArgs: exit code policy: default") {
