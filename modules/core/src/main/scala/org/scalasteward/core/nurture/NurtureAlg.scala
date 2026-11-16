@@ -41,7 +41,11 @@ import org.scalasteward.core.repoconfig.{
 import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
-import org.scalasteward.core.vulnerability.{OsvCache, Vulnerability}
+import org.scalasteward.core.vulnerability.{
+  ArtifactVulnerabilities,
+  OsvCache,
+  RemainingVulnerability
+}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
@@ -206,19 +210,14 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
     for {
       single <- update.asSingleUpdates
       artifact <- single.artifactsForUpdate.toList
-      current <- artifact.crossDependency.dependencies.toList
-    } yield current -> current.copy(
-      groupId = artifact.newerGroupId.getOrElse(current.groupId),
-      artifactId = artifact.newerArtifactId
-        .fold(current.artifactId)(UpdateAlg.migrateArtifactId(current.artifactId, _)),
-      version = single.nextVersion
-    )
+      pair <- UpdateAlg.dependencyPairs(artifact, single.nextVersion)
+    } yield pair
 
-  /** Returns advisories fixed by the update, keyed by group ID and artifact name. */
-  private[nurture] def fixedVulnerabilities(
+  /** Returns advisories fixed or left by the update, keyed by group ID and artifact name. */
+  private[nurture] def vulnerabilities(
       update: Update,
       vulnerabilityCheck: VulnerabilityCheckConfig
-  ): F[Map[(GroupId, String), List[Vulnerability]]] =
+  ): F[Map[(GroupId, String), ArtifactVulnerabilities]] =
     if (!enableVulnerabilityCheck) F.pure(Map.empty)
     else {
       val dependencyPairs = dependencyPairsWithMigrations(update).filterNot {
@@ -228,39 +227,33 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
       if (dependencyPairs.isEmpty) F.pure(Map.empty)
       else
         logger.attemptWarn
-          .log("Vulnerability check failed")(queryFixedVulnerabilities(dependencyPairs))
+          .log("Vulnerability check failed")(queryVulnerabilities(dependencyPairs))
           .map(_.getOrElse(Map.empty))
     }
 
-  private def queryFixedVulnerabilities(
+  private def queryVulnerabilities(
       dependencyPairs: List[(Dependency, Dependency)]
-  ): F[Map[(GroupId, String), List[Vulnerability]]] = {
+  ): F[Map[(GroupId, String), ArtifactVulnerabilities]] = {
     val dependencies =
       dependencyPairs.flatMap { case (current, next) => List(current, next) }.distinct
     for {
-      dependencyToIds <- osvCache.vulnerabilityIds(dependencies)
-      fixedIds = fixedIdsByArtifact(dependencyPairs, dependencyToIds)
-      idToVulnerability <- fixedIds.values.toList.flatten.distinct
+      idsOf <- osvCache.vulnerabilityIds(dependencies).map(_.withDefaultValue(Set.empty))
+      // Fixed and remaining advisories both affect the current version.
+      currentIds = dependencyPairs.flatMap { case (current, _) => idsOf(current) }.distinct
+      idToVulnerability <- currentIds
         .traverse(id => osvCache.vulnerability(id).tupleLeft(id))
         .map(_.toMap)
-    } yield fixedIds.map { case (artifact, ids) =>
-      artifact -> ids.toList.sorted.flatMap(idToVulnerability.get)
-    }
-  }
-
-  private def fixedIdsByArtifact(
-      dependencyPairs: List[(Dependency, Dependency)],
-      dependencyToIds: Map[Dependency, Set[String]]
-  ): Map[(GroupId, String), Set[String]] = {
-    def idsOf(dependency: Dependency): Set[String] =
-      dependencyToIds.getOrElse(dependency, Set.empty)
-
-    dependencyPairs
+    } yield dependencyPairs
       .map { case (current, next) =>
-        (current.groupId, current.artifactId.name) -> (idsOf(current) -- idsOf(next))
+        val (remainingIds, fixedIds) = idsOf(current).toList.sorted.partition(idsOf(next))
+        val fixed = fixedIds.flatMap(idToVulnerability.get)
+        val remaining = remainingIds.flatMap(idToVulnerability.get).map { vulnerability =>
+          RemainingVulnerability(vulnerability, vulnerability.fixedIn(next))
+        }
+        (current.groupId, current.artifactId.name) -> ArtifactVulnerabilities(fixed, remaining)
       }
-      .filter { case (_, fixedIds) => fixedIds.nonEmpty }
-      // Cross-built artifacts share a key, so their fixed IDs are merged.
+      .filterNot { case (_, vulnerabilities) => vulnerabilities.isEmpty }
+      // Cross-built artifacts share a key, so their advisories are merged.
       .groupMapReduce(_._1)(_._2)(_ ++ _)
   }
 
@@ -300,7 +293,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg, enableVulnerabilityCheck: Boolean
           .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
-      vulnerabilitiesByArtifact <- fixedVulnerabilities(
+      vulnerabilitiesByArtifact <- vulnerabilities(
         filterUpdateWithEditAttempts(data.update, edits),
         data.repoConfig.vulnerabilityCheckOrDefault
       )

@@ -68,6 +68,7 @@ class RepoConfigAlgTest extends FunSuite {
          |  {
          |    pullRequests.frequency = "@daily",
          |    cooldown.minimumAge = "1 day",
+         |    cooldown.skipForVulnerabilityCheck = false,
          |    dependency = { groupId = "eu.timepit" }
          |  },
          |  { pullRequests.frequency = "@monthly", dependency = { groupId = "eu.timepit", artifactId = "refined.1" } },
@@ -160,7 +161,7 @@ class RepoConfigAlgTest extends FunSuite {
       dependencyOverrides = List(
         GroupRepoConfig(
           dependency = UpdatePattern(GroupId("eu.timepit"), None, None),
-          cooldown = Some(CooldownConfig(1.day)),
+          cooldown = Some(CooldownConfig(1.day, skipForVulnerabilityCheck = Some(false))),
           pullRequests = PullRequestsConfig(
             frequency = Some(PullRequestFrequency.Timespan(1.day))
           )

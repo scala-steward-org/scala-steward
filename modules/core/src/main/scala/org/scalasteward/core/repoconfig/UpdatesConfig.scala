@@ -24,7 +24,7 @@ import io.circe.refined.*
 import io.circe.{Codec, Decoder}
 import org.scalasteward.core.buildtool.{gradle, maven, mill, sbt}
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
-import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId}
+import org.scalasteward.core.data.{ArtifactUpdateCandidates, GroupId, Version}
 import org.scalasteward.core.scalafmt
 import org.scalasteward.core.update.FilterAlg.*
 import org.scalasteward.core.util.{combineOptions, intellijThisImportIsUsed, Timestamp}
@@ -60,12 +60,32 @@ final case class UpdatesConfig(
   def keep(
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp,
-      dependencyOverrides: List[GroupRepoConfig]
+      dependencyOverrides: List[GroupRepoConfig],
+      cooldownExempt: Option[Version]
   ): FilterResult =
     isAllowed(update)
       .flatMap(isPinned)
       .flatMap(isIgnored)
-      .flatMap(isTooRecent(_, currentTime, dependencyOverrides))
+      .flatMap(isTooRecent(_, currentTime, dependencyOverrides, cooldownExempt))
+
+  def versionsInCooldown(
+      update: ArtifactUpdateCandidates,
+      currentTime: Timestamp,
+      dependencyOverrides: List[GroupRepoConfig]
+  ): List[Version] =
+    isAllowed(update)
+      .flatMap(isPinned)
+      .flatMap(isIgnored)
+      .toList
+      .flatMap { allowed =>
+        allowed.newerVersionsWithFirstSeen.toList.filter { versionWithFirstSeen =>
+          cooldownFor(versionWithFirstSeen, allowed, dependencyOverrides).exists { config =>
+            config.skipForVulnerabilityCheckOrDefault &&
+            !versionWithFirstSeen.isOlderThan(config.minimumAge, currentTime)
+          }
+        }
+      }
+      .map(_.version)
 
   def preRelease(update: ArtifactUpdateCandidates): FilterResult =
     isAllowedPreReleases(update)
@@ -98,11 +118,12 @@ final case class UpdatesConfig(
   private def isTooRecent(
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp,
-      dependencyOverrides: List[GroupRepoConfig]
+      dependencyOverrides: List[GroupRepoConfig],
+      cooldownExempt: Option[Version]
   ): FilterResult =
     update
       .filterVersionsWithFirstSeen(
-        keepVersionForCooldown(_, update, currentTime, dependencyOverrides)
+        keepVersionForCooldown(_, update, currentTime, dependencyOverrides, cooldownExempt)
       )
       .toRight(TooRecentForCooldown(update))
 
@@ -110,10 +131,12 @@ final case class UpdatesConfig(
       versionWithFirstSeen: VersionWithFirstSeen,
       update: ArtifactUpdateCandidates,
       currentTime: Timestamp,
-      dependencyOverrides: List[GroupRepoConfig]
+      dependencyOverrides: List[GroupRepoConfig],
+      cooldownExempt: Option[Version]
   ): Boolean =
-    cooldownFor(versionWithFirstSeen, update, dependencyOverrides)
-      .forall(config => versionWithFirstSeen.isOlderThan(config.minimumAge, currentTime))
+    cooldownExempt.contains(versionWithFirstSeen.version) ||
+      cooldownFor(versionWithFirstSeen, update, dependencyOverrides)
+        .forall(config => versionWithFirstSeen.isOlderThan(config.minimumAge, currentTime))
 
   private def cooldownFor(
       versionWithFirstSeen: VersionWithFirstSeen,

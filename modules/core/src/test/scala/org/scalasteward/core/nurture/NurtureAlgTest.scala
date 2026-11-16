@@ -47,7 +47,12 @@ import org.scalasteward.core.repoconfig.{
   RepoConfig,
   VulnerabilityCheckConfig
 }
-import org.scalasteward.core.vulnerability.{ClearOsvCache, Vulnerability}
+import org.scalasteward.core.vulnerability.{
+  ArtifactVulnerabilities,
+  ClearOsvCache,
+  RemainingVulnerability,
+  Vulnerability
+}
 
 class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearOsvCache {
   test("preparePullRequest") {
@@ -372,7 +377,7 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
 
   private val akkaHttpCoreKey = ("com.typesafe.akka".g, "akka-http-core")
 
-  private val noVulnerabilities = Map.empty[(GroupId, String), List[Vulnerability]]
+  private val noVulnerabilities = Map.empty[(GroupId, String), ArtifactVulnerabilities]
 
   private val fixedVulnerability = Vulnerability(
     id = "GHSA-3hw2-h67c-wq66",
@@ -380,6 +385,17 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
     aliases = List("CVE-2021-42697"),
     severity = Some("HIGH")
   )
+
+  private val remainingVulnerability = Vulnerability(
+    id = "GHSA-qppj-fm5r-hxr3",
+    summary = Some("HTTP/2 Stream Cancellation Attack"),
+    aliases = Nil,
+    severity = None,
+    fixedVersions = Map("com.typesafe.akka:akka-http-core_2.13" -> List("10.2.11".v, "10.5.3".v))
+  )
+
+  private val remainingAfterAkkaHttpCoreUpdate =
+    RemainingVulnerability(remainingVulnerability, Some("10.2.11".v))
 
   private val akkaHttpCoreUpdate = (akkaHttpCore %> "10.2.10").single
 
@@ -408,18 +424,36 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
           "aliases": ["CVE-2021-42697"],
           "database_specific": { "severity": "HIGH" }
         }""")
+      case GET -> Root / "v1" / "vulns" / "GHSA-qppj-fm5r-hxr3" =>
+        Ok(json"""{
+          "id": "GHSA-qppj-fm5r-hxr3",
+          "summary": "HTTP/2 Stream Cancellation Attack",
+          "affected": [
+            {
+              "package": { "name": "com.typesafe.akka:akka-http-core_2.13" },
+              "ranges": [
+                { "type": "ECOSYSTEM", "events": [{ "introduced": "0" }, { "fixed": "10.2.11" }] },
+                { "type": "ECOSYSTEM", "events": [{ "introduced": "10.4.0" }, { "fixed": "10.5.3" }] }
+              ]
+            }
+          ]
+        }""")
       case _ => NotFound()
     })
 
-  test("fixedVulnerabilities: advisory fixed by the next version") {
+  test("vulnerabilities: advisory fixed by the next version") {
     val state = osvState(Ok(json"""{
       "results": [
         { "vulns": [{ "id": "GHSA-3hw2-h67c-wq66" }, { "id": "GHSA-qppj-fm5r-hxr3" }] },
         { "vulns": [{ "id": "GHSA-qppj-fm5r-hxr3" }] }
       ]
     }"""))
-    val obtained = vulnerabilityCheckAlg.fixedVulnerabilities(akkaHttpCoreUpdate, noExclusions)
-    assertIO(obtained.runA(state), Map(akkaHttpCoreKey -> List(fixedVulnerability)))
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(akkaHttpCoreUpdate, noExclusions)
+    val expected = ArtifactVulnerabilities(
+      fixed = List(fixedVulnerability),
+      remaining = List(remainingAfterAkkaHttpCoreUpdate)
+    )
+    assertIO(obtained.runA(state), Map(akkaHttpCoreKey -> expected))
   }
 
   private val pekkoMigrationQuery = json"""{
@@ -438,16 +472,17 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
   private val pekkoMigrationUpdate = (akkaHttpCore %> "1.0.1").single
     .migration("org.apache.pekko".g.some, "pekko-http-core".some)
 
-  test("fixedVulnerabilities: artifact migration queries the new artifact") {
+  test("vulnerabilities: artifact migration queries the new artifact") {
     val state = osvState(
       Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-3hw2-h67c-wq66" }] }, {}] }"""),
       pekkoMigrationQuery
     )
-    val obtained = vulnerabilityCheckAlg.fixedVulnerabilities(pekkoMigrationUpdate, noExclusions)
-    assertIO(obtained.runA(state), Map(akkaHttpCoreKey -> List(fixedVulnerability)))
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(pekkoMigrationUpdate, noExclusions)
+    val expected = ArtifactVulnerabilities(List(fixedVulnerability), Nil)
+    assertIO(obtained.runA(state), Map(akkaHttpCoreKey -> expected))
   }
 
-  test("fixedVulnerabilities: artifact migration to an affected artifact fixes nothing") {
+  test("vulnerabilities: artifact migration to an affected artifact is still affected") {
     val state = osvState(
       Ok(json"""{
         "results": [
@@ -457,8 +492,10 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
       }"""),
       pekkoMigrationQuery
     )
-    val obtained = vulnerabilityCheckAlg.fixedVulnerabilities(pekkoMigrationUpdate, noExclusions)
-    assertIO(obtained.runA(state), noVulnerabilities)
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(pekkoMigrationUpdate, noExclusions)
+    val expected =
+      ArtifactVulnerabilities(Nil, List(RemainingVulnerability(fixedVulnerability, None)))
+    assertIO(obtained.runA(state), Map(akkaHttpCoreKey -> expected))
   }
 
   test("preparePullRequest with a fixed vulnerability") {
@@ -471,8 +508,29 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
       assert(clue(obtained.labels).contains("security-fix"))
       assert(
         clue(obtained.body).contains(
-          """|⚠️ Fixes vulnerabilities:
+          """|🔒 Fixes vulnerabilities:
              |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP
+             |""".stripMargin
+        )
+      )
+    }
+  }
+
+  test("preparePullRequest with a remaining vulnerability") {
+    val state = osvState(Ok(json"""{
+      "results": [
+        { "vulns": [{ "id": "GHSA-qppj-fm5r-hxr3" }] },
+        { "vulns": [{ "id": "GHSA-qppj-fm5r-hxr3" }] }
+      ]
+    }"""))
+    val updateData = vulnerabilityUpdateData(akkaHttpCoreUpdate)
+    val edits = List(UpdateEdit(updateData.update.asSingleUpdates.head, Commit(dummySha1)))
+    vulnerabilityCheckAlg.preparePullRequest(updateData, edits).runA(state).map { obtained =>
+      assert(!clue(obtained.labels).contains("security-fix"))
+      assert(
+        clue(obtained.body).contains(
+          """|⚠️ Still affected after this update:
+             |  * [GHSA-qppj-fm5r-hxr3](https://osv.dev/vulnerability/GHSA-qppj-fm5r-hxr3): HTTP/2 Stream Cancellation Attack (fixed in `10.2.11`)
              |""".stripMargin
         )
       )
@@ -510,37 +568,44 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
     }
   }
 
-  test("fixedVulnerabilities: none fixed") {
+  test("vulnerabilities: none fixed") {
     val state = osvState(Ok(json"""{
       "results": [
         { "vulns": [{ "id": "GHSA-qppj-fm5r-hxr3" }] },
         { "vulns": [{ "id": "GHSA-qppj-fm5r-hxr3" }] }
       ]
     }"""))
-    val obtained = vulnerabilityCheckAlg.fixedVulnerabilities(akkaHttpCoreUpdate, noExclusions)
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(akkaHttpCoreUpdate, noExclusions)
+    val expected = ArtifactVulnerabilities(Nil, List(remainingAfterAkkaHttpCoreUpdate))
+    assertIO(obtained.runA(state), Map(akkaHttpCoreKey -> expected))
+  }
+
+  test("vulnerabilities: none affected") {
+    val state = osvState(Ok(json"""{ "results": [{}, {}] }"""))
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(akkaHttpCoreUpdate, noExclusions)
     assertIO(obtained.runA(state), noVulnerabilities)
   }
 
-  test("fixedVulnerabilities: excluded artifact is not sent") {
+  test("vulnerabilities: excluded artifact is not sent") {
     val exclusions =
       VulnerabilityCheckConfig(Some(List(ArtifactPattern("com.typesafe.*".g, None))))
-    val obtained = vulnerabilityCheckAlg.fixedVulnerabilities(akkaHttpCoreUpdate, exclusions)
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(akkaHttpCoreUpdate, exclusions)
     obtained.runSA(osvState(InternalServerError())).map { case (state, result) =>
       assertEquals(result, noVulnerabilities)
       assertEquals(state.trace, Vector.empty)
     }
   }
 
-  test("fixedVulnerabilities: disabled by flag") {
-    val obtained = context.nurtureAlg.fixedVulnerabilities(akkaHttpCoreUpdate, noExclusions)
+  test("vulnerabilities: disabled by flag") {
+    val obtained = context.nurtureAlg.vulnerabilities(akkaHttpCoreUpdate, noExclusions)
     obtained.runSA(osvState(InternalServerError())).map { case (state, result) =>
       assertEquals(result, noVulnerabilities)
       assertEquals(state.trace, Vector.empty)
     }
   }
 
-  test("fixedVulnerabilities: OSV failure is logged and ignored") {
-    val obtained = vulnerabilityCheckAlg.fixedVulnerabilities(akkaHttpCoreUpdate, noExclusions)
+  test("vulnerabilities: OSV failure is logged and ignored") {
+    val obtained = vulnerabilityCheckAlg.vulnerabilities(akkaHttpCoreUpdate, noExclusions)
     obtained.runSA(osvState(InternalServerError())).map { case (state, result) =>
       assertEquals(result, noVulnerabilities)
       assert(state.trace.exists {

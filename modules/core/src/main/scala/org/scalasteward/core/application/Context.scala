@@ -176,7 +176,6 @@ object Context {
       implicit val urlChecker: UrlChecker[F] = urlChecker0
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](maybeGlobalRepoConfig)
-      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config)
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
@@ -189,6 +188,7 @@ object Context {
       implicit val osvAlg: OsvAlg[F] = new OsvAlg[F]
       implicit val osvCache: OsvCache[F] =
         new OsvCache[F](config.cacheTtl, osvIdsStore, osvVulnerabilityStore)
+      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F](config.enableVulnerabilityCheck)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val pullRequestService: PullRequestService[F] =

@@ -29,7 +29,11 @@ import org.scalasteward.core.git.{Branch, Commit}
 import org.scalasteward.core.nurture.UpdateInfoUrl
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.util.Nel
-import org.scalasteward.core.vulnerability.Vulnerability
+import org.scalasteward.core.vulnerability.{
+  ArtifactVulnerabilities,
+  RemainingVulnerability,
+  Vulnerability
+}
 
 class NewPullRequestDataTest extends FunSuite {
   test("bodyFor()") {
@@ -615,9 +619,12 @@ class NewPullRequestDataTest extends FunSuite {
     severity = Some("HIGH")
   )
 
+  private def fixes(vulnerability: Vulnerability): ArtifactVulnerabilities =
+    ArtifactVulnerabilities(List(vulnerability), Nil)
+
   private def aboutThisPr(
       update: Update,
-      vulnerabilitiesByArtifact: Map[(GroupId, String), List[Vulnerability]]
+      vulnerabilitiesByArtifact: Map[(GroupId, String), ArtifactVulnerabilities]
   ): String = {
     val edits = update.asSingleUpdates.map(UpdateEdit(_, Commit(dummySha1)))
     val body = bodyFor(
@@ -643,7 +650,7 @@ class NewPullRequestDataTest extends FunSuite {
       ("com.typesafe.akka".g % "akka-http-core".a % "10.1.10" %> "10.2.10").single
     val obtained = aboutThisPr(
       update,
-      Map(("com.typesafe.akka".g, "akka-http-core") -> List(akkaHttpVulnerability))
+      Map(("com.typesafe.akka".g, "akka-http-core") -> fixes(akkaHttpVulnerability))
     )
     val expected =
       """|## About this PR
@@ -651,8 +658,36 @@ class NewPullRequestDataTest extends FunSuite {
          |
          |📜 [Version Diff](https://github.com/akka/akka-http/compare/v1...v2)
          |
-         |⚠️ Fixes vulnerabilities:
+         |🔒 Fixes vulnerabilities:
          |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP""".stripMargin
+    assertEquals(obtained, expected)
+  }
+
+  test("bodyFor() single update with remaining vulnerabilities") {
+    val update =
+      ("com.typesafe.akka".g % "akka-http-core".a % "10.1.10" %> "10.2.10").single
+    val withoutFix = akkaHttpVulnerability.copy(id = "GHSA-2", aliases = Nil, severity = None)
+    val vulnerabilities = ArtifactVulnerabilities(
+      fixed = List(akkaHttpVulnerability),
+      remaining = List(
+        RemainingVulnerability(withoutFix, Some("11.0.0".v)),
+        RemainingVulnerability(withoutFix.copy(id = "GHSA-3", summary = None), None)
+      )
+    )
+    val obtained =
+      aboutThisPr(update, Map(("com.typesafe.akka".g, "akka-http-core") -> vulnerabilities))
+    val expected =
+      """|## About this PR
+         |📦 Updates com.typesafe.akka:akka-http-core from `10.1.10` to `10.2.10`
+         |
+         |📜 [Version Diff](https://github.com/akka/akka-http/compare/v1...v2)
+         |
+         |🔒 Fixes vulnerabilities:
+         |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP
+         |
+         |⚠️ Still affected after this update:
+         |  * [GHSA-2](https://osv.dev/vulnerability/GHSA-2): Uncontrolled Recursion in Akka HTTP (fixed in `11.0.0`)
+         |  * [GHSA-3](https://osv.dev/vulnerability/GHSA-3)""".stripMargin
     assertEquals(obtained, expected)
   }
 
@@ -676,10 +711,10 @@ class NewPullRequestDataTest extends FunSuite {
       ) % "10.1.10" %> "10.2.10").group
     val vulnerability = akkaHttpVulnerability.copy(summary = None, aliases = Nil, severity = None)
     val obtained =
-      aboutThisPr(update, Map(("com.typesafe.akka".g, "akka-http-core") -> List(vulnerability)))
+      aboutThisPr(update, Map(("com.typesafe.akka".g, "akka-http-core") -> fixes(vulnerability)))
     assert(
       clue(obtained).endsWith(
-        """|⚠️ Fixes vulnerabilities:
+        """|🔒 Fixes vulnerabilities:
            |  * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66)""".stripMargin
       )
     )
@@ -696,7 +731,7 @@ class NewPullRequestDataTest extends FunSuite {
     )
     val obtained = aboutThisPr(
       update,
-      Map(("com.typesafe.akka".g, "akka-http-core") -> List(akkaHttpVulnerability))
+      Map(("com.typesafe.akka".g, "akka-http-core") -> fixes(akkaHttpVulnerability))
     )
     val expected =
       """|## About this PR
@@ -704,7 +739,7 @@ class NewPullRequestDataTest extends FunSuite {
          |
          |* 📦 com.typesafe.akka:akka-http-core from `10.1.10` to `10.2.10`
          |  + 📜 [Version Diff](https://github.com/akka/akka-http/compare/v1...v2)
-         |  + ⚠️ Fixes vulnerabilities:
+         |  + 🔒 Fixes vulnerabilities:
          |    * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66) / CVE-2021-42697 (HIGH): Uncontrolled Recursion in Akka HTTP
          |* 📦 com.example:foo from `1.0.0` to `1.0.1`""".stripMargin
     assertEquals(obtained, expected)
@@ -720,14 +755,14 @@ class NewPullRequestDataTest extends FunSuite {
       )
     )
     val vulnerability = akkaHttpVulnerability.copy(summary = None, aliases = Nil, severity = None)
-    val obtained = aboutThisPr(update, Map(("org.b".g, "core") -> List(vulnerability)))
+    val obtained = aboutThisPr(update, Map(("org.b".g, "core") -> fixes(vulnerability)))
     val expected =
       """|## About this PR
          |Updates:
          |
          |* 📦 org.a:core from `1.0.0` to `1.0.1`
          |* 📦 org.b:core from `2.0.0` to `2.0.1`
-         |  + ⚠️ Fixes vulnerabilities:
+         |  + 🔒 Fixes vulnerabilities:
          |    * [GHSA-3hw2-h67c-wq66](https://osv.dev/vulnerability/GHSA-3hw2-h67c-wq66)""".stripMargin
     assertEquals(obtained, expected)
   }
@@ -999,8 +1034,13 @@ class NewPullRequestDataTest extends FunSuite {
     val update = ("a".g % "b".a % "1" -> "2").single
     val vulnerability = Vulnerability("GHSA-1", None, Nil, None)
     val obtained =
-      labelsFor(update, vulnerabilitiesByArtifact = Map(("a".g, "b") -> List(vulnerability)))
+      labelsFor(update, vulnerabilitiesByArtifact = Map(("a".g, "b") -> fixes(vulnerability)))
     assertEquals(obtained, List("library-update", "security-fix", "commit-count:0"))
+    val remaining = ArtifactVulnerabilities(Nil, List(RemainingVulnerability(vulnerability, None)))
+    assertEquals(
+      labelsFor(update, vulnerabilitiesByArtifact = Map(("a".g, "b") -> remaining)),
+      List("library-update", "commit-count:0")
+    )
     assertEquals(labelsFor(update), List("library-update", "commit-count:0"))
   }
 
