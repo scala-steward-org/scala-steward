@@ -252,7 +252,7 @@ dependencyOverrides = [
   }
 ]
 
-# The dependencies which match the given patterns are never sent to api.osv.dev
+# The dependencies which match the given patterns are never sent to the OSV API
 # when the instance runs with --enable-vulnerability-check.
 #
 # Each pattern must have `groupId`, and may have `artifactId` (without the Scala suffix).
