@@ -18,7 +18,7 @@ object Dependencies {
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.8.2"
   val decline = "com.monovore" %% "decline" % "2.6.2"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "2.0.0"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.14.0"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.15.0"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
   val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M49"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
