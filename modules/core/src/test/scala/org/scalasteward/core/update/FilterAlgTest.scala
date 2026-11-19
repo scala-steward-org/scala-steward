@@ -454,6 +454,16 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     )
   }
 
+  test("localFilter: LTS->Next with updates.allowScalaNext skips RCs") {
+    val update =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0", "3.11.0-RC1")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Right(update.asSpecificUpdate("3.10.0".v))
+    )
+  }
+
   test("localFilter: LTS->Next is ignored and suggests updates.allowScalaNext") {
     val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0")).single
     val (state, filtered) =
