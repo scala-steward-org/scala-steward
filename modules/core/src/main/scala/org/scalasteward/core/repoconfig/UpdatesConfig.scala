@@ -37,7 +37,8 @@ final case class UpdatesConfig(
     private val retracted: Option[List[RetractedArtifact]] = None,
     limit: Option[NonNegInt] = UpdatesConfig.defaultLimit,
     private val fileExtensions: Option[List[String]] = None,
-    private val cooldown: Option[CooldownConfig] = None
+    private val cooldown: Option[CooldownConfig] = None,
+    private val allowScalaNext: Option[Boolean] = None
 ) {
   private[repoconfig] def pinOrDefault: List[UpdatePattern] =
     pin.getOrElse(Nil)
@@ -53,6 +54,9 @@ final case class UpdatesConfig(
 
   def retractedOrDefault: List[RetractedArtifact] =
     retracted.getOrElse(Nil)
+
+  def allowScalaNextOrDefault: Boolean =
+    allowScalaNext.getOrElse(false)
 
   def fileExtensionsOrDefault: Set[String] =
     fileExtensions.fold(UpdatesConfig.defaultFileExtensions)(_.toSet)
@@ -197,7 +201,8 @@ object UpdatesConfig {
           retracted = x.retracted |+| y.retracted,
           limit = x.limit.orElse(y.limit),
           fileExtensions = mergeFileExtensions(x.fileExtensions, y.fileExtensions),
-          cooldown = mergeCooldown(x.cooldown, y.cooldown)
+          cooldown = mergeCooldown(x.cooldown, y.cooldown),
+          allowScalaNext = y.allowScalaNext.orElse(x.allowScalaNext)
         )
     )
 

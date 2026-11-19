@@ -176,6 +176,11 @@ updates.retracted = [
 # Defaults to empty `[]` which mean Scala Steward will ignore all stable to pre-release update options.
 updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
 
+# If true, Scala Steward will also update projects on a Scala LTS version to Scala Next versions.
+# If false, projects on a Scala LTS version only get updates to other Scala LTS versions.
+# Default: false
+updates.allowScalaNext = true
+
 # If set, Scala Steward will only create or update `n` PRs each time it runs (see `pullRequests.frequency` above).
 # Useful if running frequently and/or CI build are costly
 # Default: ${UpdatesConfig.defaultLimit.asJson.noSpaces}
