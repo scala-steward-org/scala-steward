@@ -40,7 +40,7 @@ final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
       resolvers: List[Resolver]
   ): F[Option[Update.ForArtifactId]] = for {
     currentTime <- dateTimeAlg.currentTimestamp
-    scalaVersionLine <- findScalaVersionLines(update, resolvers)
+    scalaVersionLine <- findScalaVersionLines(config, update, resolvers)
     baseline = localFilter(update, config, currentTime, cooldownExempt = None, scalaVersionLine)
     vulnerabilityFix <-
       vulnerabilityFixInCooldown(config, update, currentTime, baseline.toOption, scalaVersionLine)
@@ -53,6 +53,7 @@ final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
 
   // Scala releases a whole series as LTS or Next, so one POM per series is enough.
   private def findScalaVersionLines(
+      config: RepoConfig,
       update: ArtifactUpdateCandidates,
       resolvers: List[Resolver]
   ): F[Version => Option[ScalaVersionLine]] = {
@@ -70,7 +71,10 @@ final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
         }
       }
 
-    if (!isScala3Lang(update) || !current.value.startsWith("3.") || versionsBySeries.sizeIs <= 1)
+    if (
+      !isScala3Lang(update) || !current.value.startsWith("3.") || versionsBySeries.sizeIs <= 1 ||
+      config.updatesOrDefault.allowScalaNextOrDefault
+    )
       F.pure(unknownScalaVersionLine)
     else
       findLine(currentSeries).flatMap {

@@ -543,6 +543,16 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     )
   }
 
+  test("localFilterSingle: no POM lookups with updates.allowScalaNext") {
+    // A lookup of this POM would fail and leave a debug log.
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.0" %> Nel.of("3.10.0")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    val (state, filtered) =
+      filterAlg.localFilterSingle(config, update, resolvers).runSA(MockState.empty).unsafeRunSync()
+    assertEquals(filtered, Some(update.asSpecificUpdate("3.10.0".v)))
+    assertEquals(state.trace, Vector.empty)
+  }
+
   test("localFilter: LTS->Next is ignored and suggests updates.allowScalaNext") {
     val update =
       ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
