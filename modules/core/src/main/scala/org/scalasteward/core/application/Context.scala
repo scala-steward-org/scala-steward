@@ -188,6 +188,7 @@ object Context {
       implicit val osvAlg: OsvAlg[F] = new OsvAlg[F](config.osvApiHost)
       implicit val osvCache: OsvCache[F] =
         new OsvCache[F](config.cacheTtl, osvIdsStore, osvVulnerabilityStore)
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val filterAlg: FilterAlg[F] = new FilterAlg[F](config.enableVulnerabilityCheck)
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
@@ -196,7 +197,6 @@ object Context {
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolvers)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]

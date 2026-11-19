@@ -40,10 +40,10 @@ final class UpdateAlg[F[_]](implicit
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.ForArtifactId]] =
     findUpdateWithoutMigration(dependency, maxAge)
-      .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
+      .flatMapF(filterAlg.localFilterSingle(repoConfig, _, dependency.resolvers))
       .orElse(
         findUpdateWithMigration(dependency, maxAge)
-          .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
+          .flatMapF(filterAlg.localFilterSingle(repoConfig, _, dependency.resolvers))
       )
       .value
 
