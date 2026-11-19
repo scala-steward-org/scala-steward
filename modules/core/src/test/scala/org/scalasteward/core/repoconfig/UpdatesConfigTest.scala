@@ -74,6 +74,19 @@ class UpdatesConfigTest extends DisciplineSuite {
     )
   }
 
+  test("combine: allowScalaNext prefers the repo config") {
+    def combine(global: Option[Boolean], repo: Option[Boolean]): Boolean = {
+      val merged = UpdatesConfig(allowScalaNext = global) |+| UpdatesConfig(allowScalaNext = repo)
+      merged.allowScalaNextOrDefault
+    }
+
+    assertEquals(combine(None, None), false)
+    assertEquals(combine(Some(true), None), true)
+    assertEquals(combine(None, Some(true)), true)
+    assertEquals(combine(Some(true), Some(false)), false)
+    assertEquals(combine(Some(false), Some(true)), true)
+  }
+
   test("mergeAllow: basic checks") {
     assertEquals(UpdatesConfig.mergeAllow(Nil.some, Nil.some), Nil.some)
     assertEquals(UpdatesConfig.mergeAllow(List(a00).some, Nil.some), List(a00).some)

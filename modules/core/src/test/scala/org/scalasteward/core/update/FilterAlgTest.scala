@@ -415,6 +415,70 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     assertEquals(scalaLTSFilter(update213_39), Left(NoSuitableNextVersion(update213_39)))
   }
 
+  test("scalaLTSFilter: LTS->Next with allowScalaNext") {
+    val update1 =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.3.3", "3.4.0")).single
+    assertEquals(scalaLTSFilter(update1, allowScalaNext = true), Right(update1))
+
+    val update2 =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.9.0" %> Nel.of("3.9.1", "3.10.0")).single
+    assertEquals(scalaLTSFilter(update2, allowScalaNext = true), Right(update2))
+  }
+
+  test("scalaLTSFilter: Next->Next with allowScalaNext") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
+        "3.4.1"
+      )).single
+    assertEquals(scalaLTSFilter(update, allowScalaNext = true), Right(update))
+  }
+
+  test("scalaLTSFilter: Scala 2 stays on Scala 2 with allowScalaNext") {
+    val update =
+      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.17" %> Nel.of(
+        "2.13.18",
+        "3.8.1"
+      )).single
+    assertEquals(
+      scalaLTSFilter(update, allowScalaNext = true),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("2.13.18").map(_.vfs)))
+    )
+  }
+
+  test("localFilter: LTS->Next with updates.allowScalaNext") {
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Right(update.asSpecificUpdate("3.10.0".v))
+    )
+  }
+
+  test("localFilter: LTS->Next with updates.allowScalaNext skips RCs") {
+    val update =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0", "3.11.0-RC1")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Right(update.asSpecificUpdate("3.10.0".v))
+    )
+  }
+
+  test("localFilter: LTS->Next is ignored and suggests updates.allowScalaNext") {
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0")).single
+    val (state, filtered) =
+      filterAlg.localFilterSingle(RepoConfig.empty, update).runSA(MockState.empty).unsafeRunSync()
+    assertEquals(filtered, None)
+    assertEquals(
+      state.trace,
+      Vector(
+        Log(
+          "Ignore org.scala-lang:scala3-compiler : 3.9.1 -> 3.10.0 (reason: not upgrading from Scala LTS to Next version; set updates.allowScalaNext = true to allow)"
+        )
+      )
+    )
+  }
+
   test("isScala3Lang: true") {
     val update33_24 =
       ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.3" %> Nel.of(

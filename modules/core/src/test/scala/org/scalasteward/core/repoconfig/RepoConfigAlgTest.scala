@@ -54,6 +54,7 @@ class RepoConfigAlgTest extends FunSuite {
          |               ]
          |updates.ignore = [ { groupId = "org.acme", version = "1.0" } ]
          |updates.allowPreReleases = [ { groupId = "eu.timepit" } ]
+         |updates.allowScalaNext = true
          |updates.limit = 4
          |updates.fileExtensions = [ ".txt" ]
          |pullRequests.frequency = "@weekly"
@@ -152,7 +153,8 @@ class RepoConfigAlgTest extends FunSuite {
         ignore = List(UpdatePattern("org.acme".g, None, Some(VersionPattern(Some("1.0"))))).some,
         allowPreReleases = List(UpdatePattern("eu.timepit".g, None, None)).some,
         limit = Some(NonNegInt.unsafeFrom(4)),
-        fileExtensions = Some(List(".txt"))
+        fileExtensions = Some(List(".txt")),
+        allowScalaNext = Some(true)
       ).some,
       commits = CommitsConfig(
         message = Some("Update ${artifactName} from ${currentVersion} to ${nextVersion}")

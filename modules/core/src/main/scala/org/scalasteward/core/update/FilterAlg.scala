@@ -136,8 +136,9 @@ object FilterAlg {
         case NotAllowedByConfig(_)      => "not allowed by config"
         case NoSuitableNextVersion(_)   => "no suitable next version"
         case VersionOrderingConflict(_) => "version ordering conflict"
-        case IgnoreScalaNext(_)         => "not upgrading from Scala LTS to Next version"
-        case TooRecentForCooldown(_)    => "too recent for cooldown config"
+        case IgnoreScalaNext(_)         =>
+          "not upgrading from Scala LTS to Next version; set updates.allowScalaNext = true to allow"
+        case TooRecentForCooldown(_) => "too recent for cooldown config"
       }
   }
 
@@ -157,13 +158,16 @@ object FilterAlg {
   ): Either[RejectionReason, Update.ForArtifactId] =
     repoConfig.updatesOrDefault
       .keep(update, currentTime, repoConfig.dependencyOverridesOrDefault, cooldownExempt)
-      .flatMap(scalaLTSFilter)
+      .flatMap(scalaLTSFilter(_, repoConfig.updatesOrDefault.allowScalaNextOrDefault))
       .flatMap(globalFilter(_, repoConfig))
 
   private def isScalaLtsVersion(version: Version): Boolean =
     version.value.startsWith("3.3.") || version.value.startsWith("3.9.")
 
-  def scalaLTSFilter(update: ArtifactUpdateCandidates): FilterResult =
+  def scalaLTSFilter(
+      update: ArtifactUpdateCandidates,
+      allowScalaNext: Boolean = false
+  ): FilterResult =
     if (isScala3Lang(update)) {
       if (
         update.artifactForUpdate.currentVersion.value.startsWith("3.") &&
@@ -174,6 +178,9 @@ object FilterAlg {
       } else if (update.artifactForUpdate.currentVersion.value.startsWith("2.")) {
         // no updates from Scala 2 to Scala 3; newer Scala 2 versions stay eligible
         update.filterVersions(_.value.startsWith("2.")).toRight(NoSuitableNextVersion(update))
+      } else if (allowScalaNext) {
+        // on Scala LTS, but opted in to Scala Next
+        Right(update)
       } else {
         // on Scala LTS (3.3.x or 3.9.x), stay on LTS versions
         update.filterVersions(isScalaLtsVersion).toRight(IgnoreScalaNext(update))
