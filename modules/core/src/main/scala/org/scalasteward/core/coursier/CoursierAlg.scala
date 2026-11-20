@@ -171,8 +171,14 @@ object CoursierAlg {
         .collectFirst { case (key, value) if key.equalsIgnoreCase("info.releaseNotesUrl") => value }
         .flatMap(uri.fromStringWithScheme),
       versionScheme = project.properties
-        .collectFirst { case (key, value) if key.equalsIgnoreCase("info.versionScheme") => value }
+        .collectFirst { case (key, value) if key.equalsIgnoreCase("info.versionScheme") => value },
+      scalaVersionLine = project.properties.collectFirst {
+        case (key, value) if scalaVersionLineKeys.exists(key.equalsIgnoreCase) => value
+      }
     )
+
+  // Scala 3.8.0 renamed scala.versionLine to info.scala.versionLine.
+  private val scalaVersionLineKeys = List("info.scala.versionLine", "scala.versionLine")
 
   private def parentOf(project: Project): Option[coursier.Dependency] =
     project.parent0.map { case (module, version) =>

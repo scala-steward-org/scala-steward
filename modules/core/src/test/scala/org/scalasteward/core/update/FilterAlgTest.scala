@@ -30,7 +30,9 @@ import org.scalasteward.core.data.{
   ArtifactForUpdate,
   ArtifactUpdateCandidates,
   CrossDependency,
-  GroupId
+  GroupId,
+  Resolver,
+  Version
 }
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
@@ -44,7 +46,20 @@ import scala.concurrent.duration.DurationInt
 
 class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache {
   private val config = RepoConfig.empty
+  private val resolvers = List(Resolver.mavenCentral)
   val currentTime = Timestamp(0)
+
+  // 3.15 is a made-up LTS series that no version prefix check knows.
+  private val scalaVersionLine: Version => Option[ScalaVersionLine] = version =>
+    Map(
+      "3.3" -> ScalaVersionLine.Lts,
+      "3.4" -> ScalaVersionLine.Next,
+      "3.7" -> ScalaVersionLine.Next,
+      "3.8" -> ScalaVersionLine.Next,
+      "3.9" -> ScalaVersionLine.Lts,
+      "3.10" -> ScalaVersionLine.Next,
+      "3.15" -> ScalaVersionLine.Lts
+    ).get(version.value.split('.').take(2).mkString("."))
 
   test("localFilter: SNAP -> SNAP") {
     val update =
@@ -149,7 +164,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     val update1 = ("eu.timepit".g % "refined".a % "0.8.0" %> Nel.of("0.8.1")).single
     val initialState1 = MockState.empty
     val (state1, filtered1) =
-      filterAlg.localFilterSingle(config, update1).runSA(initialState1).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update1, resolvers).runSA(initialState1).unsafeRunSync()
 
     assertEquals(filtered1, None)
     val expected1 = initialState1.copy(
@@ -161,7 +176,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     val update2 = ("eu.timepit".g % "refined".a % "0.9.0" %> Nel.of("0.9.1")).single
     val initialState2 = MockState.empty
     val (state2, filtered2) =
-      filterAlg.localFilterSingle(config, update2).runSA(initialState2).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update2, resolvers).runSA(initialState2).unsafeRunSync()
 
     assertEquals(filtered2, Some(update2.asSpecificUpdate("0.9.1".v)))
     assertEquals(state2, initialState2)
@@ -208,14 +223,14 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     )
 
     val filtered1 = filterAlg
-      .localFilterSingle(config, update1)
+      .localFilterSingle(config, update1, resolvers)
       .runA(MockState.empty)
       .unsafeRunSync()
 
     assertEquals(filtered1, None)
 
     val filtered2 = filterAlg
-      .localFilterSingle(config, update2)
+      .localFilterSingle(config, update2, resolvers)
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -224,7 +239,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     // pinning the version to 0.8, prevents updates to greater versions, too.
     // becasue the artifact is "pinned" to version with the "0.8." prefix
     val filtered3 = filterAlg
-      .localFilterSingle(config, update3)
+      .localFilterSingle(config, update3, resolvers)
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -255,7 +270,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
     included.foreach { update =>
       val filtered = filterAlg
-        .localFilterSingle(config, update)
+        .localFilterSingle(config, update, resolvers)
         .runA(MockState.empty)
         .unsafeRunSync()
 
@@ -263,7 +278,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     }
     notIncluded.foreach { update =>
       val filtered = filterAlg
-        .localFilterSingle(config, update)
+        .localFilterSingle(config, update, resolvers)
         .runA(MockState.empty)
         .unsafeRunSync()
 
@@ -359,10 +374,10 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
   test("scalaLTSFilter: LTS->Next, no update") {
     val update1 = ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.4.0")).single
-    assertEquals(scalaLTSFilter(update1), Left(IgnoreScalaNext(update1)))
+    assertEquals(scalaLTSFilter(update1, scalaVersionLine), Left(IgnoreScalaNext(update1)))
 
     val update2 = ("org.scala-lang".g % "scala3-compiler".a % "3.9.2" %> Nel.of("3.10.0")).single
-    assertEquals(scalaLTSFilter(update2), Left(IgnoreScalaNext(update2)))
+    assertEquals(scalaLTSFilter(update2, scalaVersionLine), Left(IgnoreScalaNext(update2)))
   }
 
   test("scalaLTSFilter: LTS->LTS, filter versions") {
@@ -373,8 +388,20 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         "3.9.0"
       )).single
     assertEquals(
-      scalaLTSFilter(update),
+      scalaLTSFilter(update, scalaVersionLine),
       Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.3.3", "3.9.0").map(_.vfs)))
+    )
+  }
+
+  test("scalaLTSFilter: LTS->LTS for a series without a version prefix check") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.2" %> Nel.of(
+        "3.10.0",
+        "3.15.0"
+      )).single
+    assertEquals(
+      scalaLTSFilter(update, scalaVersionLine),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.15.0").map(_.vfs)))
     )
   }
 
@@ -383,7 +410,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
         "3.4.1"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update))
+    assertEquals(scalaLTSFilter(update, scalaVersionLine), Right(update))
   }
 
   test("scalaLTSFilter: Next->LTS") {
@@ -391,7 +418,28 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.8.4" %> Nel.of(
         "3.9.0"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update))
+    assertEquals(scalaLTSFilter(update, scalaVersionLine), Right(update))
+  }
+
+  test("scalaLTSFilter: unknown lines stay in the current series") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.8.3" %> Nel.of(
+        "3.8.4",
+        "3.9.0",
+        "3.10.0"
+      )).single
+    assertEquals(
+      scalaLTSFilter(update, unknownScalaVersionLine),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.8.4").map(_.vfs)))
+    )
+  }
+
+  test("scalaLTSFilter: LTS does not move to a series with an unknown line") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
+        "3.11.0"
+      )).single
+    assertEquals(scalaLTSFilter(update, scalaVersionLine), Left(IgnoreScalaNext(update)))
   }
 
   test("scalaLTSFilter: Scala after 3.8.x (the return of scala-library)") {
@@ -400,19 +448,50 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
         "3.8.1",
         "3.9.0"
       )).single
-    assertEquals(scalaLTSFilter(update37_38), Right(update37_38))
+    assertEquals(scalaLTSFilter(update37_38, scalaVersionLine), Right(update37_38))
 
     val update213_38 =
       ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
         "3.8.1"
       )).single
-    assertEquals(scalaLTSFilter(update213_38), Left(NoSuitableNextVersion(update213_38)))
+    assertEquals(
+      scalaLTSFilter(update213_38, scalaVersionLine),
+      Left(NoSuitableNextVersion(update213_38))
+    )
 
     val update213_39 =
       ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
         "3.9.0"
       )).single
-    assertEquals(scalaLTSFilter(update213_39), Left(NoSuitableNextVersion(update213_39)))
+    assertEquals(
+      scalaLTSFilter(update213_39, scalaVersionLine),
+      Left(NoSuitableNextVersion(update213_39))
+    )
+  }
+
+  test("localFilterSingle: LTS->LTS with the version line from POMs") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.9" %> Nel.of(
+        "3.9.0",
+        "3.10.1"
+      )).single
+    val obtained = filterAlg
+      .localFilterSingle(config, update, resolvers)
+      .runA(MockContext.mockState)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("3.9.0".v)))
+  }
+
+  test("localFilterSingle: Next->Next with the version line from a pre-3.8 POM") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.7.4" %> Nel.of(
+        "3.8.4"
+      )).single
+    val obtained = filterAlg
+      .localFilterSingle(config, update, resolvers)
+      .runA(MockContext.mockState)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("3.8.4".v)))
   }
 
   test("scalaLTSFilter: LTS->Next with allowScalaNext") {
@@ -464,16 +543,31 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     )
   }
 
-  test("localFilter: LTS->Next is ignored and suggests updates.allowScalaNext") {
-    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0")).single
+  test("localFilterSingle: no POM lookups with updates.allowScalaNext") {
+    // A lookup of this POM would fail and leave a debug log.
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.0" %> Nel.of("3.10.0")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
     val (state, filtered) =
-      filterAlg.localFilterSingle(RepoConfig.empty, update).runSA(MockState.empty).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update, resolvers).runSA(MockState.empty).unsafeRunSync()
+    assertEquals(filtered, Some(update.asSpecificUpdate("3.10.0".v)))
+    assertEquals(state.trace, Vector.empty)
+  }
+
+  test("localFilter: LTS->Next is ignored and suggests updates.allowScalaNext") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
+        "3.10.0"
+      )).single
+    val (state, filtered) = filterAlg
+      .localFilterSingle(RepoConfig.empty, update, resolvers)
+      .runSA(MockState.empty)
+      .unsafeRunSync()
     assertEquals(filtered, None)
     assertEquals(
       state.trace,
       Vector(
         Log(
-          "Ignore org.scala-lang:scala3-compiler : 3.9.1 -> 3.10.0 (reason: not upgrading from Scala LTS to Next version; set updates.allowScalaNext = true to allow)"
+          "Ignore org.scala-lang:(scala3-compiler, scala3-compiler_3) : 3.9.0 -> 3.10.0 (reason: not upgrading from Scala LTS to Next version; set updates.allowScalaNext = true to allow)"
         )
       )
     )
@@ -697,7 +791,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
   test("cooldown is skipped for a version that fixes a vulnerability") {
     val state = osvState(Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}] }"""))
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, refinedUpdate)
+      .localFilterSingle(cooldownConfig, refinedUpdate, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(refinedUpdate.asSoleUpdate))
@@ -713,7 +807,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       "results": [{ "vulns": [{ "id": "GHSA-1" }] }, { "vulns": [{ "id": "GHSA-1" }] }]
     }"""))
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, refinedUpdate)
+      .localFilterSingle(cooldownConfig, refinedUpdate, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, None)
@@ -727,7 +821,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ).some
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(config, refinedUpdate)
+      .localFilterSingle(config, refinedUpdate, resolvers)
       .runSA(osvState(InternalServerError()))
       .unsafeRunSync()
     assertEquals(obtained, None)
@@ -744,7 +838,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       ).some
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(config, refinedUpdate)
+      .localFilterSingle(config, refinedUpdate, resolvers)
       .runSA(osvState(InternalServerError()))
       .unsafeRunSync()
     assertEquals(obtained, None)
@@ -756,7 +850,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       VulnerabilityCheckConfig(Some(List(ArtifactPattern("eu.timepit".g, None)))).some
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(config, refinedUpdate)
+      .localFilterSingle(config, refinedUpdate, resolvers)
       .runSA(osvState(InternalServerError()))
       .unsafeRunSync()
     assertEquals(obtained, None)
@@ -776,7 +870,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       osvQuery("1.0.0", "1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, update)
+      .localFilterSingle(cooldownConfig, update, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(update.asSpecificUpdate("1.0.2".v)))
@@ -794,7 +888,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       osvQuery("1.0.0", "1.0.1", "1.0.2")
     )
     val obtained = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, update)
+      .localFilterSingle(cooldownConfig, update, resolvers)
       .runA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
@@ -811,7 +905,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       osvQuery("1.0.0", "1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, updateWithOldFix)
+      .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.1".v)))
@@ -831,7 +925,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       osvQuery("1.0.0", "1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, updateWithOldFix)
+      .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.2".v)))
@@ -848,7 +942,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       osvQuery("1.0.0", "1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, updateWithOldFix)
+      .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.2".v)))
@@ -863,7 +957,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     val update = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1-RC1", "1.0.1")).single
     val state = osvState(Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}] }"""))
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, update)
+      .localFilterSingle(cooldownConfig, update, resolvers)
       .runSA(state)
       .unsafeRunSync()
     assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
@@ -880,7 +974,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
       Nel.of(VersionWithFirstSeen("1.0.1".v, Some(Timestamp(0))), "2.0.0".vfs)
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, update)
+      .localFilterSingle(cooldownConfig, update, resolvers)
       .runSA(osvState(InternalServerError()))
       .unsafeRunSync()
     assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
@@ -889,7 +983,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
   test("cooldown applies when the vulnerability check fails") {
     val (obtainedState, obtained) = vulnerabilityFilterAlg
-      .localFilterSingle(cooldownConfig, refinedUpdate)
+      .localFilterSingle(cooldownConfig, refinedUpdate, resolvers)
       .runSA(osvState(InternalServerError()))
       .unsafeRunSync()
     assertEquals(obtained, None)
