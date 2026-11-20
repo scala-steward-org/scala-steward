@@ -111,13 +111,13 @@ class RewriteTest extends FunSuite {
   test("sbt plugins") {
     val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
     val original = Map(
-      "plugins.sbt" -> """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+      "plugins.sbt" -> """addSbtPlugin("com.github.sbt" % "sbt-jmh" % "0.3.3")
                          |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
                          |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
                          |""".stripMargin.trim
     )
     val expected = Map(
-      "plugins.sbt" -> """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+      "plugins.sbt" -> """addSbtPlugin("com.github.sbt" % "sbt-jmh" % "0.3.3")
                          |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
                          |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
                          |""".stripMargin.trim
@@ -128,7 +128,7 @@ class RewriteTest extends FunSuite {
   test("sbt plugins: missing version") {
     val update = ("org.scala-js".g % "sbt-scalajs".a % "0.6.24" %> "0.6.25").single
     val original = Map(
-      "plugins.sbt" -> """addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
+      "plugins.sbt" -> """addSbtPlugin("com.github.sbt" % "sbt-jmh" % "0.3.3")
                          |addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.23")
                          |addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.4.0")
                          |""".stripMargin.trim
