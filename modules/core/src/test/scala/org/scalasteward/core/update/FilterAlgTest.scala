@@ -901,8 +901,8 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
   test("cooldown is not skipped when the version out of cooldown already fixes it") {
     val state = osvState(
-      Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}, {}] }"""),
-      osvQuery("1.0.0", "1.0.1", "1.0.2")
+      Ok(json"""{ "results": [{}, {}] }"""),
+      osvQuery("1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
       .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
@@ -912,7 +912,7 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
     assertEquals(
       obtainedState.trace.collect { case Log((_, message)) => message },
       Vector(
-        "Query OSV for eu.timepit:refined:1.0.0, eu.timepit:refined:1.0.1, eu.timepit:refined:1.0.2"
+        "Query OSV for eu.timepit:refined:1.0.1, eu.timepit:refined:1.0.2"
       )
     )
   }
@@ -920,9 +920,9 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
   test("cooldown is skipped when the version out of cooldown is still affected") {
     val state = osvState(
       Ok(json"""{
-        "results": [{ "vulns": [{ "id": "GHSA-1" }] }, { "vulns": [{ "id": "GHSA-1" }] }, {}]
+        "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}]
       }"""),
-      osvQuery("1.0.0", "1.0.1", "1.0.2")
+      osvQuery("1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
       .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
@@ -938,8 +938,8 @@ class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache 
 
   test("cooldown is skipped when the version out of cooldown introduces a vulnerability") {
     val state = osvState(
-      Ok(json"""{ "results": [{}, { "vulns": [{ "id": "GHSA-1" }] }, {}] }"""),
-      osvQuery("1.0.0", "1.0.1", "1.0.2")
+      Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}] }"""),
+      osvQuery("1.0.1", "1.0.2")
     )
     val (obtainedState, obtained) = vulnerabilityFilterAlg
       .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
