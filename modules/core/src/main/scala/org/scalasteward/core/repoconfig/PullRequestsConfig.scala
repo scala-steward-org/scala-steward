@@ -35,7 +35,7 @@ final case class PullRequestsConfig(
     skipFrequencyForVulnerabilityCheck: Option[Boolean] = None,
     private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
-    private val customLabels: Option[List[String]] = None,
+    customLabels: Option[List[String]] = None,
     draft: Option[Boolean] = None
 ) {
   def frequencyOrDefault: PullRequestFrequency =
