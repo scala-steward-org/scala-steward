@@ -70,7 +70,7 @@ final case class RepoConfig(
   /** Returns the custom labels that should be added to the PR for `update`.
     *
     * Labels are resolved for each artifact of the update separately (see
-    * [[customLabelsForArtifact]]) and merged, so a PR gets the union of the labels each of its
+    * `customLabelsForArtifact`) and merged, so a PR gets the union of the labels each of its
     * artifacts would get in a PR of its own.
     */
   def customLabelsFor(update: Update): List[String] =
