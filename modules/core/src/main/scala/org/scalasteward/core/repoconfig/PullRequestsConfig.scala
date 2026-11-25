@@ -32,6 +32,7 @@ final case class PullRequestsConfig(
     frequency: Option[PullRequestFrequency] = None,
     frequencySpread: Option[FiniteDuration] = None,
     allowedHours: Option[AllowedHours] = None,
+    skipFrequencyForVulnerabilityCheck: Option[Boolean] = None,
     private val grouping: Option[List[PullRequestGroup]] = None,
     includeMatchedLabels: Option[Regex] = None,
     private val customLabels: Option[List[String]] = None,
@@ -40,6 +41,9 @@ final case class PullRequestsConfig(
 ) {
   def frequencyOrDefault: PullRequestFrequency =
     frequency.getOrElse(PullRequestsConfig.defaultFrequency)
+
+  def skipFrequencyForVulnerabilityCheckOrDefault: Boolean =
+    skipFrequencyForVulnerabilityCheck.getOrElse(true)
 
   def groupingOrDefault: List[PullRequestGroup] =
     grouping.getOrElse(Nil)
@@ -74,6 +78,9 @@ object PullRequestsConfig {
           frequency = x.frequency.orElse(y.frequency),
           frequencySpread = x.frequencySpread.orElse(y.frequencySpread),
           allowedHours = x.allowedHours.orElse(y.allowedHours),
+          skipFrequencyForVulnerabilityCheck = x.skipFrequencyForVulnerabilityCheck.orElse(
+            y.skipFrequencyForVulnerabilityCheck
+          ),
           grouping = x.grouping |+| y.grouping,
           includeMatchedLabels = x.includeMatchedLabels.orElse(y.includeMatchedLabels),
           customLabels = x.customLabels |+| y.customLabels,

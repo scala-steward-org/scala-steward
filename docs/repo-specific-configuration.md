@@ -39,6 +39,13 @@ If a configuration file exists in more than one location, only the first found f
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
 
+# When vulnerability checking is enabled, skip the pull request frequency
+# delay for updates that fix a known vulnerability in the version currently used.
+# allowedHours still applies.
+# Default: true
+#
+#pullRequests.skipFrequencyForVulnerabilityCheck = true
+
 # pullRequests.frequencySpread allows to control the offset that spreads a
 # <timespan> frequency across dependencies. The value is the largest offset
 # a dependency can get. "0 days" turns the offset off, so every PR becomes
@@ -153,6 +160,9 @@ updates.ignore = [ { groupId = "org.acme", artifactId="foo", version = "1.0" } ]
 # the artefact version's age from that time.
 updates.cooldown = {
   minimumAge: "7 days"
+  # Updates that avoid a known vulnerability skip cooldown when Scala Steward runs with `--enable-vulnerability-check`.
+  # Default: true
+  skipForVulnerabilityCheck = true
 }
 
 # The dependencies which match the given pattern are retracted. Their existing pull-request will be closed.
@@ -174,6 +184,11 @@ updates.retracted = [
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # Defaults to empty `[]` which mean Scala Steward will ignore all stable to pre-release update options.
 updates.allowPreReleases  = [ { groupId = "com.example", artifactId="foo" } ]
+
+# If true, Scala Steward will also update projects on a Scala LTS version to Scala Next versions.
+# If false, projects on a Scala LTS version only get updates to other Scala LTS versions.
+# Default: false
+updates.allowScalaNext = true
 
 # If set, Scala Steward will only create or update `n` PRs each time it runs (see `pullRequests.frequency` above).
 # Useful if running frequently and/or CI build are costly
@@ -218,7 +233,12 @@ postUpdateHooks = [{
 }]
 
 # You can override some config options for dependencies that matches the given pattern.
-# Currently, "pullRequests" and cooldown can be overridden.
+# Currently, cooldown and only the scheduling-related "pullRequests" options can be overridden:
+# frequency, frequencySpread, allowedHours, and skipFrequencyForVulnerabilityCheck.
+# If skipFrequencyForVulnerabilityCheck is omitted in a dependency override, it inherits
+# the repository-level value. Other pullRequests options (grouping,
+# includeMatchedLabels, customLabels, and draft) apply to the whole repository and cannot
+# be overridden per dependency.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # First-matched entry is used.
 # More-specific entry should be placed before less-specific entry.
@@ -249,6 +269,19 @@ dependencyOverrides = [
     dependency = { groupId = "com.example" },
     pullRequests = { frequency = "14 days" },
   }
+]
+
+# The dependencies which match the given patterns are never sent to the OSV API
+# when the instance runs with --enable-vulnerability-check.
+#
+# Each pattern must have `groupId`, and may have `artifactId` (without the Scala suffix).
+# Patterns from the default config and the repo config are combined.
+# To opt out of the check entirely, use `[ { groupId = "*" } ]`.
+# Default: []
+vulnerabilityCheck.exclude = [
+  { groupId = "com.my-company" },
+  { groupId = "com.my-company.*" },
+  { groupId = "com.example", artifactId = "internal-lib" }
 ]
 
 # Assign people from the list to the pull request or request a review.

@@ -40,10 +40,10 @@ final class UpdateAlg[F[_]](implicit
       maxAge: Option[FiniteDuration]
   ): F[Option[Update.ForArtifactId]] =
     findUpdateWithoutMigration(dependency, maxAge)
-      .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
+      .flatMapF(filterAlg.localFilterSingle(repoConfig, _, dependency.resolvers))
       .orElse(
         findUpdateWithMigration(dependency, maxAge)
-          .flatMapF(filterAlg.localFilterSingle(repoConfig, _))
+          .flatMapF(filterAlg.localFilterSingle(repoConfig, _, dependency.resolvers))
       )
       .value
 
@@ -98,8 +98,21 @@ object UpdateAlg {
       update.artifactIds.contains_(dependency.artifactId)
     }
 
-  private def migrateArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
+  def migrateArtifactId(artifactId: ArtifactId, newName: String): ArtifactId =
     ArtifactId(newName, artifactId.maybeCrossName.map(_.replace(artifactId.name, newName)))
+
+  def dependencyPairs(
+      artifact: ArtifactForUpdate,
+      nextVersion: Version
+  ): List[(Dependency, Dependency)] =
+    artifact.crossDependency.dependencies.toList.map { current =>
+      current -> current.copy(
+        groupId = artifact.newerGroupId.getOrElse(current.groupId),
+        artifactId = artifact.newerArtifactId
+          .fold(current.artifactId)(migrateArtifactId(current.artifactId, _)),
+        version = nextVersion
+      )
+    }
 
   def migrateDependency(dependency: Dependency, change: ArtifactChange): Dependency =
     dependency.copy(

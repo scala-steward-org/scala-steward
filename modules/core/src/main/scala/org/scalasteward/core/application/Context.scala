@@ -55,6 +55,7 @@ import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, Artifact
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.*
 import org.scalasteward.core.util.uri.*
+import org.scalasteward.core.vulnerability.{OsvAlg, OsvCache, Vulnerability, VulnerabilityCheckAlg}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -91,6 +92,9 @@ final class Context[F[_]](implicit
     val updateAlg: UpdateAlg[F],
     val updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     val urlChecker: UrlChecker[F],
+    val osvAlg: OsvAlg[F],
+    val osvCache: OsvCache[F],
+    val vulnerabilityCheckAlg: VulnerabilityCheckAlg[F],
     val workspaceAlg: WorkspaceAlg[F]
 )
 
@@ -158,6 +162,13 @@ object Context {
         .create[F, Repo, RepoCache]("repo_cache", "1", kvsPrefix)
       versionsStore <- JsonKeyValueStore
         .create[F, VersionsCache.Key, VersionsCache.Value]("versions", "2")
+      osvIdsStore <- JsonKeyValueStore
+        .create[F, OsvCache.Key, OsvCache.Cached[Set[String]]]("osv_vulnerability_ids", "1")
+      osvVulnerabilityStore <- JsonKeyValueStore
+        .create[F, OsvCache.VulnerabilityKey, OsvCache.Cached[Vulnerability]](
+          "osv_vulnerabilities",
+          "1"
+        )
     } yield {
       implicit val artifactMigrationsLoader: ArtifactMigrationsLoader[F] = artifactMigrationsLoader0
       implicit val artifactMigrationsFinder: ArtifactMigrationsFinder = artifactMigrationsFinder0
@@ -166,7 +177,6 @@ object Context {
       implicit val urlChecker: UrlChecker[F] = urlChecker0
       implicit val dateTimeAlg: DateTimeAlg[F] = DateTimeAlg.create[F]
       implicit val repoConfigAlg: RepoConfigAlg[F] = new RepoConfigAlg[F](maybeGlobalRepoConfig)
-      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val gitAlg: GitAlg[F] = GenGitAlg.create[F](config)
       implicit val hookExecutor: HookExecutor[F] = new HookExecutor[F]
       implicit val repoCacheRepository: RepoCacheRepository[F] =
@@ -176,6 +186,13 @@ object Context {
       implicit val forgeRepoAlg: ForgeRepoAlg[F] = new ForgeRepoAlg[F](config)
       implicit val forgeCfg: ForgeCfg = config.forgeCfg
       implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[F] = new UpdateInfoUrlFinder[F]
+      implicit val osvAlg: OsvAlg[F] = new OsvAlg[F](config.osvApiHost)
+      implicit val osvCache: OsvCache[F] =
+        new OsvCache[F](config.cacheTtl, osvIdsStore, osvVulnerabilityStore)
+      implicit val vulnerabilityCheckAlg: VulnerabilityCheckAlg[F] =
+        new VulnerabilityCheckAlg[F](config.enableVulnerabilityCheck)
+      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
+      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val pullRequestService: PullRequestService[F] =
@@ -183,7 +200,6 @@ object Context {
       implicit val scalafixCli: ScalafixCli[F] = new ScalafixCli[F]
       implicit val scalafmtAlg: ScalafmtAlg[F] = new ScalafmtAlg[F](config.defaultResolvers)
       implicit val selfCheckAlg: SelfCheckAlg[F] = new SelfCheckAlg[F](config)
-      implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
       implicit val versionsCache: VersionsCache[F] =
         new VersionsCache[F](config.cacheTtl, versionsStore)
       implicit val updateAlg: UpdateAlg[F] = new UpdateAlg[F]

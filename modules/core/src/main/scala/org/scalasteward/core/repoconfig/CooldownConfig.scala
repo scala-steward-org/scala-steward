@@ -24,8 +24,12 @@ import org.scalasteward.core.util.dateTime.parseFiniteDuration
 import scala.concurrent.duration.FiniteDuration
 
 final case class CooldownConfig(
-    minimumAge: FiniteDuration
-)
+    minimumAge: FiniteDuration,
+    private val skipForVulnerabilityCheck: Option[Boolean] = None
+) {
+  def skipForVulnerabilityCheckOrDefault: Boolean =
+    skipForVulnerabilityCheck.getOrElse(true)
+}
 
 object CooldownConfig {
   implicit val codec: Codec[CooldownConfig] = deriveCodec

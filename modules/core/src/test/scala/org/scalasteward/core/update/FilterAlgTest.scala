@@ -18,43 +18,70 @@ package org.scalasteward.core.update
 
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all.*
+import io.circe.Json
+import io.circe.literal.*
 import munit.FunSuite
+import org.http4s.circe.*
+import org.http4s.dsl.Http4sDsl
+import org.http4s.{HttpApp, Response}
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.coursier.VersionsCache.VersionWithFirstSeen
 import org.scalasteward.core.data.{
   ArtifactForUpdate,
   ArtifactUpdateCandidates,
   CrossDependency,
-  GroupId
+  GroupId,
+  Resolver,
+  Version
 }
 import org.scalasteward.core.mock.MockContext.context.filterAlg
 import org.scalasteward.core.mock.MockState.TraceEntry.Log
-import org.scalasteward.core.mock.{MockEffOps, MockState}
+import org.scalasteward.core.mock.{MockConfig, MockContext, MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.*
 import org.scalasteward.core.update.FilterAlg.*
 import org.scalasteward.core.util.{Nel, Timestamp}
+import org.scalasteward.core.vulnerability.ClearOsvCache
 
 import scala.concurrent.duration.DurationInt
 
-class FilterAlgTest extends FunSuite {
+class FilterAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache {
   private val config = RepoConfig.empty
+  private val resolvers = List(Resolver.mavenCentral)
   val currentTime = Timestamp(0)
+
+  // 3.15 is a made-up LTS series that no version prefix check knows.
+  private val scalaVersionLine: Version => Option[ScalaVersionLine] = version =>
+    Map(
+      "3.3" -> ScalaVersionLine.Lts,
+      "3.4" -> ScalaVersionLine.Next,
+      "3.7" -> ScalaVersionLine.Next,
+      "3.8" -> ScalaVersionLine.Next,
+      "3.9" -> ScalaVersionLine.Lts,
+      "3.10" -> ScalaVersionLine.Next,
+      "3.15" -> ScalaVersionLine.Lts
+    ).get(version.value.split('.').take(2).mkString("."))
 
   test("localFilter: SNAP -> SNAP") {
     val update =
       ("org.scalatest".g % "scalatest".a % "3.0.8-SNAP2" %> Nel.of("3.0.8-SNAP10")).single
-    assertEquals(localFilter(update, config, currentTime), Right(update.asSoleUpdate))
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Right(update.asSoleUpdate)
+    )
   }
 
   test("localFilter: RC -> SNAP") {
     val update = ("org.scalatest".g % "scalatest".a % "3.0.8-RC2" %> Nel.of("3.1.0-SNAP10")).single
-    assertEquals(localFilter(update, config, currentTime), Left(NoSuitableNextVersion(update)))
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Left(NoSuitableNextVersion(update))
+    )
   }
 
   test("localFilter: update without bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.0" %> Nel.of("1.1.2", "2.0.0")).single
     assertEquals(
-      localFilter(update, config, currentTime),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSpecificUpdate("1.1.2".v))
     )
   }
@@ -65,7 +92,7 @@ class FilterAlgTest extends FunSuite {
         "2.13.19-M1",
         "3.10.0"
       )).single
-    assert(clue(localFilter(update, config, currentTime)).isLeft)
+    assert(clue(localFilter(update, config, currentTime, cooldownExempt = None)).isLeft)
   }
 
   test("localFilter: Scala 2.13 is updated to a newer 2.13 release, not to Scala 3") {
@@ -74,13 +101,16 @@ class FilterAlgTest extends FunSuite {
         "2.13.19",
         "3.10.0"
       )).single
-    assertEquals(localFilter(update, config, currentTime).map(_.nextVersion), Right("2.13.19".v))
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None).map(_.nextVersion),
+      Right("2.13.19".v)
+    )
   }
 
   test("localFilter: update with bad version") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("1.1.2", "2.0.0")).single
     assertEquals(
-      localFilter(update, config, currentTime),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSpecificUpdate("2.0.0".v))
     )
   }
@@ -89,14 +119,17 @@ class FilterAlgTest extends FunSuite {
     val update = ("net.sourceforge.plantuml".g % "plantuml".a % "1.2019.11" %>
       Nel.of("7726", "8020", "2017.09", "1.2019.12")).single
     assertEquals(
-      localFilter(update, config, currentTime),
+      localFilter(update, config, currentTime, cooldownExempt = None),
       Right(update.asSpecificUpdate("1.2019.12".v))
     )
   }
 
   test("localFilter: update to pre-releases of a different series") {
     val update = ("com.jsuereth".g % "sbt-pgp".a % "1.1.2-1" %> Nel.of("2.0.1-M3")).single
-    assertEquals(localFilter(update, config, currentTime), Left(NoSuitableNextVersion(update)))
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Left(NoSuitableNextVersion(update))
+    )
   }
 
   test("localFilter: allowed update to pre-releases of a different series") {
@@ -108,7 +141,10 @@ class FilterAlgTest extends FunSuite {
     )
 
     val expected = Right(update.asSpecificUpdate("2.0.1-M3".v))
-    assertEquals(localFilter(update, configWithAllowed, currentTime), expected)
+    assertEquals(
+      localFilter(update, configWithAllowed, currentTime, cooldownExempt = None),
+      expected
+    )
   }
 
   test("ignore update via config updates.ignore") {
@@ -128,7 +164,7 @@ class FilterAlgTest extends FunSuite {
     val update1 = ("eu.timepit".g % "refined".a % "0.8.0" %> Nel.of("0.8.1")).single
     val initialState1 = MockState.empty
     val (state1, filtered1) =
-      filterAlg.localFilterSingle(config, update1).runSA(initialState1).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update1, resolvers).runSA(initialState1).unsafeRunSync()
 
     assertEquals(filtered1, None)
     val expected1 = initialState1.copy(
@@ -140,7 +176,7 @@ class FilterAlgTest extends FunSuite {
     val update2 = ("eu.timepit".g % "refined".a % "0.9.0" %> Nel.of("0.9.1")).single
     val initialState2 = MockState.empty
     val (state2, filtered2) =
-      filterAlg.localFilterSingle(config, update2).runSA(initialState2).unsafeRunSync()
+      filterAlg.localFilterSingle(config, update2, resolvers).runSA(initialState2).unsafeRunSync()
 
     assertEquals(filtered2, Some(update2.asSpecificUpdate("0.9.1".v)))
     assertEquals(state2, initialState2)
@@ -161,7 +197,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
     val expected = Right(update.asSpecificUpdate("2.13.7".v))
-    assertEquals(localFilter(update, config, currentTime), expected)
+    assertEquals(localFilter(update, config, currentTime, cooldownExempt = None), expected)
   }
 
   test("ignore update via config updates.pin") {
@@ -187,14 +223,14 @@ class FilterAlgTest extends FunSuite {
     )
 
     val filtered1 = filterAlg
-      .localFilterSingle(config, update1)
+      .localFilterSingle(config, update1, resolvers)
       .runA(MockState.empty)
       .unsafeRunSync()
 
     assertEquals(filtered1, None)
 
     val filtered2 = filterAlg
-      .localFilterSingle(config, update2)
+      .localFilterSingle(config, update2, resolvers)
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -203,7 +239,7 @@ class FilterAlgTest extends FunSuite {
     // pinning the version to 0.8, prevents updates to greater versions, too.
     // becasue the artifact is "pinned" to version with the "0.8." prefix
     val filtered3 = filterAlg
-      .localFilterSingle(config, update3)
+      .localFilterSingle(config, update3, resolvers)
       .runA(MockState.empty)
       .unsafeRunSync()
 
@@ -234,7 +270,7 @@ class FilterAlgTest extends FunSuite {
 
     included.foreach { update =>
       val filtered = filterAlg
-        .localFilterSingle(config, update)
+        .localFilterSingle(config, update, resolvers)
         .runA(MockState.empty)
         .unsafeRunSync()
 
@@ -242,7 +278,7 @@ class FilterAlgTest extends FunSuite {
     }
     notIncluded.foreach { update =>
       val filtered = filterAlg
-        .localFilterSingle(config, update)
+        .localFilterSingle(config, update, resolvers)
         .runA(MockState.empty)
         .unsafeRunSync()
 
@@ -266,7 +302,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    val filtered = localFilter(update, config, currentTime)
+    val filtered = localFilter(update, config, currentTime, cooldownExempt = None)
     assertEquals(filtered, Right(update.asSpecificUpdate("7.3.0.jre8".v)))
   }
 
@@ -286,7 +322,7 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    val filtered = localFilter(update, config, currentTime)
+    val filtered = localFilter(update, config, currentTime, cooldownExempt = None)
     assertEquals(filtered, Right(update.asSpecificUpdate("7.3.0.jre8".v)))
   }
 
@@ -307,7 +343,10 @@ class FilterAlgTest extends FunSuite {
       ).some
     )
 
-    assertEquals(localFilter(update, config, currentTime), Left(VersionPinnedByConfig(update)))
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Left(VersionPinnedByConfig(update))
+    )
   }
 
   test("ignore version with 'contains' matcher") {
@@ -316,7 +355,10 @@ class FilterAlgTest extends FunSuite {
     val repoConfig = RepoConfigAlg.parseRepoConfig(
       """updates.ignore = [ { groupId = "sqlserver", version = { contains = "feature" } } ]"""
     )
-    val obtained = repoConfig.flatMap(localFilter(update, _, currentTime).leftMap(_.show))
+    val obtained =
+      repoConfig.flatMap(
+        localFilter(update, _, currentTime, cooldownExempt = None).leftMap(_.show)
+      )
     assertEquals(obtained.map(_.nextVersion), Right("7.3.0".v))
   }
 
@@ -332,10 +374,10 @@ class FilterAlgTest extends FunSuite {
 
   test("scalaLTSFilter: LTS->Next, no update") {
     val update1 = ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.4.0")).single
-    assertEquals(scalaLTSFilter(update1), Left(IgnoreScalaNext(update1)))
+    assertEquals(scalaLTSFilter(update1, scalaVersionLine), Left(IgnoreScalaNext(update1)))
 
     val update2 = ("org.scala-lang".g % "scala3-compiler".a % "3.9.2" %> Nel.of("3.10.0")).single
-    assertEquals(scalaLTSFilter(update2), Left(IgnoreScalaNext(update2)))
+    assertEquals(scalaLTSFilter(update2, scalaVersionLine), Left(IgnoreScalaNext(update2)))
   }
 
   test("scalaLTSFilter: LTS->LTS, filter versions") {
@@ -346,8 +388,20 @@ class FilterAlgTest extends FunSuite {
         "3.9.0"
       )).single
     assertEquals(
-      scalaLTSFilter(update),
+      scalaLTSFilter(update, scalaVersionLine),
       Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.3.3", "3.9.0").map(_.vfs)))
+    )
+  }
+
+  test("scalaLTSFilter: LTS->LTS for a series without a version prefix check") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.2" %> Nel.of(
+        "3.10.0",
+        "3.15.0"
+      )).single
+    assertEquals(
+      scalaLTSFilter(update, scalaVersionLine),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.15.0").map(_.vfs)))
     )
   }
 
@@ -356,7 +410,7 @@ class FilterAlgTest extends FunSuite {
       ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
         "3.4.1"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update))
+    assertEquals(scalaLTSFilter(update, scalaVersionLine), Right(update))
   }
 
   test("scalaLTSFilter: Next->LTS") {
@@ -364,7 +418,28 @@ class FilterAlgTest extends FunSuite {
       ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.8.4" %> Nel.of(
         "3.9.0"
       )).single
-    assertEquals(scalaLTSFilter(update), Right(update))
+    assertEquals(scalaLTSFilter(update, scalaVersionLine), Right(update))
+  }
+
+  test("scalaLTSFilter: unknown lines stay in the current series") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.8.3" %> Nel.of(
+        "3.8.4",
+        "3.9.0",
+        "3.10.0"
+      )).single
+    assertEquals(
+      scalaLTSFilter(update, unknownScalaVersionLine),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("3.8.4").map(_.vfs)))
+    )
+  }
+
+  test("scalaLTSFilter: LTS does not move to a series with an unknown line") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
+        "3.11.0"
+      )).single
+    assertEquals(scalaLTSFilter(update, scalaVersionLine), Left(IgnoreScalaNext(update)))
   }
 
   test("scalaLTSFilter: Scala after 3.8.x (the return of scala-library)") {
@@ -373,19 +448,129 @@ class FilterAlgTest extends FunSuite {
         "3.8.1",
         "3.9.0"
       )).single
-    assertEquals(scalaLTSFilter(update37_38), Right(update37_38))
+    assertEquals(scalaLTSFilter(update37_38, scalaVersionLine), Right(update37_38))
 
     val update213_38 =
       ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
         "3.8.1"
       )).single
-    assertEquals(scalaLTSFilter(update213_38), Left(NoSuitableNextVersion(update213_38)))
+    assertEquals(
+      scalaLTSFilter(update213_38, scalaVersionLine),
+      Left(NoSuitableNextVersion(update213_38))
+    )
 
     val update213_39 =
       ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.18" %> Nel.of(
         "3.9.0"
       )).single
-    assertEquals(scalaLTSFilter(update213_39), Left(NoSuitableNextVersion(update213_39)))
+    assertEquals(
+      scalaLTSFilter(update213_39, scalaVersionLine),
+      Left(NoSuitableNextVersion(update213_39))
+    )
+  }
+
+  test("localFilterSingle: LTS->LTS with the version line from POMs") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.3.9" %> Nel.of(
+        "3.9.0",
+        "3.10.1"
+      )).single
+    val obtained = filterAlg
+      .localFilterSingle(config, update, resolvers)
+      .runA(MockContext.mockState)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("3.9.0".v)))
+  }
+
+  test("localFilterSingle: Next->Next with the version line from a pre-3.8 POM") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.7.4" %> Nel.of(
+        "3.8.4"
+      )).single
+    val obtained = filterAlg
+      .localFilterSingle(config, update, resolvers)
+      .runA(MockContext.mockState)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("3.8.4".v)))
+  }
+
+  test("scalaLTSFilter: LTS->Next with allowScalaNext") {
+    val update1 =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.3.2" %> Nel.of("3.3.3", "3.4.0")).single
+    assertEquals(scalaLTSFilter(update1, allowScalaNext = true), Right(update1))
+
+    val update2 =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.9.0" %> Nel.of("3.9.1", "3.10.0")).single
+    assertEquals(scalaLTSFilter(update2, allowScalaNext = true), Right(update2))
+  }
+
+  test("scalaLTSFilter: Next->Next with allowScalaNext") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.4.0" %> Nel.of(
+        "3.4.1"
+      )).single
+    assertEquals(scalaLTSFilter(update, allowScalaNext = true), Right(update))
+  }
+
+  test("scalaLTSFilter: Scala 2 stays on Scala 2 with allowScalaNext") {
+    val update =
+      ("org.scala-lang".g % ("scala-library", "scala-library_2.13").a % "2.13.17" %> Nel.of(
+        "2.13.18",
+        "3.8.1"
+      )).single
+    assertEquals(
+      scalaLTSFilter(update, allowScalaNext = true),
+      Right(update.copy(newerVersionsWithFirstSeen = Nel.of("2.13.18").map(_.vfs)))
+    )
+  }
+
+  test("localFilter: LTS->Next with updates.allowScalaNext") {
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Right(update.asSpecificUpdate("3.10.0".v))
+    )
+  }
+
+  test("localFilter: LTS->Next with updates.allowScalaNext skips RCs") {
+    val update =
+      ("org.scala-lang".g % "scala3-compiler".a % "3.9.1" %> Nel.of("3.10.0", "3.11.0-RC1")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    assertEquals(
+      localFilter(update, config, currentTime, cooldownExempt = None),
+      Right(update.asSpecificUpdate("3.10.0".v))
+    )
+  }
+
+  test("localFilterSingle: no POM lookups with updates.allowScalaNext") {
+    // A lookup of this POM would fail and leave a debug log.
+    val update = ("org.scala-lang".g % "scala3-compiler".a % "3.9.0" %> Nel.of("3.10.0")).single
+    val config = RepoConfig(updates = UpdatesConfig(allowScalaNext = Some(true)).some)
+    val (state, filtered) =
+      filterAlg.localFilterSingle(config, update, resolvers).runSA(MockState.empty).unsafeRunSync()
+    assertEquals(filtered, Some(update.asSpecificUpdate("3.10.0".v)))
+    assertEquals(state.trace, Vector.empty)
+  }
+
+  test("localFilter: LTS->Next is ignored and suggests updates.allowScalaNext") {
+    val update =
+      ("org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % "3.9.0" %> Nel.of(
+        "3.10.0"
+      )).single
+    val (state, filtered) = filterAlg
+      .localFilterSingle(RepoConfig.empty, update, resolvers)
+      .runSA(MockState.empty)
+      .unsafeRunSync()
+    assertEquals(filtered, None)
+    assertEquals(
+      state.trace,
+      Vector(
+        Log(
+          "Ignore org.scala-lang:(scala3-compiler, scala3-compiler_3) : 3.9.0 -> 3.10.0 (reason: not upgrading from Scala LTS to Next version; set updates.allowScalaNext = true to allow)"
+        )
+      )
+    )
   }
 
   test("isScala3Lang: true") {
@@ -435,7 +620,7 @@ class FilterAlgTest extends FunSuite {
         Some(Timestamp(8))
       )).single
     assertEquals(
-      FilterAlg.localFilter(update1, config, Timestamp(10)),
+      FilterAlg.localFilter(update1, config, Timestamp(10), cooldownExempt = None),
       Left(TooRecentForCooldown(update1))
     )
 
@@ -444,12 +629,18 @@ class FilterAlgTest extends FunSuite {
       "1.0.1".v,
       Some(Timestamp(3))
     )).single
-    assertEquals(FilterAlg.localFilter(update2, config, Timestamp(10)), Right(update2.asSoleUpdate))
+    assertEquals(
+      FilterAlg.localFilter(update2, config, Timestamp(10), cooldownExempt = None),
+      Right(update2.asSoleUpdate)
+    )
 
     val update3 = update1.copy(newerVersionsWithFirstSeen =
       update1.newerVersionsWithFirstSeen.concatNel(update2.newerVersionsWithFirstSeen)
     )
-    assertEquals(FilterAlg.localFilter(update3, config, Timestamp(10)), Right(update2.asSoleUpdate))
+    assertEquals(
+      FilterAlg.localFilter(update3, config, Timestamp(10), cooldownExempt = None),
+      Right(update2.asSoleUpdate)
+    )
   }
 
   test("dependencyOverrides can override cooldown for internal dependencies") {
@@ -469,7 +660,7 @@ class FilterAlgTest extends FunSuite {
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(internalUpdate, config, Timestamp(10)),
+      FilterAlg.localFilter(internalUpdate, config, Timestamp(10), cooldownExempt = None),
       Right(internalUpdate.asSoleUpdate)
     )
 
@@ -479,7 +670,7 @@ class FilterAlgTest extends FunSuite {
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(externalUpdate, config, Timestamp(10)),
+      FilterAlg.localFilter(externalUpdate, config, Timestamp(10), cooldownExempt = None),
       Left(TooRecentForCooldown(externalUpdate))
     )
   }
@@ -501,7 +692,7 @@ class FilterAlgTest extends FunSuite {
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(internalUpdate, config, Timestamp(10)),
+      FilterAlg.localFilter(internalUpdate, config, Timestamp(10), cooldownExempt = None),
       Right(internalUpdate.asSoleUpdate)
     )
 
@@ -511,7 +702,7 @@ class FilterAlgTest extends FunSuite {
         Some(Timestamp(9))
       )).single
     assertEquals(
-      FilterAlg.localFilter(externalUpdate, config, Timestamp(10)),
+      FilterAlg.localFilter(externalUpdate, config, Timestamp(10), cooldownExempt = None),
       Left(TooRecentForCooldown(externalUpdate))
     )
   }
@@ -523,13 +714,13 @@ class FilterAlgTest extends FunSuite {
 
     val ignored = ("com.example.widgets".g % "widgets".a % "1.0.0" %> Nel.of("1.0.1")).single
     assertEquals(
-      FilterAlg.localFilter(ignored, config, currentTime),
+      FilterAlg.localFilter(ignored, config, currentTime, cooldownExempt = None),
       Left(IgnoredByConfig(ignored))
     )
 
     val notIgnored = ("com.example".g % "widgets".a % "1.0.0" %> Nel.of("1.0.1")).single
     assertEquals(
-      FilterAlg.localFilter(notIgnored, config, currentTime),
+      FilterAlg.localFilter(notIgnored, config, currentTime, cooldownExempt = None),
       Right(notIgnored.asSpecificUpdate("1.0.1".v))
     )
   }
@@ -560,6 +751,246 @@ class FilterAlgTest extends FunSuite {
         Some(Timestamp(9))
       )).single
 
-    assertEquals(FilterAlg.localFilter(update, config, Timestamp(10)), Right(expected.asSoleUpdate))
+    assertEquals(
+      FilterAlg.localFilter(update, config, Timestamp(10), cooldownExempt = None),
+      Right(expected.asSoleUpdate)
+    )
+  }
+
+  private val vulnerabilityFilterAlg =
+    MockContext.context(MockConfig.config.copy(enableVulnerabilityCheck = true)).filterAlg
+
+  private val cooldownConfig =
+    RepoConfig(updates = UpdatesConfig(cooldown = CooldownConfig(7.days).some).some)
+
+  private val refinedUpdate = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1")).single
+
+  private val refinedTooRecent =
+    Log("Ignore eu.timepit:refined : 1.0.0 -> 1.0.1 (reason: too recent for cooldown config)")
+
+  private def osvQuery(versions: String*): Json =
+    Json.obj("queries" -> Json.fromValues(versions.map { version =>
+      json"""{
+        "package": { "ecosystem": "Maven", "name": "eu.timepit:refined" },
+        "version": $version
+      }"""
+    }))
+
+  private def osvState(
+      queryBatchResponse: MockEff[Response[MockEff]],
+      expectedQuery: Json = osvQuery("1.0.0", "1.0.1")
+  ): MockState =
+    MockState.empty.copy(clientResponses = HttpApp[MockEff] {
+      case request @ POST -> Root / "v1" / "querybatch" =>
+        request.as[Json].flatMap { body =>
+          if (body == expectedQuery) queryBatchResponse else BadRequest(body)
+        }
+      case _ => NotFound()
+    })
+
+  test("cooldown is skipped for a version that fixes a vulnerability") {
+    val state = osvState(Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}] }"""))
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, refinedUpdate, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(refinedUpdate.asSoleUpdate))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.1 (fixes GHSA-1)")
+      )
+    )
+  }
+
+  test("cooldown applies to a version that fixes no vulnerability") {
+    val state = osvState(Ok(json"""{
+      "results": [{ "vulns": [{ "id": "GHSA-1" }] }, { "vulns": [{ "id": "GHSA-1" }] }]
+    }"""))
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, refinedUpdate, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, None)
+    assert(clue(obtainedState.trace).contains(refinedTooRecent))
+  }
+
+  test("cooldown.skipForVulnerabilityCheck = false keeps cooldown without OSV call") {
+    val config = RepoConfig(updates =
+      UpdatesConfig(cooldown =
+        CooldownConfig(7.days, skipForVulnerabilityCheck = Some(false)).some
+      ).some
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(config, refinedUpdate, resolvers)
+      .runSA(osvState(InternalServerError()))
+      .unsafeRunSync()
+    assertEquals(obtained, None)
+    assertEquals(obtainedState.trace, Vector(refinedTooRecent))
+  }
+
+  test("dependencyOverrides can keep cooldown for vulnerability fixes") {
+    val config = cooldownConfig.copy(dependencyOverrides =
+      List(
+        GroupRepoConfig(
+          cooldown = CooldownConfig(7.days, skipForVulnerabilityCheck = Some(false)).some,
+          dependency = UpdatePattern("eu.timepit".g, None, None)
+        )
+      ).some
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(config, refinedUpdate, resolvers)
+      .runSA(osvState(InternalServerError()))
+      .unsafeRunSync()
+    assertEquals(obtained, None)
+    assertEquals(obtainedState.trace, Vector(refinedTooRecent))
+  }
+
+  test("vulnerabilityCheck.exclude keeps cooldown without OSV call") {
+    val config = cooldownConfig.copy(vulnerabilityCheck =
+      VulnerabilityCheckConfig(Some(List(ArtifactPattern("eu.timepit".g, None)))).some
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(config, refinedUpdate, resolvers)
+      .runSA(osvState(InternalServerError()))
+      .unsafeRunSync()
+    assertEquals(obtained, None)
+    assertEquals(obtainedState.trace, Vector(refinedTooRecent))
+  }
+
+  test("cooldown is skipped for the version that fixes the most vulnerabilities") {
+    val update = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1", "1.0.2")).single
+    val state = osvState(
+      Ok(json"""{
+        "results": [
+          { "vulns": [{ "id": "GHSA-1" }, { "id": "GHSA-2" }] },
+          { "vulns": [{ "id": "GHSA-2" }] },
+          {}
+        ]
+      }"""),
+      osvQuery("1.0.0", "1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, update, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("1.0.2".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.2 (fixes GHSA-1, GHSA-2)")
+      )
+    )
+  }
+
+  test("cooldown is skipped for the lowest of equal vulnerability fixes") {
+    val update = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1", "1.0.2")).single
+    val state = osvState(
+      Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}, {}] }"""),
+      osvQuery("1.0.0", "1.0.1", "1.0.2")
+    )
+    val obtained = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, update, resolvers)
+      .runA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
+  }
+
+  private val updateWithOldFix = ArtifactUpdateCandidates(
+    ArtifactForUpdate(CrossDependency("eu.timepit".g % "refined".a % "1.0.0")),
+    Nel.of(VersionWithFirstSeen("1.0.1".v, Some(Timestamp(0))), "1.0.2".vfs)
+  )
+
+  test("cooldown is not skipped when the version out of cooldown already fixes it") {
+    val state = osvState(
+      Ok(json"""{ "results": [{}, {}] }"""),
+      osvQuery("1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.1".v)))
+    assertEquals(
+      obtainedState.trace.collect { case Log((_, message)) => message },
+      Vector(
+        "Query OSV for eu.timepit:refined:1.0.1, eu.timepit:refined:1.0.2"
+      )
+    )
+  }
+
+  test("cooldown is skipped when the version out of cooldown is still affected") {
+    val state = osvState(
+      Ok(json"""{
+        "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}]
+      }"""),
+      osvQuery("1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.2".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.2 (fixes GHSA-1)")
+      )
+    )
+  }
+
+  test("cooldown is skipped when the version out of cooldown introduces a vulnerability") {
+    val state = osvState(
+      Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}] }"""),
+      osvQuery("1.0.1", "1.0.2")
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, updateWithOldFix, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(updateWithOldFix.asSpecificUpdate("1.0.2".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.2 (fixes GHSA-1)")
+      )
+    )
+  }
+
+  test("cooldown is not skipped for a fix that would not be selected") {
+    val update = ("eu.timepit".g % "refined".a % "1.0.0" %> Nel.of("1.0.1-RC1", "1.0.1")).single
+    val state = osvState(Ok(json"""{ "results": [{ "vulns": [{ "id": "GHSA-1" }] }, {}] }"""))
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, update, resolvers)
+      .runSA(state)
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
+    assert(
+      clue(obtainedState.trace).contains(
+        Log("Skip cooldown for eu.timepit:refined:1.0.1 (fixes GHSA-1)")
+      )
+    )
+  }
+
+  test("cooldown is not skipped for a fix that loses to an older version") {
+    val update = ArtifactUpdateCandidates(
+      ArtifactForUpdate(CrossDependency("eu.timepit".g % "refined".a % "1.0.0")),
+      Nel.of(VersionWithFirstSeen("1.0.1".v, Some(Timestamp(0))), "2.0.0".vfs)
+    )
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, update, resolvers)
+      .runSA(osvState(InternalServerError()))
+      .unsafeRunSync()
+    assertEquals(obtained, Some(update.asSpecificUpdate("1.0.1".v)))
+    assertEquals(obtainedState.trace, Vector.empty)
+  }
+
+  test("cooldown applies when the vulnerability check fails") {
+    val (obtainedState, obtained) = vulnerabilityFilterAlg
+      .localFilterSingle(cooldownConfig, refinedUpdate, resolvers)
+      .runSA(osvState(InternalServerError()))
+      .unsafeRunSync()
+    assertEquals(obtained, None)
+    assert(obtainedState.trace.exists {
+      case Log((Some(_), "Vulnerability check failed")) => true
+      case _                                            => false
+    })
+    assert(clue(obtainedState.trace).contains(refinedTooRecent))
   }
 }

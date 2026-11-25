@@ -17,9 +17,14 @@
 package org.scalasteward.core.update
 
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all.*
+import io.circe.Json
 import io.circe.parser.decode
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 import munit.FunSuite
+import org.http4s.circe.*
+import org.http4s.dsl.Http4sDsl
+import org.http4s.HttpApp
 import org.scalasteward.core.TestInstances.dummyRepoCache
 import org.scalasteward.core.TestSyntax.*
 import org.scalasteward.core.data.Resolver.MavenRepository
@@ -28,15 +33,159 @@ import org.http4s.syntax.literals.*
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git.{branchFor, Sha1}
 import org.scalasteward.core.mock.MockConfig.config
+import org.scalasteward.core.mock.MockContext
 import org.scalasteward.core.mock.MockContext.context.{pruningAlg, pullRequestRepository}
 import org.scalasteward.core.mock.MockState.TraceEntry.{Cmd, Log}
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.nurture.{ClosedReason, PullRequestData}
 import org.scalasteward.core.repocache.RepoCache
-import org.scalasteward.core.repoconfig.RepoConfig
-import org.scalasteward.core.util.Nel
+import org.scalasteward.core.repoconfig.*
+import org.scalasteward.core.update.data.UpdateState.DependencyOutdated
+import org.scalasteward.core.util.{Nel, Timestamp}
+import org.scalasteward.core.vulnerability.ClearOsvCache
+import scala.concurrent.duration.*
 
-class PruningAlgTest extends FunSuite {
+class PruningAlgTest extends FunSuite with Http4sDsl[MockEff] with ClearOsvCache {
+  private val securityCurrent = "org.example".g % "library".a % "1.0.0"
+  private val securityNext = securityCurrent.copy(version = "1.1.0".v)
+  private val securityUpdate = (securityCurrent %> "1.1.0").single
+  private val securityOutdated = DependencyOutdated(securityUpdate.crossDependency, securityUpdate)
+  private val vulnerabilityEnabledPruningAlg =
+    MockContext.context(config.copy(enableVulnerabilityCheck = true)).pruningAlg
+
+  private def osvQuery(dependency: org.scalasteward.core.data.Dependency): Json =
+    Json.obj(
+      "package" -> Json.obj(
+        "ecosystem" -> Json.fromString("Maven"),
+        "name" -> Json.fromString(s"${dependency.groupId}:${dependency.artifactId.crossName}")
+      ),
+      "version" -> Json.fromString(dependency.version.value)
+    )
+
+  private def osvState(currentIds: List[String], nextIds: List[String]): MockState = {
+    val expectedQuery =
+      Json.obj("queries" -> Json.arr(osvQuery(securityCurrent), osvQuery(securityNext)))
+    def result(ids: List[String]): Json =
+      if (ids.isEmpty) Json.obj()
+      else
+        Json.obj("vulns" -> Json.fromValues(ids.map(id => Json.obj("id" -> Json.fromString(id)))))
+
+    MockState.empty.copy(clientResponses = HttpApp[MockEff] {
+      case request @ POST -> Root / "v1" / "querybatch" =>
+        request.as[Json].flatMap { body =>
+          if (body == expectedQuery)
+            Ok(Json.obj("results" -> Json.arr(result(currentIds), result(nextIds))))
+          else BadRequest(body)
+        }
+      case _ => NotFound()
+    })
+  }
+
+  private def frequencyConfig(
+      skip: Option[Boolean],
+      overrideSkip: Option[Boolean] = None
+  ): RepoConfig = {
+    val rootPullRequests = PullRequestsConfig(
+      frequency = Some(PullRequestFrequency.Timespan(30.days)),
+      frequencySpread = Some(Duration.Zero),
+      skipFrequencyForVulnerabilityCheck = skip
+    )
+    val dependencyOverrides = overrideSkip
+      .map { value =>
+        List(
+          GroupRepoConfig(
+            pullRequests = PullRequestsConfig(
+              frequency = Some(PullRequestFrequency.Timespan(30.days)),
+              frequencySpread = Some(Duration.Zero),
+              skipFrequencyForVulnerabilityCheck = Some(value)
+            ),
+            dependency = UpdatePattern("org.example".g, None, None)
+          )
+        )
+      }
+      .orElse {
+        Option.when(skip.isDefined) {
+          List(
+            GroupRepoConfig(
+              pullRequests = PullRequestsConfig(
+                frequency = Some(PullRequestFrequency.Timespan(30.days)),
+                frequencySpread = Some(Duration.Zero)
+              ),
+              dependency = UpdatePattern("org.example".g, None, None)
+            )
+          )
+        }
+      }
+    RepoConfig(
+      pullRequests = rootPullRequests.some,
+      dependencyOverrides = dependencyOverrides
+    )
+  }
+
+  private def frequencyAllowed(repoConfig: RepoConfig, state: MockState): (MockState, Boolean) =
+    vulnerabilityEnabledPruningAlg
+      .newPullRequestsAllowed(
+        securityOutdated,
+        now = Timestamp(1.day.toMillis),
+        repoLastPrCreatedAt = Some(Timestamp(0)),
+        artifactLastPrCreatedAt = Some(Timestamp(0)),
+        repoConfig = repoConfig
+      )
+      .runSA(state)
+      .unsafeRunSync()
+
+  test("vulnerability fix skips a blocking pull request frequency") {
+    val (state, allowed) = frequencyAllowed(
+      frequencyConfig(skip = Some(true)),
+      osvState(List("GHSA-fixed"), Nil)
+    )
+
+    assert(allowed)
+    assert(
+      state.trace.contains(
+        Log("Skip pull request frequency for org.example:library (fixes a vulnerability)")
+      )
+    )
+  }
+
+  test("pull request override inherits repository vulnerability frequency setting") {
+    val (state, allowed) = frequencyAllowed(
+      frequencyConfig(skip = Some(false)),
+      MockState.empty
+    )
+
+    assert(!allowed)
+    assert(!state.trace.contains(Log("Vulnerability check failed")))
+  }
+
+  test("explicit dependency override enables the vulnerability frequency bypass") {
+    val (state, allowed) = frequencyAllowed(
+      frequencyConfig(skip = Some(false), overrideSkip = Some(true)),
+      osvState(List("GHSA-fixed"), Nil)
+    )
+
+    assert(allowed)
+    assert(
+      state.trace.contains(
+        Log("Skip pull request frequency for org.example:library (fixes a vulnerability)")
+      )
+    )
+  }
+
+  test("update with no fixed advisory still observes pull request frequency") {
+    val (state, allowed) = frequencyAllowed(
+      frequencyConfig(skip = Some(true)),
+      osvState(List("GHSA-still-affected"), List("GHSA-still-affected"))
+    )
+
+    assert(!allowed)
+    assert(state.trace.exists {
+      case Log((_, message)) =>
+        message.startsWith("Ignoring outdated dependency org.example:library for")
+      case _ => false
+    })
+  }
+
   test("needsAttention") {
     val repo = Repo("fthomas", "scalafix-test")
     val Right(repoCache) = decode[RepoCache](

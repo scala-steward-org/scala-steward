@@ -332,6 +332,17 @@ object Cli {
     if (ifAnyRepoSucceeds) SuccessIfAnyRepoSucceeds else SuccessOnlyIfAllReposSucceed
   }
 
+  private val enableVulnerabilityCheck: Opts[Boolean] =
+    flag(
+      "enable-vulnerability-check",
+      "Whether to mark updates that fix known vulnerabilities, using the OSV API; default: false"
+    ).orFalse
+
+  private val osvApiHost: Opts[Uri] = {
+    val default = uri"https://api.osv.dev"
+    option[Uri]("osv-api-host", s"API URL of OSV; default: $default").withDefault(default)
+  }
+
   private val regular: Opts[Usage] = (
     workspace,
     reposFiles,
@@ -351,7 +362,9 @@ object Cli {
     urlCheckerTestUrls,
     defaultMavenRepos,
     refreshBackoffPeriod,
-    exitCodePolicy
+    exitCodePolicy,
+    enableVulnerabilityCheck,
+    osvApiHost
   ).mapN(Config.apply).map(Usage.Regular.apply)
 
   private val validateRepoConfig: Opts[Usage] =

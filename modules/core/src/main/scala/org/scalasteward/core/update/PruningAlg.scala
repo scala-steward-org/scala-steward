@@ -32,12 +32,14 @@ import org.scalasteward.core.update.data.UpdateState
 import org.scalasteward.core.update.data.UpdateState.*
 import org.scalasteward.core.util
 import org.scalasteward.core.util.{dateTime, DateTimeAlg, Nel, Timestamp}
+import org.scalasteward.core.vulnerability.VulnerabilityCheckAlg
 import org.typelevel.log4cats.Logger
 import scala.concurrent.duration.*
 
 final class PruningAlg[F[_]](implicit
     dateTimeAlg: DateTimeAlg[F],
     logger: Logger[F],
+    vulnerabilityCheckAlg: VulnerabilityCheckAlg[F],
     pullRequestRepository: PullRequestRepository[F],
     updateAlg: UpdateAlg[F],
     F: Monad[F]
@@ -173,13 +175,14 @@ final class PruningAlg[F[_]](implicit
       }
     } yield result
 
-  private def newPullRequestsAllowed(
+  private[update] def newPullRequestsAllowed(
       dependencyOutdated: DependencyOutdated,
       now: Timestamp,
       repoLastPrCreatedAt: Option[Timestamp],
       artifactLastPrCreatedAt: Option[Timestamp],
       repoConfig: RepoConfig
   ): F[Boolean] = {
+    val repositoryPullRequests = repoConfig.pullRequestsOrDefault
     val (pullRequests: PullRequestsConfig, lastPrCreatedAt: Option[Timestamp]) =
       repoConfig.dependencyOverridesOrDefault
         .collectFirstSome { groupRepoConfig =>
@@ -189,23 +192,57 @@ final class PruningAlg[F[_]](implicit
             (groupRepoConfig.pullRequests, artifactLastPrCreatedAt)
           )
         }
-        .getOrElse((repoConfig.pullRequestsOrDefault, repoLastPrCreatedAt))
+        .getOrElse((repositoryPullRequests, repoLastPrCreatedAt))
     val frequency = pullRequests.frequency.getOrElse(PullRequestFrequency.Asap)
+    val skipFrequencyForVulnerabilityCheck = pullRequests.skipFrequencyForVulnerabilityCheck
+      .orElse(repositoryPullRequests.skipFrequencyForVulnerabilityCheck)
+      .getOrElse(true)
 
     val dep = dependencyOutdated.crossDependency.head
     val key = s"${dep.groupId}:${dep.artifactId.name}"
     def ignore(why: String) =
       logger.info(s"Ignoring outdated dependency $key $why").as(false)
-    pullRequests.allowedHours match {
-      case _ if !frequency.onSchedule(now) =>
-        ignore(s"according to $frequency")
-      case Some(allowed) if !allowed.matches(now) =>
-        ignore(s"according to allowed hours ${allowed.render}")
-      case _ =>
+    def checkFrequency(): F[Boolean] =
+      if (!frequency.onSchedule(now)) ignore(s"according to $frequency")
+      else
         lastPrCreatedAt
           .flatMap(frequency.waitingTime(_, now, key, pullRequests.frequencySpread))
           .fold(true.pure[F])(waitingTime => ignore(s"for ${dateTime.showDuration(waitingTime)}"))
+
+    val frequencyBlocks =
+      !frequency.onSchedule(now) ||
+        lastPrCreatedAt
+          .flatMap(frequency.waitingTime(_, now, key, pullRequests.frequencySpread))
+          .nonEmpty
+
+    pullRequests.allowedHours match {
+      case Some(allowed) if !allowed.matches(now) =>
+        ignore(s"according to allowed hours ${allowed.render}")
+      case _ =>
+        if (skipFrequencyForVulnerabilityCheck && frequencyBlocks)
+          isVulnerabilityFix(dependencyOutdated.update, repoConfig).flatMap {
+            case true =>
+              logger.info(s"Skip pull request frequency for $key (fixes a vulnerability)").as(true)
+            case false => checkFrequency()
+          }
+        else if (frequencyBlocks) checkFrequency()
+        else true.pure[F]
     }
+  }
+
+  private def isVulnerabilityFix(
+      update: Update.ForArtifactId,
+      repoConfig: RepoConfig
+  ): F[Boolean] = {
+    val dependencyPairs = UpdateAlg
+      .dependencyPairs(update.artifactForUpdate, update.nextVersion)
+      .filterNot { case (current, next) =>
+        val vulnerabilityCheck = repoConfig.vulnerabilityCheckOrDefault
+        vulnerabilityCheck.isExcluded(current) || vulnerabilityCheck.isExcluded(next)
+      }
+    vulnerabilityCheckAlg
+      .compare(dependencyPairs)
+      .map(_.valuesIterator.exists(_.fixedIds.nonEmpty))
   }
 }
 

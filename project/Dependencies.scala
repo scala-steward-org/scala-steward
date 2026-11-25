@@ -1,7 +1,7 @@
 import sbt.*
 
 object Dependencies {
-  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.86"
+  val bcprovJdk15to18 = "org.bouncycastle" % "bcprov-jdk15to18" % "1.87"
   val betterFiles = "com.github.pathikrit" %% "better-files" % "3.9.2"
   val catsEffect = "org.typelevel" %% "cats-effect" % "3.7.1"
   val catsCore = "org.typelevel" %% "cats-core" % "2.13.0"
@@ -13,21 +13,22 @@ object Dependencies {
   val circeParser = "io.circe" %% "circe-parser" % circeGeneric.revision
   val circeRefined = "io.circe" %% "circe-refined" % "0.15.1"
   val commonsIo = "commons-io" % "commons-io" % "2.22.0"
-  val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.21.0"
-  val coursierCore = "io.get-coursier" %% "coursier" % "2.1.26"
+  val commonsLang3 = "org.apache.commons" % "commons-lang3" % "3.22.0"
+  val coursierCore =
+    ("io.get-coursier" %% "coursier" % "2.1.27").exclude("org.jline", "jline-native")
   val cron4sCore = "com.github.alonsodomin.cron4s" %% "cron4s-core" % "0.8.2"
   val decline = "com.monovore" %% "decline" % "2.6.2"
   val disciplineMunit = "org.typelevel" %% "discipline-munit" % "2.0.0"
-  val fs2Core = "co.fs2" %% "fs2-core" % "3.14.0"
+  val fs2Core = "co.fs2" %% "fs2-core" % "3.16.0"
   val fs2Io = "co.fs2" %% "fs2-io" % fs2Core.revision
-  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M49"
+  val http4sCore = "org.http4s" %% "http4s-core" % "1.0.0-M50"
   val http4sCirce = "org.http4s" %% "http4s-circe" % http4sCore.revision
   val http4sClient = "org.http4s" %% "http4s-client" % http4sCore.revision
   val http4sDsl = "org.http4s" %% "http4s-dsl" % http4sCore.revision
   val http4sEmberServer = "org.http4s" %% "http4s-ember-server" % http4sCore.revision
   val http4sJdkhttpClient = "org.http4s" %% "http4s-jdk-http-client" % "1.0.0-M10"
   val log4catsSlf4j = "org.typelevel" %% "log4cats-slf4j" % "2.8.0"
-  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.6.6"
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.6.8"
   val jjwtApi = "io.jsonwebtoken" % "jjwt-api" % "0.13.0"
   val jjwtImpl = "io.jsonwebtoken" % "jjwt-impl" % jjwtApi.revision
   val jjwtJackson = "io.jsonwebtoken" % "jjwt-jackson" % jjwtApi.revision
@@ -44,6 +45,6 @@ object Dependencies {
   val scalaStewardMillPluginArtifactName = "scala-steward-mill-plugin"
   val scalaStewardMillPlugin =
     "org.scala-steward" % s"${scalaStewardMillPluginArtifactName}_mill1_3" % "0.19.1"
-  val scalafix = "ch.epfl.scala" %% "scalafix-core" % "0.14.9"
+  val scalafix = "ch.epfl.scala" %% "scalafix-core" % "0.14.10"
   val tomlj = "org.tomlj" % "tomlj" % "2.2.0"
 }

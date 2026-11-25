@@ -115,6 +115,16 @@ class CoursierAlgTest extends CatsEffectSuite {
     assertIO(obtained, expected)
   }
 
+  test("getMetadata: Scala version line") {
+    def scalaVersionLine(version: String) = {
+      val dep = "org.scala-lang".g % ("scala3-compiler", "scala3-compiler_3").a % version
+      coursierAlg.getMetadata(dep, resolvers).runA(MockState.empty).map(_.scalaVersionLine)
+    }
+    assertIO(scalaVersionLine("3.9.0"), Some("LTS")) >>
+      assertIO(scalaVersionLine("3.7.4"), Some("Next")) >>
+      assertIO(scalaVersionLine("3.3.0"), None)
+  }
+
   test("getMetadata: no resolvers") {
     val dep = "org.example".g % "foo".a % "1.0.0"
     val obtained = coursierAlg.getMetadata(dep, List.empty).runA(MockState.empty)

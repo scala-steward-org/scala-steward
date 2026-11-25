@@ -26,12 +26,27 @@ import org.scalasteward.core.data.ProcessResult.{Created, Ignored, Updated}
 import org.scalasteward.core.edit.{EditAlg, EditAttempt}
 import org.scalasteward.core.forge.ForgeType.GitHub
 import org.scalasteward.core.forge.data.*
-import org.scalasteward.core.forge.data.NewPullRequestData.{filterLabels, labelsFor}
+import org.scalasteward.core.forge.data.NewPullRequestData.{
+  filterLabels,
+  filterUpdateWithEditAttempts,
+  labelsFor
+}
 import org.scalasteward.core.forge.{ForgeApiAlg, ForgeRepoAlg}
 import org.scalasteward.core.git.{Branch, Commit, GitAlg}
-import org.scalasteward.core.repoconfig.{PullRequestUpdateStrategy, RetractedArtifact}
+import org.scalasteward.core.repoconfig.{
+  PullRequestUpdateStrategy,
+  RetractedArtifact,
+  VulnerabilityCheckConfig
+}
+import org.scalasteward.core.update.UpdateAlg
 import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{Nel, UrlChecker}
+import org.scalasteward.core.vulnerability.{
+  ArtifactVulnerabilities,
+  OsvCache,
+  RemainingVulnerability,
+  VulnerabilityCheckAlg
+}
 import org.scalasteward.core.{git, util}
 import org.typelevel.log4cats.Logger
 
@@ -42,6 +57,8 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
     forgeRepoAlg: ForgeRepoAlg[F],
     gitAlg: GitAlg[F],
     logger: Logger[F],
+    osvCache: OsvCache[F],
+    vulnerabilityCheckAlg: VulnerabilityCheckAlg[F],
     pullRequestService: PullRequestService[F],
     updateInfoUrlFinder: UpdateInfoUrlFinder[F],
     urlChecker: UrlChecker[F],
@@ -211,6 +228,52 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       _.updates.flatMap(dependenciesUpdatedWithNextAndCurrentVersion(_))
     )
 
+  /** Pairs each current dependency with its next one, applying artifact migrations. */
+  private def dependencyPairsWithMigrations(update: Update): List[(Dependency, Dependency)] =
+    for {
+      single <- update.asSingleUpdates
+      artifact <- single.artifactsForUpdate.toList
+      pair <- UpdateAlg.dependencyPairs(artifact, single.nextVersion)
+    } yield pair
+
+  /** Returns advisories fixed or left by the update, keyed by group ID and artifact name. */
+  private[nurture] def vulnerabilities(
+      update: Update,
+      vulnerabilityCheck: VulnerabilityCheckConfig
+  ): F[Map[(GroupId, String), ArtifactVulnerabilities]] = {
+    val dependencyPairs = dependencyPairsWithMigrations(update).filterNot { case (current, next) =>
+      vulnerabilityCheck.isExcluded(current) || vulnerabilityCheck.isExcluded(next)
+    }
+    if (dependencyPairs.isEmpty) F.pure(Map.empty)
+    else
+      logger.attemptWarn
+        .log("Vulnerability check failed")(queryVulnerabilities(dependencyPairs))
+        .map(_.getOrElse(Map.empty))
+  }
+
+  private def queryVulnerabilities(
+      dependencyPairs: List[(Dependency, Dependency)]
+  ): F[Map[(GroupId, String), ArtifactVulnerabilities]] =
+    for {
+      idsByPair <- vulnerabilityCheckAlg.compare(dependencyPairs)
+      // Fixed and remaining advisories both affect the current version.
+      currentIds = idsByPair.valuesIterator.flatMap(_.currentIds).toList.distinct
+      idToVulnerability <- currentIds
+        .traverse(id => osvCache.vulnerability(id).tupleLeft(id))
+        .map(_.toMap)
+    } yield dependencyPairs
+      .map { case (current, next) =>
+        val ids = idsByPair(current -> next)
+        val fixed = ids.fixedIds.toList.sorted.flatMap(idToVulnerability.get)
+        val remaining = ids.remainingIds.toList.sorted.flatMap(idToVulnerability.get).map {
+          vulnerability => RemainingVulnerability(vulnerability, vulnerability.fixedIn(next))
+        }
+        (current.groupId, current.artifactId.name) -> ArtifactVulnerabilities(fixed, remaining)
+      }
+      .filterNot { case (_, vulnerabilities) => vulnerabilities.isEmpty }
+      // Cross-built artifacts share a key, so their advisories are merged.
+      .groupMapReduce(_._1)(_._2)(_ ++ _)
+
   private[nurture] def preparePullRequest(
       data: UpdateData,
       edits: List[EditAttempt]
@@ -247,7 +310,17 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
           .on(u => List(u.currentVersion.value), _.updates.map(_.currentVersion.value))
           .flatTraverse(gitAlg.findFilesContaining(data.repo, _))
           .map(_.distinct)
-      allLabels = labelsFor(data.update, edits, filesWithOldVersion, artifactIdToVersionScheme)
+      vulnerabilitiesByArtifact <- vulnerabilities(
+        filterUpdateWithEditAttempts(data.update, edits),
+        data.repoConfig.vulnerabilityCheckOrDefault
+      )
+      allLabels = labelsFor(
+        data.update,
+        edits,
+        filesWithOldVersion,
+        artifactIdToVersionScheme,
+        vulnerabilitiesByArtifact
+      )
       pullRequestsConfig = data.repoData.config.pullRequestsOrDefault
       labels =
         filterLabels(allLabels, pullRequestsConfig.includeMatchedLabels)
@@ -257,6 +330,7 @@ final class NurtureAlg[F[_]](config: ForgeCfg)(implicit
       edits = edits,
       artifactIdToUrl = artifactIdToUrl,
       artifactIdToUpdateInfoUrls = artifactIdToUpdateInfoUrls.toMap,
+      vulnerabilitiesByArtifact = vulnerabilitiesByArtifact,
       filesWithOldVersion = filesWithOldVersion,
       addLabels = config.addLabels,
       draft = pullRequestsConfig.draft.contains(true),

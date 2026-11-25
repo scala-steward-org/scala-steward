@@ -145,7 +145,7 @@ object TestInstances {
     )
 
   implicit val cooldownConfigArbitrary: Arbitrary[CooldownConfig] =
-    Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig.apply))
+    Arbitrary(Arbitrary.arbitrary[FiniteDuration].map(CooldownConfig(_)))
 
   implicit val pullRequestUpdateStrategyArbitrary: Arbitrary[PullRequestUpdateStrategy] =
     Arbitrary(
@@ -183,6 +183,7 @@ object TestInstances {
         limit <- Arbitrary.arbitrary[Option[NonNegInt]]
         fileExtensions <- Arbitrary.arbitrary[Option[List[String]]]
         cooldown <- Arbitrary.arbitrary[Option[CooldownConfig]]
+        allowScalaNext <- Arbitrary.arbitrary[Option[Boolean]]
       } yield UpdatesConfig(
         pin = Some(pin),
         allow = Some(allow),
@@ -190,8 +191,22 @@ object TestInstances {
         ignore = Some(ignore),
         limit = limit,
         fileExtensions = fileExtensions,
-        cooldown = cooldown
+        cooldown = cooldown,
+        allowScalaNext = allowScalaNext
       )
+    )
+
+  implicit val artifactPatternArbitrary: Arbitrary[ArtifactPattern] =
+    Arbitrary(for {
+      groupId <- Arbitrary.arbitrary[String].map(GroupId.apply)
+      artifactId <- Arbitrary.arbitrary[Option[String]]
+    } yield ArtifactPattern(groupId = groupId, artifactId = artifactId))
+
+  implicit val vulnerabilityCheckConfigArbitrary: Arbitrary[VulnerabilityCheckConfig] =
+    Arbitrary(
+      Gen
+        .option(smallListOf(4, Arbitrary.arbitrary[ArtifactPattern]))
+        .map(exclude => VulnerabilityCheckConfig(exclude = exclude))
     )
 
   implicit val repoConfigArbitrary: Arbitrary[RepoConfig] =
@@ -202,12 +217,14 @@ object TestInstances {
         scalafmt <- Arbitrary.arbitrary[Option[ScalafmtConfig]]
         updates <- Arbitrary.arbitrary[Option[UpdatesConfig]]
         updatePullRequests <- Arbitrary.arbitrary[Option[PullRequestUpdateStrategy]]
+        vulnerabilityCheck <- Arbitrary.arbitrary[Option[VulnerabilityCheckConfig]]
       } yield RepoConfig(
         commits = commits,
         pullRequests = pullRequests,
         scalafmt = scalafmt,
         updates = updates,
-        updatePullRequests = updatePullRequests
+        updatePullRequests = updatePullRequests,
+        vulnerabilityCheck = vulnerabilityCheck
       )
     )
 }
