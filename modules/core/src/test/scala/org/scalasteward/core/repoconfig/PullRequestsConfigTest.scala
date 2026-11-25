@@ -33,4 +33,13 @@ class PullRequestsConfigTest extends DisciplineSuite {
     assert((draftTrue |+| draftFalse).draft === Some(true))
     assert((draftUnset |+| draftUnset).draft === None)
   }
+
+  test("skipFrequencyForVulnerabilityCheck defaults to true") {
+    assert(PullRequestsConfig().skipFrequencyForVulnerabilityCheckOrDefault)
+    assert(
+      !PullRequestsConfig(skipFrequencyForVulnerabilityCheck =
+        Some(false)
+      ).skipFrequencyForVulnerabilityCheckOrDefault
+    )
+  }
 }

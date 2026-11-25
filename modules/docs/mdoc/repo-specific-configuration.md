@@ -44,6 +44,13 @@ val input = s"""
 #pullRequests.frequency = "0 0 ? * 3" # every thursday on midnight
 pullRequests.frequency = "7 days"
 
+# When vulnerability checking is enabled, skip the pull request frequency
+# delay for updates that fix a known vulnerability in the version currently used.
+# allowedHours still applies.
+# Default: true
+#
+#pullRequests.skipFrequencyForVulnerabilityCheck = true
+
 # pullRequests.frequencySpread allows to control the offset that spreads a
 # <timespan> frequency across dependencies. The value is the largest offset
 # a dependency can get. "0 days" turns the offset off, so every PR becomes
@@ -224,7 +231,12 @@ postUpdateHooks = [{
 }]
 
 # You can override some config options for dependencies that matches the given pattern.
-# Currently, "pullRequests" and cooldown can be overridden.
+# Currently, cooldown and only the scheduling-related "pullRequests" options can be overridden:
+# frequency, frequencySpread, allowedHours, and skipFrequencyForVulnerabilityCheck.
+# If skipFrequencyForVulnerabilityCheck is omitted in a dependency override, it inherits
+# the repository-level value. Other pullRequests options (grouping,
+# includeMatchedLabels, customLabels, and draft) apply to the whole repository and cannot
+# be overridden per dependency.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # First-matched entry is used.
 # More-specific entry should be placed before less-specific entry.

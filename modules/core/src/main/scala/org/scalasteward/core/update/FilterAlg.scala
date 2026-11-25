@@ -22,16 +22,15 @@ import org.scalasteward.core.coursier.CoursierAlg
 import org.scalasteward.core.data.*
 import org.scalasteward.core.repoconfig.RepoConfig
 import org.scalasteward.core.update.FilterAlg.*
-import org.scalasteward.core.util.logger.LoggerOps
 import org.scalasteward.core.util.{DateTimeAlg, Timestamp}
-import org.scalasteward.core.vulnerability.OsvCache
+import org.scalasteward.core.vulnerability.VulnerabilityCheckAlg
 import org.typelevel.log4cats.Logger
 
-final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
+final class FilterAlg[F[_]](implicit
     coursierAlg: CoursierAlg[F],
     logger: Logger[F],
     dateTimeAlg: DateTimeAlg[F],
-    osvCache: OsvCache[F],
+    vulnerabilityCheckAlg: VulnerabilityCheckAlg[F],
     F: MonadThrow[F]
 ) {
   def localFilterSingle(
@@ -98,37 +97,30 @@ final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
       currentTime: Timestamp,
       baseline: Option[Update.ForArtifactId],
       scalaVersionLine: Version => Option[ScalaVersionLine]
-  ): F[Option[Update.ForArtifactId]] =
-    if (!enableVulnerabilityCheck) F.pure(None)
-    else {
-      // Updates to cooldown versions that win selection once exempted.
-      val pairsByExempted = config.updatesOrDefault
-        .versionsInCooldown(update, currentTime, config.dependencyOverridesOrDefault)
-        .flatMap { version =>
-          localFilter(
-            update,
-            config,
-            currentTime,
-            cooldownExempt = version.some,
-            scalaVersionLine
-          ).toOption
-            .filter(_.nextVersion === version)
-        }
-        .map(exempted => exempted -> dependencyPairs(exempted))
-      val vulnerabilityCheck = config.vulnerabilityCheckOrDefault
-      val isExcluded = pairsByExempted.exists { case (_, pairs) =>
-        pairs.exists { case (current, next) =>
-          vulnerabilityCheck.isExcluded(current) || vulnerabilityCheck.isExcluded(next)
-        }
+  ): F[Option[Update.ForArtifactId]] = {
+    // Updates to cooldown versions that win selection once exempted.
+    val pairsByExempted = config.updatesOrDefault
+      .versionsInCooldown(update, currentTime, config.dependencyOverridesOrDefault)
+      .flatMap { version =>
+        localFilter(
+          update,
+          config,
+          currentTime,
+          cooldownExempt = version.some,
+          scalaVersionLine
+        ).toOption
+          .filter(_.nextVersion === version)
       }
-      if (pairsByExempted.isEmpty || isExcluded) F.pure(None)
-      else
-        logger.attemptWarn
-          .log("Vulnerability check failed")(
-            selectVulnerabilityFix(update, baseline, pairsByExempted)
-          )
-          .map(_.toOption.flatten)
+      .map(exempted => exempted -> dependencyPairs(exempted))
+    val vulnerabilityCheck = config.vulnerabilityCheckOrDefault
+    val isExcluded = pairsByExempted.exists { case (_, pairs) =>
+      pairs.exists { case (current, next) =>
+        vulnerabilityCheck.isExcluded(current) || vulnerabilityCheck.isExcluded(next)
+      }
     }
+    if (pairsByExempted.isEmpty || isExcluded) F.pure(None)
+    else selectVulnerabilityFix(update, baseline, pairsByExempted)
+  }
 
   // Picks the cooldown version fixing most open advisories, lowest on ties.
   private def selectVulnerabilityFix(
@@ -139,19 +131,15 @@ final class FilterAlg[F[_]](enableVulnerabilityCheck: Boolean)(implicit
     val baselinePairs = baseline.toList.flatMap(dependencyPairs)
     // Without a baseline update, the current dependency stays.
     val nextInBaseline = baselinePairs.toMap.withDefault(identity)
-    val dependencies = (update.artifactForUpdate.crossDependency.dependencies.toList ++
-      baselinePairs.map { case (_, next) => next } ++
-      pairsByExempted.flatMap { case (_, pairs) => pairs.map { case (_, next) => next } }).distinct
-    osvCache.vulnerabilityIds(dependencies).flatMap { dependencyToIds =>
-      def idsOf(dependency: Dependency): Set[String] =
-        dependencyToIds.getOrElse(dependency, Set.empty)
-
+    val comparisonsByExempted = pairsByExempted.map { case (exempted, pairs) =>
+      exempted -> pairs.map { case (current, next) => nextInBaseline(current) -> next }
+    }
+    val comparisons = comparisonsByExempted.flatMap(_._2).distinct
+    vulnerabilityCheckAlg.compare(comparisons).flatMap { idsByPair =>
       // Only advisories the baseline would leave or introduce count as fixes.
-      val fixedIdsByExempted = pairsByExempted
+      val fixedIdsByExempted = comparisonsByExempted
         .map { case (exempted, pairs) =>
-          exempted -> pairs.foldMap { case (current, next) =>
-            idsOf(nextInBaseline(current)) -- idsOf(next)
-          }
+          exempted -> pairs.foldMap(pair => idsByPair(pair).fixedIds)
         }
         .filter { case (_, fixedIds) => fixedIds.nonEmpty }
       fixedIdsByExempted.minimumByOption { case (exempted, fixedIds) =>

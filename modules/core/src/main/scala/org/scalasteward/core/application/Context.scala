@@ -55,7 +55,7 @@ import org.scalasteward.core.update.artifact.{ArtifactMigrationsFinder, Artifact
 import org.scalasteward.core.update.{FilterAlg, PruningAlg, UpdateAlg}
 import org.scalasteward.core.util.*
 import org.scalasteward.core.util.uri.*
-import org.scalasteward.core.vulnerability.{OsvAlg, OsvCache, Vulnerability}
+import org.scalasteward.core.vulnerability.{OsvAlg, OsvCache, Vulnerability, VulnerabilityCheckAlg}
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -94,6 +94,7 @@ final class Context[F[_]](implicit
     val urlChecker: UrlChecker[F],
     val osvAlg: OsvAlg[F],
     val osvCache: OsvCache[F],
+    val vulnerabilityCheckAlg: VulnerabilityCheckAlg[F],
     val workspaceAlg: WorkspaceAlg[F]
 )
 
@@ -188,8 +189,10 @@ object Context {
       implicit val osvAlg: OsvAlg[F] = new OsvAlg[F](config.osvApiHost)
       implicit val osvCache: OsvCache[F] =
         new OsvCache[F](config.cacheTtl, osvIdsStore, osvVulnerabilityStore)
+      implicit val vulnerabilityCheckAlg: VulnerabilityCheckAlg[F] =
+        new VulnerabilityCheckAlg[F](config.enableVulnerabilityCheck)
       implicit val coursierAlg: CoursierAlg[F] = CoursierAlg.create[F]
-      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F](config.enableVulnerabilityCheck)
+      implicit val filterAlg: FilterAlg[F] = new FilterAlg[F]
       implicit val pullRequestRepository: PullRequestRepository[F] =
         new PullRequestRepository[F](pullRequestsStore)
       implicit val pullRequestService: PullRequestService[F] =
@@ -213,8 +216,7 @@ object Context {
       implicit val repoCacheAlg: RepoCacheAlg[F] = new RepoCacheAlg[F](config)
       implicit val scannerAlg: ScannerAlg[F] = new ScannerAlg[F]
       implicit val editAlg: EditAlg[F] = new EditAlg[F]
-      implicit val nurtureAlg: NurtureAlg[F] =
-        new NurtureAlg[F](config.forgeCfg, config.enableVulnerabilityCheck)
+      implicit val nurtureAlg: NurtureAlg[F] = new NurtureAlg[F](config.forgeCfg)
       implicit val pruningAlg: PruningAlg[F] = new PruningAlg[F]
       implicit val reposFilesLoader: ReposFilesLoader[F] = new ReposFilesLoader[F]
       implicit val stewardAlg: StewardAlg[F] = new StewardAlg[F](config)
