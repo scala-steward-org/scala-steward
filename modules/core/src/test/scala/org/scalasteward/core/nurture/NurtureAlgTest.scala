@@ -71,8 +71,10 @@ import org.scalasteward.core.util.{Nel, UrlChecker}
 import org.scalasteward.core.vulnerability.{
   ArtifactVulnerabilities,
   ClearOsvCache,
+  OsvCache,
   RemainingVulnerability,
-  Vulnerability
+  Vulnerability,
+  VulnerabilityCheckAlg
 }
 import org.typelevel.log4cats.Logger
 
@@ -288,6 +290,9 @@ class NurtureAlgTest extends CatsEffectSuite with Http4sDsl[MockEff] with ClearO
     implicit val logger: Logger[MockEff] = context.logger
     implicit val updateInfoUrlFinder: UpdateInfoUrlFinder[MockEff] = context.updateInfoUrlFinder
     implicit val urlChecker: UrlChecker[MockEff] = context.urlChecker
+    implicit val osvCache: OsvCache[MockEff] = context.osvCache
+    implicit val vulnerabilityCheckAlg: VulnerabilityCheckAlg[MockEff] =
+      context.vulnerabilityCheckAlg
     (new NurtureAlg[MockEff](MockConfig.config.forgeCfg), pullRequestService)
   }
 
