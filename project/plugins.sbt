@@ -9,7 +9,7 @@ addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.13.0")
 addSbtPlugin("com.github.sbt" % "sbt-header" % "5.11.0")
 addSbtPlugin("org.typelevel" % "sbt-tpolecat" % "0.5.7")
 addSbtPlugin("com.github.sbt" % "sbt-jmh" % "0.4.9")
-addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.9.2")
+addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.9.3")
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.4.4")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-mergify" % "0.8.7")
 
