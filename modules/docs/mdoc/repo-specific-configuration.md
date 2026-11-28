@@ -231,21 +231,27 @@ postUpdateHooks = [{
 }]
 
 # You can override some config options for dependencies that matches the given pattern.
-# Currently, cooldown and only the scheduling-related "pullRequests" options can be overridden:
-# frequency, frequencySpread, allowedHours, and skipFrequencyForVulnerabilityCheck.
+# Currently, cooldown and the following "pullRequests" options can be overridden:
+# frequency, frequencySpread, allowedHours, skipFrequencyForVulnerabilityCheck, and customLabels.
 # If skipFrequencyForVulnerabilityCheck is omitted in a dependency override, it inherits
 # the repository-level value. Other pullRequests options (grouping,
-# includeMatchedLabels, customLabels, and draft) apply to the whole repository and cannot
+# includeMatchedLabels, and draft) apply to the whole repository and cannot
 # be overridden per dependency.
 # Each pattern must have `groupId`, and may have `artifactId` and `version`.
 # First-matched entry is used.
+# For "cooldown" and "customLabels", matching entries that don't set the option are skipped,
+# so a less-specific entry further down can still provide it; if none does, the top-level
+# value is used. Overridden "customLabels" replace the top-level "pullRequests.customLabels";
+# an empty list (`customLabels = []`) means the matched dependency gets no custom labels.
+# For PRs with several artifacts (e.g. via "grouping"), "customLabels" are resolved for each
+# artifact separately and merged.
 # More-specific entry should be placed before less-specific entry.
 #
 # Default: empty `[]`
 dependencyOverrides = [
   {
     dependency = { groupId = "com.example", artifactId = "foo", version = "2." },
-    pullRequests = { frequency = "1 day" },
+    pullRequests = { frequency = "1 day", customLabels = [ "foo-v2" ] },
   },
   {
     dependency = { groupId = "com.my-company" },

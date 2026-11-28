@@ -22,7 +22,7 @@ import io.circe.Codec
 import io.circe.generic.semiauto.*
 import io.circe.syntax.*
 import org.scalasteward.core.buildtool.BuildRoot
-import org.scalasteward.core.data.Repo
+import org.scalasteward.core.data.{Repo, Update}
 import org.scalasteward.core.edit.hooks.PostUpdateHook
 import org.scalasteward.core.repoconfig.RepoConfig.defaultBuildRoots
 
@@ -66,6 +66,37 @@ final case class RepoConfig(
 
   def dependencyOverridesOrDefault: List[GroupRepoConfig] =
     dependencyOverrides.getOrElse(Nil)
+
+  /** Returns the custom labels that should be added to the PR for `update`.
+    *
+    * Labels are resolved for each artifact of the update separately (see
+    * `customLabelsForArtifact`) and merged, so a PR gets the union of the labels each of its
+    * artifacts would get in a PR of its own.
+    */
+  def customLabelsFor(update: Update): List[String] =
+    update.asSingleUpdates
+      .flatMap(_.forArtifactIds.toList)
+      .flatMap(customLabelsForArtifact)
+      .distinct
+
+  /** The first `dependencyOverrides` entry that matches `update` and sets
+    * `pullRequests.customLabels` is used; its labels replace the repository-wide
+    * `pullRequests.customLabels`. An empty list means that the artifact gets no custom labels.
+    * Matching entries without `customLabels` are skipped (like `cooldown`). If no matching entry
+    * sets them, the repository-wide labels are used.
+    */
+  private def customLabelsForArtifact(update: Update.ForArtifactId): List[String] =
+    dependencyOverridesOrDefault
+      .collectFirstSome { groupRepoConfig =>
+        val matchResult =
+          UpdatePattern.findMatch(List(groupRepoConfig.dependency), update, include = true)
+        Option
+          .when(matchResult.byArtifactId.nonEmpty && matchResult.filteredVersions.nonEmpty)(
+            groupRepoConfig.pullRequests.customLabels
+          )
+          .flatten
+      }
+      .getOrElse(pullRequestsOrDefault.customLabelsOrDefault)
 
   def postUpdateHooksOrDefault: List[PostUpdateHook] =
     postUpdateHooks.getOrElse(Nil).map(_.toHook)
