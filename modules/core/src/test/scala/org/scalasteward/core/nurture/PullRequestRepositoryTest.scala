@@ -21,7 +21,8 @@ import cats.effect.unsafe.implicits.global
 import munit.FunSuite
 import org.http4s.syntax.literals.*
 import org.scalasteward.core.TestSyntax.*
-import org.scalasteward.core.data.{Repo, Update}
+import org.scalasteward.core.data.NoLongerNeeded.{AlreadyApplied, DependencyRemoved}
+import org.scalasteward.core.data.{Dependency, NoLongerNeeded, Repo, Update}
 import org.scalasteward.core.forge.data.PullRequestState.Open
 import org.scalasteward.core.forge.data.{PullRequestNumber, PullRequestState}
 import org.scalasteward.core.git.{Branch, Sha1}
@@ -31,6 +32,7 @@ import org.scalasteward.core.mock.MockState.TraceEntry
 import org.scalasteward.core.mock.MockState.TraceEntry.Cmd
 import org.scalasteward.core.mock.{MockEff, MockEffOps, MockState}
 import org.scalasteward.core.repoconfig.{RetractedArtifact, UpdatePattern, VersionPattern}
+import org.scalasteward.core.util.Nel
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -136,6 +138,156 @@ class PullRequestRepositoryTest extends FunSuite {
 
     assertEquals(emptyResult, List.empty)
     assertEquals(result, List.empty)
+  }
+
+  test("findNoLongerNeededOpenPullRequests reports a removed dependency after two refreshes") {
+    val data = openPRFor(portableScala)
+    val otherSha1 = Sha1.unsafeFrom("b2ced5793c2832ada8c14ba5c77e51c4bc9656a9")
+    val present = "org.portable-scala".g % "sbt-scalajs-crossproject".a % "0.6.1"
+    val (firstAbsent, sameShaAgain, backAgain, absentAgain, secondAbsent) =
+      // writes: PR creation, first sighting, reset, first sighting again; a sighting at the same
+      // sha and the final report change nothing and are not written
+      executeOnTestRepo(expectedStoreOps = Seq("read", "write", "write", "write", "write")) {
+        repo =>
+          def check(dependencies: List[Dependency], sha1: Sha1) =
+            pullRequestRepository.findNoLongerNeededOpenPullRequests(repo, dependencies, Nil, sha1)
+          for {
+            _ <- pullRequestRepository.createOrUpdate(repo, data)
+            firstAbsent <- check(List.empty, sha1)
+            sameShaAgain <- check(List.empty, sha1)
+            // the dependency shows up again, which resets the sighting
+            backAgain <- check(List(present), otherSha1)
+            absentAgain <- check(List.empty, otherSha1)
+            secondAbsent <- check(List.empty, sha1)
+          } yield (firstAbsent, sameShaAgain, backAgain, absentAgain, secondAbsent)
+      }
+    assertEquals(firstAbsent, List.empty)
+    assertEquals(sameShaAgain, List.empty)
+    assertEquals(backAgain, List.empty)
+    assertEquals(absentAgain, List.empty)
+    assertEquals(secondAbsent, List((data, DependencyRemoved)))
+  }
+
+  test("findNoLongerNeededOpenPullRequests handles legacy entries without number or branch") {
+    val repo = Repo("pr-repo-test", "legacy")
+    val store =
+      config.workspace / s"store/pull_requests/v2/github/${repo.toPath}/pull_requests.json"
+    val update = Update.updateEncoder(portableScala).noSpaces
+    // the first entry predates the `number` and `updateBranch` fields, the second only the branch
+    val content =
+      s"""|{
+          |  "https://github.com/typelevel/cats/pull/1" : {
+          |    "baseSha1" : "${sha1.value.value}",
+          |    "update" : $update,
+          |    "state" : "open",
+          |    "entryCreatedAt" : 1581969227183
+          |  },
+          |  "https://github.com/typelevel/cats/pull/2" : {
+          |    "baseSha1" : "${sha1.value.value}",
+          |    "update" : $update,
+          |    "state" : "open",
+          |    "entryCreatedAt" : 1581969227184,
+          |    "number" : 2
+          |  }
+          |}""".stripMargin
+    val applied = "org.portable-scala".g % "sbt-scalajs-crossproject".a % "1.0.0"
+    val obtained = (for {
+      initial <- MockState.empty.addFiles(store -> content)
+      result <- pullRequestRepository
+        .findNoLongerNeededOpenPullRequests(repo, List(applied), Nil, sha1)
+        .runA(initial)
+    } yield result).unsafeRunSync()
+    assertEquals(
+      obtained.map { case (pr, reason) => (pr.number, pr.updateBranch, reason) },
+      List(
+        (
+          number.copy(value = 2),
+          Branch("update/sbt-scalajs-crossproject-1.0.0"),
+          AlreadyApplied(Nel.one(applied))
+        )
+      )
+    )
+  }
+
+  test("Entry decodes store files written before closedReason and absentSince existed") {
+    val json =
+      s"""|{
+          |  "baseSha1" : "${sha1.value.value}",
+          |  "update" : ${Update.updateEncoder(portableScala).noSpaces},
+          |  "state" : "open",
+          |  "entryCreatedAt" : 1581969227183,
+          |  "number" : 3291,
+          |  "updateBranch" : "update"
+          |}""".stripMargin
+    val obtained = io.circe.parser.decode[PullRequestRepository.Entry](json)
+    assertEquals(obtained.map(e => (e.closedReason, e.absentSince)), Right((None, None)))
+    assertEquals(obtained.map(_.update), Right(portableScala: Update))
+  }
+
+  test("findNoLongerNeededOpenPullRequests ignores closed PRs") {
+    val data = openPRFor(portableScala)
+    val dependency = "org.portable-scala".g % "sbt-scalajs-crossproject".a % "1.0.0"
+    val (result, closedResult) =
+      executeOnTestRepo(expectedStoreOps = Seq("read", "write", "write")) { repo =>
+        val getNoLongerNeededOpenPRs =
+          pullRequestRepository.findNoLongerNeededOpenPullRequests(
+            repo,
+            List(dependency),
+            Nil,
+            sha1
+          )
+        for {
+          _ <- pullRequestRepository.createOrUpdate(repo, data)
+          result <- getNoLongerNeededOpenPRs
+          _ <- pullRequestRepository.changeState(repo, data.url, PullRequestState.Closed)
+          closedResult <- getNoLongerNeededOpenPRs
+        } yield (result, closedResult)
+      }
+    assertEquals(result, List((data, AlreadyApplied(Nel.one(dependency)))))
+    assertEquals(closedResult, List.empty)
+  }
+
+  test("findNoLongerNeededOpenPullRequests ignores grouped updates") {
+    val dependency = "org.portable-scala".g % "sbt-scalajs-crossproject".a % "1.0.0"
+    val (_, obtained) = beforeAndAfterPRCreation(groupedUpdate(portableScala)) { repo =>
+      pullRequestRepository.findNoLongerNeededOpenPullRequests(repo, List(dependency), Nil, sha1)
+    }
+    assertEquals(obtained, List.empty[(PullRequestData[Id], NoLongerNeeded)])
+  }
+
+  test("wasClosedAsNoLongerNeeded is only true for PRs closed with that reason") {
+    val data = openPRFor(portableScala)
+    val (open, closedByHuman, closedAsNoLongerNeeded, afterListing, reopened) =
+      executeOnTestRepo(expectedStoreOps =
+        Seq("read", "write", "write", "write", "write", "write")
+      ) { repo =>
+        val wasClosedAsNoLongerNeeded =
+          pullRequestRepository.wasClosedAsNoLongerNeeded(repo, data.url)
+        for {
+          _ <- pullRequestRepository.createOrUpdate(repo, data)
+          open <- wasClosedAsNoLongerNeeded
+          _ <- pullRequestRepository.changeState(repo, data.url, PullRequestState.Closed)
+          closedByHuman <- wasClosedAsNoLongerNeeded
+          _ <- pullRequestRepository.changeState(
+            repo,
+            data.url,
+            PullRequestState.Closed,
+            Some(ClosedReason.AlreadyApplied)
+          )
+          closedAsNoLongerNeeded <- wasClosedAsNoLongerNeeded
+          // listing the PR again refreshes the entry but must keep the reason
+          _ <- pullRequestRepository
+            .createOrUpdate(repo, data.copy(state = PullRequestState.Closed))
+          afterListing <- wasClosedAsNoLongerNeeded
+          _ <- pullRequestRepository.changeState(repo, data.url, PullRequestState.Open)
+          reopened <- wasClosedAsNoLongerNeeded
+        } yield (open, closedByHuman, closedAsNoLongerNeeded, afterListing, reopened)
+      }
+    assertEquals(open, false)
+    assertEquals(closedByHuman, false)
+    assertEquals(closedAsNoLongerNeeded, true)
+    assertEquals(afterListing, true)
+    assertEquals(reopened, false)
   }
 
   test("getRetractedPullRequests with no retractions defined") {
